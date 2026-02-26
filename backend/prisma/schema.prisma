@@ -12,8 +12,10 @@ datasource db {
 model User {
   id             String  @id @default(uuid())
   email          String  @unique
-  phone          String  @unique
-  password       String
+  phone          String? @unique
+  password       String?
+  firebaseUid    String? @unique
+  authProvider   String  @default("LOCAL") // LOCAL, GOOGLE, etc.
   firstName      String?
   lastName       String?
   role           Role    @default(USER)

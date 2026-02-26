@@ -69,8 +69,8 @@ export const changePassword = async (req: Request, res: Response) => {
         const { currentPassword, newPassword } = req.body;
 
         const user = await prisma.user.findUnique({ where: { id: userId } });
-        if (!user || !(await bcrypt.compare(currentPassword, user.password))) {
-            return res.status(400).json({ error: 'Incorrect current password' });
+        if (!user || !user.password || !(await bcrypt.compare(currentPassword, user.password))) {
+            return res.status(400).json({ error: 'Incorrect current password or account uses Google sign-in' });
         }
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);

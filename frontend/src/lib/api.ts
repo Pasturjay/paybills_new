@@ -1,12 +1,19 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
+// Retrieves the current Firebase ID Token from local storage
+const getFirebaseToken = (): string | null => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('firebaseToken');
+};
+
 export const api = {
     async post(endpoint: string, data: any, token?: string) {
+        const authToken = token || getFirebaseToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json',
         };
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
+        if (authToken) {
+            headers['Authorization'] = `Bearer ${authToken}`;
         }
 
         const res = await fetch(`${API_URL}${endpoint}`, {
@@ -21,15 +28,15 @@ export const api = {
         }
 
         return res.json();
-        return res.json();
     },
 
     async put(endpoint: string, data: any, token?: string) {
+        const authToken = token || getFirebaseToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json',
         };
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
+        if (authToken) {
+            headers['Authorization'] = `Bearer ${authToken}`;
         }
 
         const res = await fetch(`${API_URL}${endpoint}`, {
@@ -46,11 +53,14 @@ export const api = {
         return res.json();
     },
 
-    async get(endpoint: string, token: string) {
+    async get(endpoint: string, token?: string) {
+        const authToken = token || getFirebaseToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
         };
+        if (authToken) {
+            headers['Authorization'] = `Bearer ${authToken}`;
+        }
 
         const res = await fetch(`${API_URL}${endpoint}`, {
             method: 'GET',

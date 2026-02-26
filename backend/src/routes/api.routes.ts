@@ -1,14 +1,14 @@
 import { Router } from 'express';
-import { register, login, requestOtp } from '../controllers/auth.controller';
+import { register, login, requestOtp, syncFirebaseUser } from '../controllers/auth.controller';
 import { authenticateToken } from '../middleware/auth.middleware';
 
 const router = Router();
 
-// Auth Routes
-// Auth Routes
-router.post('/auth/request-otp', requestOtp);
-router.post('/auth/register', register);
-router.post('/auth/login', login);
+// Auth Routes - Firebase
+router.post('/auth/sync', syncFirebaseUser); // Primary: Firebase token sync (login + register)
+router.post('/auth/request-otp', requestOtp); // Deprecated (kept for stability)
+router.post('/auth/register', register);       // Deprecated (kept for stability)
+router.post('/auth/login', login);             // Deprecated (kept for stability)
 
 // Notification Routes
 import { getNotifications, markRead } from '../controllers/notification.controller';

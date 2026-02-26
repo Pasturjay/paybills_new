@@ -1,62 +1,48 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { signInWithPopup } from "firebase/auth";
+import { auth, googleProvider } from "@/lib/firebase";
 
 export default function RegisterPage() {
     const router = useRouter();
-    const [formData, setFormData] = useState({
-        email: "",
-        phone: "",
-        password: "",
-        firstName: "",
-        lastName: "",
-    });
-    const [step, setStep] = useState<"details" | "otp">("details");
-    const [otp, setOtp] = useState("");
-    const [otpReference, setOtpReference] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleGoogleSignUp = async () => {
         setLoading(true);
         setError("");
 
         try {
-            if (step === "details") {
-                // Request OTP first
-                const res = await api.post("/auth/request-otp", {
-                    identifier: formData.email,
-                    channel: "email"
-                });
+            // 1. Google OAuth (same flow handles both sign-up and sign-in)
+            const result = await signInWithPopup(auth, googleProvider);
 
-                if (res.reference) {
-                    setOtpReference(res.reference);
-                    setStep("otp");
-                } else {
-                    throw new Error("Failed to retrieve OTP reference. Please try again.");
-                }
-            } else if (step === "otp") {
-                // Finalize Registration with OTP and Reference
-                await api.post("/auth/register", {
-                    ...formData,
-                    otp,
-                    reference: otpReference
-                });
-                router.push("/auth/login?registered=true");
+            // 2. Get the Firebase ID Token
+            const idToken = await result.user.getIdToken();
+
+            // 3. Backend will auto-create the user in Prisma if they don't exist
+            const res = await fetch('/api/auth/sync', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`,
+                },
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || 'Failed to create account');
             }
+
+            // 4. Store the token and redirect to dashboard
+            localStorage.setItem('firebaseToken', idToken);
+            router.push("/dashboard");
         } catch (err: any) {
-            // Check if it's a TypeError from fetch
-            console.error("Catch Block Error:", err);
-            if (err instanceof TypeError && err.message === 'Failed to fetch') {
-                setError("Network error: Failed to connect to the server. Please ensure the backend is running.");
+            console.error("Google Sign-Up Error:", err);
+            if (err.code === 'auth/popup-closed-by-user') {
+                setError("Sign-up was cancelled. Please try again.");
             } else {
                 setError(err.message || "An unexpected error occurred.");
             }
@@ -79,93 +65,47 @@ export default function RegisterPage() {
                         </Link>
                     </p>
                 </div>
-                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                    <div className="-space-y-px rounded-md shadow-sm">
-                        <div>
-                            <input
-                                name="firstName"
-                                type="text"
-                                required
-                                className="relative block w-full rounded-t-md border-0 p-3 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                                placeholder="First Name"
-                                value={formData.firstName}
-                                onChange={handleChange}
-                            />
-                        </div>
-                        <div>
-                            <input
-                                name="lastName"
-                                type="text"
-                                required
-                                className="relative block w-full border-0 p-3 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                                placeholder="Last Name"
-                                value={formData.lastName}
-                                onChange={handleChange}
-                            />
-                        </div>
-                        <div>
-                            <input
-                                name="email"
-                                type="email"
-                                required
-                                className="relative block w-full border-0 p-3 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                                placeholder="Email address"
-                                value={formData.email}
-                                onChange={handleChange}
-                            />
-                        </div>
-                        <div>
-                            <input
-                                name="phone"
-                                type="tel"
-                                required
-                                className="relative block w-full border-0 p-3 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                                placeholder="Phone Number"
-                                value={formData.phone}
-                                onChange={handleChange}
-                            />
-                        </div>
-                        <div>
-                            <input
-                                name="password"
-                                type="password"
-                                required
-                                className="relative block w-full rounded-b-md border-0 p-3 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                                placeholder="Password"
-                                value={formData.password}
-                                onChange={handleChange}
-                            />
-                        </div>
 
-                        {step === "otp" && (
-                            <div className="mt-4 pt-4 border-t border-gray-200">
-                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">We sent a verification code to your email.</p>
-                                <input
-                                    name="otp"
-                                    type="text"
-                                    required
-                                    className="relative block w-full rounded-md border-0 p-3 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                                    placeholder="Enter 6-digit OTP"
-                                    value={otp}
-                                    onChange={(e) => setOtp(e.target.value)}
-                                    maxLength={6}
-                                />
-                            </div>
+                <div className="mt-8 space-y-4">
+                    {error && (
+                        <div className="rounded-md bg-red-50 p-4">
+                            <p className="text-sm text-red-700">{error}</p>
+                        </div>
+                    )}
+
+                    <button
+                        onClick={handleGoogleSignUp}
+                        disabled={loading}
+                        className="group relative flex w-full items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-3 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700"
+                    >
+                        {loading ? (
+                            <>
+                                <svg className="animate-spin h-5 w-5 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Creating account...
+                            </>
+                        ) : (
+                            <>
+                                <svg className="h-5 w-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                                </svg>
+                                Sign up with Google
+                            </>
                         )}
-                    </div>
+                    </button>
 
-                    {error && <div className="text-red-500 text-sm">{error}</div>}
-
-                    <div>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="group relative flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
-                        >
-                            {loading ? "Processing..." : step === "details" ? "Send Verification Code" : "Verify & Register"}
-                        </button>
-                    </div>
-                </form>
+                    <p className="text-center text-xs text-gray-500 dark:text-gray-400">
+                        By creating an account, you agree to our{" "}
+                        <Link href="/legal/terms" className="underline">Terms of Service</Link>
+                        {" "}and{" "}
+                        <Link href="/legal/privacy" className="underline">Privacy Policy</Link>.
+                    </p>
+                </div>
             </div>
         </div>
     );
