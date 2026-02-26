@@ -54,6 +54,7 @@ export default function RegisterPage() {
             }
         } catch (err: any) {
             // Check if it's a TypeError from fetch
+            console.error("Catch Block Error:", err);
             if (err instanceof TypeError && err.message === 'Failed to fetch') {
                 setError("Network error: Failed to connect to the server. Please ensure the backend is running.");
             } else {
