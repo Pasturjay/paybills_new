@@ -2,10 +2,10 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
-import { HisendService } from '../services/hisend.service';
+import { OtpService } from '../services/otp.service';
 
 const prisma = new PrismaClient();
-const hisendService = new HisendService();
+const otpService = new OtpService();
 
 export const requestOtp = async (req: Request, res: Response) => {
     try {
@@ -15,7 +15,7 @@ export const requestOtp = async (req: Request, res: Response) => {
         }
 
         // Send OTP
-        const reference = await hisendService.sendOtp(identifier, channel as 'email' | 'sms');
+        const reference = await otpService.requestOtp(identifier);
         res.json({ message: 'OTP sent successfully', reference });
     } catch (error: any) {
         res.status(500).json({ error: error.message || 'Failed to send OTP' });
@@ -32,7 +32,7 @@ export const register = async (req: Request, res: Response) => {
         }
 
         // Validate OTP
-        const isValidParams = await hisendService.validateOtp(reference, otp);
+        const isValidParams = await otpService.validateOtp(reference, otp);
         if (!isValidParams) {
             return res.status(400).json({ error: 'Invalid or expired OTP' });
         }

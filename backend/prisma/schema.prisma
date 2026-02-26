@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
@@ -10,64 +10,78 @@ datasource db {
 
 // User & Auth
 model User {
-  id              String    @id @default(uuid())
-  email           String    @unique
-  phone           String    @unique
-  password        String
-  firstName       String?
-  lastName        String?
-  role            Role      @default(USER)
-  userTag         String?   @unique // @UniqueTag for P2P
-  kycLevel        Int       @default(0) // 0, 1, 2, 3
-  address         String?
-  bvn             String?   // Bank Verification Number (Tier 1)
-  nin             String?   // National ID (Tier 1)
-  idCardUrl       String?   // Tier 2
-  utilityBillUrl  String?   // Tier 2
-  isVerified      Boolean   @default(false)
-  isActive        Boolean   @default(true)
-  tenantId        String?   // For SaaS/Multi-tenancy (Phase 2)
-  
+  id             String  @id @default(uuid())
+  email          String  @unique
+  phone          String  @unique
+  password       String
+  firstName      String?
+  lastName       String?
+  role           Role    @default(USER)
+  userTag        String? @unique // @UniqueTag for P2P
+  kycLevel       Int     @default(0) // 0, 1, 2, 3
+  address        String?
+  bvn            String? // Bank Verification Number (Tier 1)
+  nin            String? // National ID (Tier 1)
+  idCardUrl      String? // Tier 2
+  utilityBillUrl String? // Tier 2
+  isVerified     Boolean @default(false)
+  isActive       Boolean @default(true)
+  tenantId       String? // For SaaS/Multi-tenancy (Phase 2)
+
   // Didit.me KYC Integration
-  diditSessionId  String?   // External session ID from Didit
-  diditStatus     String?   // verification status (e.g., "Approved", "Declined")
-  
+  diditSessionId String? // External session ID from Didit
+  diditStatus    String? // verification status (e.g., "Approved", "Declined")
+
   wallets         Wallet[]
   virtualCards    VirtualCard[]
   transactions    Transaction[]
   sessions        Session[]
   auditLogs       AuditLog[]
-  auditLogsCaused AuditLog[] @relation("CausedBy")
+  auditLogsCaused AuditLog[]       @relation("CausedBy")
   notifications   Notification[]
   virtualAccounts VirtualAccount[]
   virtualNumbers  VirtualNumber[]
   subscriptions   Subscription[]
 
   // Security & Growth
-  transactionPin  String?
-  referralCode    String?   @unique
-  referredById    String?
-  referredBy      User?     @relation("Referrals", fields: [referredById], references: [id])
-  referrals       User[]    @relation("Referrals")
+  transactionPin String?
+  referralCode   String? @unique
+  referredById   String?
+  referredBy     User?   @relation("Referrals", fields: [referredById], references: [id])
+  referrals      User[]  @relation("Referrals")
 
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OtpCode {
+  id         String   @id @default(uuid())
+  identifier String // Email or Phone
+  code       String // The 6-digit OTP
+  reference  String   @unique // The unique token sent to the frontend
+  expiresAt  DateTime // When the code becomes invalid
+  isUsed     Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([identifier])
+  @@index([reference])
 }
 
 model VirtualAccount {
-  id              String   @id @default(uuid())
-  userId          String
-  user            User     @relation(fields: [userId], references: [id])
-  bankName        String
-  accountNumber   String
-  accountName     String
-  currency        String   @default("NGN")
-  provider        String   @default("PAYSTACK")
-  providerRef     String?  // customer_code or dedicated_account_id
-  
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id            String  @id @default(uuid())
+  userId        String
+  user          User    @relation(fields: [userId], references: [id])
+  bankName      String
+  accountNumber String
+  accountName   String
+  currency      String  @default("NGN")
+  provider      String  @default("PAYSTACK")
+  providerRef   String? // customer_code or dedicated_account_id
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([accountNumber])
   @@index([userId])
@@ -83,32 +97,32 @@ enum Role {
 
 // Session Management
 model Session {
-  id           String   @id @default(uuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id])
-  token        String   @unique // Refresh Token
-  deviceInfo   String?
-  ipAddress    String?
-  expiresAt    DateTime
-  isRevoked    Boolean  @default(false)
-  
-  createdAt    DateTime @default(now())
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  token      String   @unique // Refresh Token
+  deviceInfo String?
+  ipAddress  String?
+  expiresAt  DateTime
+  isRevoked  Boolean  @default(false)
+
+  createdAt DateTime @default(now())
 }
 
 // Financial Core: Wallet
 model Wallet {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  currency    String   @default("NGN")
-  balance     Decimal  @default(0.00) @db.Decimal(20, 2)
-  lien        Decimal  @default(0.00) @db.Decimal(20, 2) // Locked funds
-  status      WalletStatus @default(ACTIVE)
-  
+  id       String       @id @default(uuid())
+  userId   String
+  user     User         @relation(fields: [userId], references: [id])
+  currency String       @default("NGN")
+  balance  Decimal      @default(0.00) @db.Decimal(20, 2)
+  lien     Decimal      @default(0.00) @db.Decimal(20, 2) // Locked funds
+  status   WalletStatus @default(ACTIVE)
+
   transactions Transaction[]
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([userId, currency])
 }
@@ -121,37 +135,37 @@ enum WalletStatus {
 
 // Financial Core: Transaction
 model Transaction {
-  id              String            @id @default(uuid())
-  reference       String            @unique // Internal Ref
-  externalRef     String?           @unique // Provider Ref (Strict Idempotency)
-  type            TransactionType
-  status          TransactionStatus @default(PENDING)
-  amount          Decimal           @db.Decimal(20, 2)
-  fee             Decimal           @default(0.00) @db.Decimal(20, 2)
-  total           Decimal           @db.Decimal(20, 2)
-  
-  userId          String
-  user            User              @relation(fields: [userId], references: [id])
-  walletId        String
-  wallet          Wallet            @relation(fields: [walletId], references: [id])
-  
-  providerId      String?
-  provider        Provider?         @relation(fields: [providerId], references: [id])
-  serviceId       String?
-  service         Service?          @relation(fields: [serviceId], references: [id])
+  id          String            @id @default(uuid())
+  reference   String            @unique // Internal Ref
+  externalRef String?           @unique // Provider Ref (Strict Idempotency)
+  type        TransactionType
+  status      TransactionStatus @default(PENDING)
+  amount      Decimal           @db.Decimal(20, 2)
+  fee         Decimal           @default(0.00) @db.Decimal(20, 2)
+  total       Decimal           @db.Decimal(20, 2)
 
-  metadata        Json?             // Flexible metadata for provider response
-  
-  ledgerEntries   LedgerEntry[]
+  userId   String
+  user     User   @relation(fields: [userId], references: [id])
+  walletId String
+  wallet   Wallet @relation(fields: [walletId], references: [id])
 
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  
-  idempotencyKey  String?           @unique // Client-provided unique key for request deduplication
-  attempts        TransactionAttempt[]
-  
-  virtualCardId   String?
-  virtualCard     VirtualCard?      @relation(fields: [virtualCardId], references: [id])
+  providerId String?
+  provider   Provider? @relation(fields: [providerId], references: [id])
+  serviceId  String?
+  service    Service?  @relation(fields: [serviceId], references: [id])
+
+  metadata Json? // Flexible metadata for provider response
+
+  ledgerEntries LedgerEntry[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  idempotencyKey String?              @unique // Client-provided unique key for request deduplication
+  attempts       TransactionAttempt[]
+
+  virtualCardId String?
+  virtualCard   VirtualCard? @relation(fields: [virtualCardId], references: [id])
 
   @@index([userId])
   @@index([status])
@@ -160,54 +174,54 @@ model Transaction {
 }
 
 model VirtualCard {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  name        String
-  pan         String   // Last 4 or masked
-  fullPan     String?  // Encrypted (Simulated)
-  cvv         String
-  expiry      String
-  balance     Decimal  @default(0.00) @db.Decimal(20, 2)
-  currency    String   @default("USD")
-  status      String   @default("ACTIVE") // ACTIVE, FROZEN
-  color       String   @default("blue")
-  
+  id       String  @id @default(uuid())
+  userId   String
+  user     User    @relation(fields: [userId], references: [id])
+  name     String
+  pan      String // Last 4 or masked
+  fullPan  String? // Encrypted (Simulated)
+  cvv      String
+  expiry   String
+  balance  Decimal @default(0.00) @db.Decimal(20, 2)
+  currency String  @default("USD")
+  status   String  @default("ACTIVE") // ACTIVE, FROZEN
+  color    String  @default("blue")
+
   providerCardId String? // WantToPay ID
   spendingLimit  Decimal @default(0.00) @db.Decimal(20, 2)
   frozen         Boolean @default(false)
-  
+
   transactions Transaction[]
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
 }
 
 model TransactionAttempt {
-  id            String    @id @default(uuid())
+  id            String      @id @default(uuid())
   transactionId String
   transaction   Transaction @relation(fields: [transactionId], references: [id])
-  
+
   attemptNumber Int
-  status        String    // PENDING, SUCCESS, FAILED
-  error         String?   // Error message or code
-  
-  createdAt     DateTime  @default(now())
+  status        String // PENDING, SUCCESS, FAILED
+  error         String? // Error message or code
+
+  createdAt DateTime @default(now())
 }
 
 model ReconciliationLog {
-  id            String    @id @default(uuid())
-  status        String    // SUCCESS, FAILED, PARTIAL
-  
-  processedCount Int      @default(0)
-  resolvedCount  Int      @default(0)
-  failedCount    Int      @default(0)
-  
-  details       Json?     // List of transaction IDs processed
-  
-  createdAt     DateTime  @default(now())
+  id     String @id @default(uuid())
+  status String // SUCCESS, FAILED, PARTIAL
+
+  processedCount Int @default(0)
+  resolvedCount  Int @default(0)
+  failedCount    Int @default(0)
+
+  details Json? // List of transaction IDs processed
+
+  createdAt DateTime @default(now())
 }
 
 enum TransactionType {
@@ -241,17 +255,17 @@ enum TransactionStatus {
 
 // Financial Core: Double-Entry Ledger
 model LedgerEntry {
-  id            String   @id @default(uuid())
+  id            String      @id @default(uuid())
   transactionId String
   transaction   Transaction @relation(fields: [transactionId], references: [id])
-  
-  accountType   AccountType
-  description   String
-  debit         Decimal  @default(0.00) @db.Decimal(20, 2)
-  credit        Decimal  @default(0.00) @db.Decimal(20, 2)
-  balanceAfter  Decimal  @db.Decimal(20, 2) // Snapshot
-  
-  createdAt     DateTime @default(now())
+
+  accountType  AccountType
+  description  String
+  debit        Decimal     @default(0.00) @db.Decimal(20, 2)
+  credit       Decimal     @default(0.00) @db.Decimal(20, 2)
+  balanceAfter Decimal     @db.Decimal(20, 2) // Snapshot
+
+  createdAt DateTime @default(now())
 }
 
 enum AccountType {
@@ -265,32 +279,32 @@ enum AccountType {
 
 // Service & Provider Abstraction
 model Provider {
-  id          String   @id @default(uuid())
-  code        String   @unique // e.g., VTPASS, BAXI
-  name        String
-  priority    Int      @default(0) // For Failover/Routing: Higher = First Choice
-  isActive    Boolean  @default(true)
-  balance     Decimal  @default(0.00) @db.Decimal(20, 2)
-  config      Json     // API Keys, Base URLs (Stored Encrypted in App Logic)
+  id       String  @id @default(uuid())
+  code     String  @unique // e.g., VTPASS, BAXI
+  name     String
+  priority Int     @default(0) // For Failover/Routing: Higher = First Choice
+  isActive Boolean @default(true)
+  balance  Decimal @default(0.00) @db.Decimal(20, 2)
+  config   Json // API Keys, Base URLs (Stored Encrypted in App Logic)
 
-  services    Service[]
+  services     Service[]
   transactions Transaction[]
 }
 
 model Service {
-  id            String   @id @default(uuid())
-  code          String   @unique // e.g., MTN-AIRTIME, DSTV-PREMIUM
-  name          String
-  type          ServiceType
-  isActive      Boolean  @default(true)
-  
-  providerId    String
-  provider      Provider @relation(fields: [providerId], references: [id])
+  id       String      @id @default(uuid())
+  code     String      @unique // e.g., MTN-AIRTIME, DSTV-PREMIUM
+  name     String
+  type     ServiceType
+  isActive Boolean     @default(true)
 
-  basePrice     Decimal  @db.Decimal(20, 2) // Provider Price
-  markupRules   MarkupRule[]
-  
-  transactions  Transaction[]
+  providerId String
+  provider   Provider @relation(fields: [providerId], references: [id])
+
+  basePrice   Decimal      @db.Decimal(20, 2) // Provider Price
+  markupRules MarkupRule[]
+
+  transactions Transaction[]
 }
 
 enum ServiceType {
@@ -306,15 +320,15 @@ enum ServiceType {
 
 // Dynamic Margin Engine
 model MarkupRule {
-  id          String      @id @default(uuid())
-  serviceId   String
-  service     Service     @relation(fields: [serviceId], references: [id])
-  
-  userTier    Int?        // Null = Global, 0-3 specific
-  type        MarkupType
-  value       Decimal     @db.Decimal(10, 2) // Fixed amount or Percentage
-  
-  isActive    Boolean     @default(true)
+  id        String  @id @default(uuid())
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id])
+
+  userTier Int? // Null = Global, 0-3 specific
+  type     MarkupType
+  value    Decimal    @db.Decimal(10, 2) // Fixed amount or Percentage
+
+  isActive Boolean @default(true)
 }
 
 enum MarkupType {
@@ -324,22 +338,22 @@ enum MarkupType {
 
 // Security & Compliance
 model AuditLog {
-  id          String   @id @default(uuid())
-  action      String
-  entity      String   // User, Transaction, etc.
-  entityId    String
-  changes     Json?    // Before/After diff
-  
-  userId      String?  // Who performed action
-  user        User?    @relation("CausedBy", fields: [userId], references: [id], onDelete: SetNull)
-  
+  id       String @id @default(uuid())
+  action   String
+  entity   String // User, Transaction, etc.
+  entityId String
+  changes  Json? // Before/After diff
+
+  userId String? // Who performed action
+  user   User?   @relation("CausedBy", fields: [userId], references: [id], onDelete: SetNull)
+
   targetUserId String? // Who was affected
   targetUser   User?   @relation(fields: [targetUserId], references: [id], onDelete: SetNull)
-  
-  ipAddress   String?
-  userAgent   String?
-  
-  createdAt   DateTime @default(now())
+
+  ipAddress String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
 }
 
 model Notification {
@@ -357,66 +371,66 @@ model Notification {
 }
 
 model VirtualNumber {
-  id              String   @id @default(uuid())
-  userId          String
-  user            User     @relation(fields: [userId], references: [id])
-  vonageNumberId  String?  // Provider ID
-  phoneNumber     String   @unique
-  status          String   @default("ACTIVE") // ACTIVE, EXPIRED, CANCELLED
-  
-  subscriptionId  String?  @unique
-  subscription    Subscription? @relation(fields: [subscriptionId], references: [id])
-  
-  messages        SmsMessage[]
+  id             String  @id @default(uuid())
+  userId         String
+  user           User    @relation(fields: [userId], references: [id])
+  vonageNumberId String? // Provider ID
+  phoneNumber    String  @unique
+  status         String  @default("ACTIVE") // ACTIVE, EXPIRED, CANCELLED
 
-  providerMonthlyCost Decimal @db.Decimal(10, 2) @default(0.00)
-  userMonthlyPrice    Decimal @db.Decimal(10, 2) @default(5000.00)
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  subscriptionId String?       @unique
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+
+  messages SmsMessage[]
+
+  providerMonthlyCost Decimal @default(0.00) @db.Decimal(10, 2)
+  userMonthlyPrice    Decimal @default(5000.00) @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
 }
 
 model Subscription {
-  id              String   @id @default(uuid())
-  userId          String
-  user            User     @relation(fields: [userId], references: [id])
-  
-  virtualNumber   VirtualNumber?
-  type            String   // VIRTUAL_NUMBER, etc.
-  
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  virtualNumber VirtualNumber?
+  type          String // VIRTUAL_NUMBER, etc.
+
   status          String   @default("ACTIVE") // ACTIVE, PAYMENT_FAILED, CANCELLED
   nextBillingDate DateTime
   autoRenew       Boolean  @default(true)
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([userId])
   @@index([nextBillingDate])
 }
 
 model SmsMessage {
-  id              String   @id @default(uuid())
+  id              String        @id @default(uuid())
   virtualNumberId String
   virtualNumber   VirtualNumber @relation(fields: [virtualNumberId], references: [id])
-  
-  sender          String
-  message         String
-  receivedAt      DateTime @default(now())
-  
+
+  sender     String
+  message    String
+  receivedAt DateTime @default(now())
+
   @@index([virtualNumberId])
 }
 
 model ProviderCostLog {
-  id          String   @id @default(uuid())
-  provider    String   // VONAGE, WANTTOPAY
-  action      String   // RENT_NUMBER, CREATE_CARD
-  cost        Decimal  @db.Decimal(10, 4)
-  currency    String   @default("USD")
-  
-  relatedId   String?  // VirtualNumber ID or Card ID
-  
-  createdAt   DateTime @default(now())
+  id       String  @id @default(uuid())
+  provider String // VONAGE, WANTTOPAY
+  action   String // RENT_NUMBER, CREATE_CARD
+  cost     Decimal @db.Decimal(10, 4)
+  currency String  @default("USD")
+
+  relatedId String? // VirtualNumber ID or Card ID
+
+  createdAt DateTime @default(now())
 }
