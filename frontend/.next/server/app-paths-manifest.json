@@ -1,7 +1,8 @@
 {
+  "/_not-found/page": "app/_not-found/page.js",
   "/products/page": "app/products/page.js",
-  "/products/games/page": "app/products/games/page.js",
   "/auth/login/page": "app/auth/login/page.js",
+  "/products/games/page": "app/products/games/page.js",
   "/products/giftcards/page": "app/products/giftcards/page.js",
   "/dashboard/page": "app/dashboard/page.js"
 }

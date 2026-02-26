@@ -2,13 +2,40 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
+import { HisendService } from '../services/hisend.service';
 
 const prisma = new PrismaClient();
+const hisendService = new HisendService();
+
+export const requestOtp = async (req: Request, res: Response) => {
+    try {
+        const { identifier, channel } = req.body;
+        if (!identifier || !channel) {
+            return res.status(400).json({ error: 'Identifier and channel are required' });
+        }
+
+        // Send OTP
+        const reference = await hisendService.sendOtp(identifier, channel as 'email' | 'sms');
+        res.json({ message: 'OTP sent successfully', reference });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || 'Failed to send OTP' });
+    }
+};
 
 export const register = async (req: Request, res: Response) => {
     try {
         console.log("Register Request Body:", req.body);
-        const { email, phone, password, firstName, lastName } = req.body;
+        const { email, phone, password, firstName, lastName, otp, reference } = req.body;
+
+        if (!otp || !reference) {
+            return res.status(400).json({ error: 'OTP and reference are required' });
+        }
+
+        // Validate OTP
+        const isValidParams = await hisendService.validateOtp(reference, otp);
+        if (!isValidParams) {
+            return res.status(400).json({ error: 'Invalid or expired OTP' });
+        }
 
         // Check if user exists
         const existingUser = await prisma.user.findFirst({
@@ -70,7 +97,8 @@ export const register = async (req: Request, res: Response) => {
                     lastName,
                     referralCode,
                     // userTag,
-                    referredById: referrerId
+                    referredById: referrerId,
+                    isVerified: true // Set verified since they passed OTP
                 },
             });
 

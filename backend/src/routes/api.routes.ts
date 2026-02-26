@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import { register, login } from '../controllers/auth.controller';
-import { getBalance, simulateFund, getUserTransactions, initiateFunding, verifyFunding, getVirtualAccount, transferFunds } from '../controllers/wallet.controller';
+import { register, login, requestOtp } from '../controllers/auth.controller';
 import { authenticateToken } from '../middleware/auth.middleware';
 
 const router = Router();
 
 // Auth Routes
 // Auth Routes
+router.post('/auth/request-otp', requestOtp);
 router.post('/auth/register', register);
 router.post('/auth/login', login);
 
