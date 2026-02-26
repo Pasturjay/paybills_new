@@ -20,15 +20,10 @@ export class HisendService {
      */
     async sendOtp(identifier: string, channel: 'email' | 'sms' = 'email'): Promise<string> {
         try {
-            const response = await axios.get(`${HISEND_API_BASE}/otp/send`, {
-                params: {
-                    api_key: this.apiKey,
-                    customer_identifier: identifier,
-                    channel: channel,
-                    length: 6,
-                    expiry: 10
-                }
-            });
+            // Building URL manually to match the exact documented schema
+            // https://core.hisend.hunnovate.com/api/v1/otp/send?channel={channel}&customer_identifier={identifier}?api_key={apiKey}
+            const url = `${HISEND_API_BASE}/otp/send?channel=${channel}&customer_identifier=${identifier}?api_key=${this.apiKey}`;
+            const response = await axios.get(url);
 
             // Expected response format according to standard API structures:
             // { status: true, data: { reference: "..." } } or similar
@@ -58,13 +53,8 @@ export class HisendService {
      */
     async validateOtp(reference: string, otp: string): Promise<boolean> {
         try {
-            const response = await axios.get(`${HISEND_API_BASE}/otp/validate`, {
-                params: {
-                    api_key: this.apiKey,
-                    reference: reference,
-                    otp: otp
-                }
-            });
+            const url = `${HISEND_API_BASE}/otp/validate?reference=${reference}&otp=${otp}?api_key=${this.apiKey}`;
+            const response = await axios.get(url);
 
             // Adjust based on standard successful validation response.
             // Often returns 200 OK or a success boolean in the body.
