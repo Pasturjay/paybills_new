@@ -1,5 +1,9 @@
 "use client";
 
+// Prevent Next.js from statically prerendering this page at build time.
+// Firebase requires browser environment and NEXT_PUBLIC_ env vars to be set at runtime.
+export const dynamic = "force-dynamic";
+
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -39,8 +43,8 @@ export default function LoginPage() {
 
     // Setup reCAPTCHA verifier for phone sign-in
     useEffect(() => {
-        if (inputMode === "phone" && recaptchaContainerRef.current && !recaptchaVerifierRef.current) {
-            recaptchaVerifierRef.current = new RecaptchaVerifier(auth, recaptchaContainerRef.current, {
+        if (inputMode === "phone" && recaptchaContainerRef.current && !recaptchaVerifierRef.current && auth) {
+            recaptchaVerifierRef.current = new RecaptchaVerifier(auth!, recaptchaContainerRef.current, {
                 size: "invisible",
             });
         }
@@ -62,7 +66,8 @@ export default function LoginPage() {
     const handleGoogle = async () => {
         setLoading(true); setError("");
         try {
-            const result = await signInWithPopup(auth, googleProvider);
+            if (!auth || !googleProvider) { setError("Auth not ready. Please refresh."); setLoading(false); return; }
+            const result = await signInWithPopup(auth!, googleProvider!);
             await syncWithBackend(await result.user.getIdToken());
         } catch (err: any) {
             if (err.code === "auth/popup-closed-by-user") setError("Sign-in was cancelled.");
@@ -73,10 +78,11 @@ export default function LoginPage() {
     const handleApple = async () => {
         setLoading(true); setError("");
         try {
+            if (!auth) { setError("Auth not ready. Please refresh."); setLoading(false); return; }
             const provider = new OAuthProvider("apple.com");
             provider.addScope("email");
             provider.addScope("name");
-            const result = await signInWithPopup(auth, provider);
+            const result = await signInWithPopup(auth!, provider);
             await syncWithBackend(await result.user.getIdToken());
         } catch (err: any) {
             if (err.code === "auth/popup-closed-by-user") setError("Sign-in was cancelled.");
@@ -87,12 +93,13 @@ export default function LoginPage() {
     const handleEmailSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true); setError(""); setInfo("");
+        if (!auth) { setError("Auth not ready. Please refresh."); setLoading(false); return; }
         try {
             let result;
             if (authMode === "signin") {
-                result = await signInWithEmailAndPassword(auth, email, password);
+                result = await signInWithEmailAndPassword(auth!, email, password);
             } else {
-                result = await createUserWithEmailAndPassword(auth, email, password);
+                result = await createUserWithEmailAndPassword(auth!, email, password);
             }
             await syncWithBackend(await result.user.getIdToken());
         } catch (err: any) {
@@ -110,10 +117,11 @@ export default function LoginPage() {
 
     const handleSendOtp = async () => {
         if (!phone) { setError("Please enter a phone number."); return; }
+        if (!auth) { setError("Auth not ready. Please refresh."); return; }
         setLoading(true); setError(""); setInfo("");
         try {
             if (!recaptchaVerifierRef.current) throw new Error("reCAPTCHA not ready. Please try again.");
-            const confirm = await signInWithPhoneNumber(auth, phone, recaptchaVerifierRef.current);
+            const confirm = await signInWithPhoneNumber(auth!, phone, recaptchaVerifierRef.current);
             setConfirmResult(confirm);
             setOtpSent(true);
             setInfo(`Verification code sent to ${phone}`);
