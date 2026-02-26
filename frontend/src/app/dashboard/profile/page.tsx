@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { User, Mail, Phone, Lock, Bell, CheckCircle, AlertCircle, Save, Shield } from "lucide-react";
+import { User, Mail, Phone, Lock, Bell, CheckCircle, AlertCircle, Save, Shield, AtSign } from "lucide-react";
 import { api } from "@/lib/api";
 import PinModal from "@/components/PinModal";
 
@@ -13,6 +13,7 @@ export default function Profile() {
 
     // Form States
     const [formData, setFormData] = useState({ firstName: '', lastName: '', phone: '' });
+    const [tagData, setTagData] = useState('');
     const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
     const [nin, setNin] = useState('');
 
@@ -59,6 +60,7 @@ export default function Profile() {
                     lastName: data.lastName || '',
                     phone: data.phone || ''
                 });
+                setTagData(data.userTag || '');
             } catch (error) {
                 console.error("Failed to fetch profile");
             } finally {
@@ -79,6 +81,25 @@ export default function Profile() {
             fetchProfile(); // Refresh data
         } catch (error) {
             setMessage({ type: 'error', text: 'Failed to update profile' });
+        }
+    };
+
+    const handleUpdateTag = async () => {
+        setMessage(null);
+        if (!tagData || tagData.length < 3) {
+            setMessage({ type: 'error', text: 'Tag must be at least 3 characters' });
+            return;
+        }
+
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        try {
+            await api.put("/user/tag", { tag: tagData }, token);
+            setMessage({ type: 'success', text: 'Tag updated successfully' });
+            fetchProfile(); // Refresh data
+        } catch (error: any) {
+            setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to update tag' });
         }
     };
 
@@ -149,6 +170,33 @@ export default function Profile() {
                                     onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                                     className="w-full px-4 py-3 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                                 />
+                            </div>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Unique @Tag</label>
+                                <div className="flex gap-2">
+                                    <div className="relative flex-1">
+                                        <AtSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                        <input
+                                            type="text"
+                                            value={tagData}
+                                            onChange={(e) => setTagData(e.target.value)}
+                                            placeholder="@username"
+                                            className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={handleUpdateTag}
+                                        disabled={user?.userTag === tagData}
+                                        className="px-6 py-3 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold rounded-xl hover:bg-blue-200 dark:hover:bg-blue-800/50 transition-colors disabled:opacity-50 border border-blue-200 dark:border-blue-800"
+                                    >
+                                        Set Tag
+                                    </button>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2">Other users can discover and gift you using this tag.</p>
                             </div>
                         </div>
 

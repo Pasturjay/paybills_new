@@ -9,9 +9,10 @@ interface PinVerificationModalProps {
     onVerify: (pin: string) => void;
     loading?: boolean;
     title?: string;
+    error?: string;
 }
 
-export function PinVerificationModal({ isOpen, onClose, onVerify, loading = false, title = "Enter Transaction PIN" }: PinVerificationModalProps) {
+export function PinVerificationModal({ isOpen, onClose, onVerify, loading = false, title = "Enter Transaction PIN", error }: PinVerificationModalProps) {
     const [pin, setPin] = useState("");
 
     // Reset PIN when modal opens
@@ -20,6 +21,13 @@ export function PinVerificationModal({ isOpen, onClose, onVerify, loading = fals
             setPin("");
         }
     }, [isOpen]);
+
+    // Reset PIN when an error occurs so the user can re-enter
+    useEffect(() => {
+        if (error) {
+            setPin("");
+        }
+    }, [error]);
 
     // Handle Number Click
     const handleNumberClick = (num: number) => {
@@ -62,9 +70,15 @@ export function PinVerificationModal({ isOpen, onClose, onVerify, loading = fals
                     </div>
 
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{title}</h3>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm mb-8">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">
                         Please enter your 4-digit PIN to authorize this transaction.
                     </p>
+
+                    {error && (
+                        <div className="mb-4 text-sm font-bold text-red-500 bg-red-50 dark:bg-red-900/20 py-2 px-4 rounded-xl">
+                            {error}
+                        </div>
+                    )}
 
                     {/* PIN Display */}
                     <div className="flex justify-center gap-4 mb-8">
@@ -72,7 +86,7 @@ export function PinVerificationModal({ isOpen, onClose, onVerify, loading = fals
                             <div
                                 key={i}
                                 className={`w-4 h-4 rounded-full transition-colors duration-200 ${i < pin.length
-                                    ? "bg-blue-600"
+                                    ? (error ? "bg-red-500" : "bg-blue-600")
                                     : "bg-gray-200 dark:bg-zinc-700"
                                     }`}
                             ></div>

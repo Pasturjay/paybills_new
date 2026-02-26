@@ -254,6 +254,7 @@ function EducationContent() {
                 onClose={() => setPinModalOpen(false)}
                 onVerify={handlePinSubmit}
                 loading={loading}
+                error={error}
                 title={`Confirm ${selectedExam?.name} Purchase`}
             />
 

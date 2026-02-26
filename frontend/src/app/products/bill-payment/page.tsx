@@ -261,6 +261,32 @@ function BillPaymentContent() {
                 </div>
             </section>
 
+            <CheckoutModal
+                isOpen={!!checkoutData}
+                onClose={() => setCheckoutData(null)}
+                onConfirm={() => {
+                    const data = checkoutData;
+                    setCheckoutData(null);
+                    setPinModalOpen(true);
+                }}
+                amount={Number(amount)}
+                title={`Confirm ${activeTab === 'electricity' ? 'Electricity' : 'Cable'} Payment`}
+                details={[
+                    { label: "Provider", value: activeTab === 'electricity' ? electricityProviders.find(p => p.id === provider)?.name || provider : cableProviders.find(p => p.id === provider)?.name || provider },
+                    { label: "Identifier", value: identifier },
+                    { label: "Type", value: activeTab === 'electricity' ? 'Electricity Token' : 'Cable Subscription' }
+                ]}
+            />
+
+            <PinVerificationModal
+                isOpen={pinModalOpen}
+                onClose={() => setPinModalOpen(false)}
+                onVerify={handlePinSubmit}
+                loading={loading}
+                error={error}
+                title="Authorize Transaction"
+            />
+
             <Footer />
         </main>
     );

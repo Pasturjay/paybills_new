@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from 'react';
-import { X, Gift, AtSign, ChevronRight, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Gift, AtSign, ChevronRight, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import PinModal from './PinModal';
 
@@ -21,6 +21,35 @@ export default function GiftUserModal({ isOpen, onClose, onSuccess }: GiftUserMo
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+
+    // Recipient Resolution
+    const [resolvedRecipient, setResolvedRecipient] = useState<{ name: string, tag?: string } | null>(null);
+    const [isResolving, setIsResolving] = useState(false);
+
+    useEffect(() => {
+        const query = formData.recipient.trim();
+        if (query.length < 3) {
+            setResolvedRecipient(null);
+            return;
+        }
+
+        const timeoutId = setTimeout(async () => {
+            setIsResolving(true);
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+                const { name, userTag } = await api.post('/wallet/transfer/lookup', { query }, token);
+                setResolvedRecipient({ name, tag: userTag });
+                setError('');
+            } catch (err: any) {
+                setResolvedRecipient(null);
+            } finally {
+                setIsResolving(false);
+            }
+        }, 500); // 500ms debounce
+
+        return () => clearTimeout(timeoutId);
+    }, [formData.recipient]);
 
     const handleSend = async (pin: string) => {
         setIsPinModalOpen(false);
@@ -95,10 +124,22 @@ export default function GiftUserModal({ isOpen, onClose, onSuccess }: GiftUserMo
                                 placeholder="@Tag, Email or Phone"
                                 value={formData.recipient}
                                 onChange={(e) => setFormData({ ...formData, recipient: e.target.value })}
-                                className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
+                                className={`w-full pl-12 pr-12 py-3 bg-gray-50 dark:bg-zinc-800 border rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all ${resolvedRecipient ? 'border-green-500 dark:border-green-500/50' : 'border-gray-200 dark:border-zinc-700'}`}
                             />
+                            {isResolving && (
+                                <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-500 animate-spin" />
+                            )}
+                            {!isResolving && resolvedRecipient && (
+                                <CheckCircle2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-green-500" />
+                            )}
                         </div>
-                        <div className="text-xs text-gray-400 mt-1 ml-1">Use @tag for instant identification</div>
+                        {resolvedRecipient ? (
+                            <div className="text-xs font-bold text-green-600 dark:text-green-400 mt-2 ml-1 flex items-center gap-1">
+                                Verified: {resolvedRecipient.name} {resolvedRecipient.tag && `(${resolvedRecipient.tag})`}
+                            </div>
+                        ) : (
+                            <div className="text-xs text-gray-400 mt-1 ml-1">Use @tag for instant identification</div>
+                        )}
                     </div>
 
                     <div>
@@ -132,9 +173,13 @@ export default function GiftUserModal({ isOpen, onClose, onSuccess }: GiftUserMo
                                 setError('Please fill in all required fields');
                                 return;
                             }
+                            if (!resolvedRecipient) {
+                                setError('Please enter a valid recipient');
+                                return;
+                            }
                             setIsPinModalOpen(true);
                         }}
-                        disabled={loading}
+                        disabled={loading || isResolving}
                         className="w-full py-4 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-colors flex items-center justify-center gap-2 mt-4 shadow-lg shadow-purple-500/20"
                     >
                         {loading ? 'Processing...' : (
@@ -151,7 +196,7 @@ export default function GiftUserModal({ isOpen, onClose, onSuccess }: GiftUserMo
                 onClose={() => setIsPinModalOpen(false)}
                 onSuccess={handleSend}
                 title="Confirm Gift"
-                description={`Enter PIN to gift ₦${Number(formData.amount).toLocaleString()}`}
+                description={`Gift ₦${Number(formData.amount).toLocaleString()} to ${resolvedRecipient?.name || 'User'}?`}
             />
         </div>
     );

@@ -336,6 +336,7 @@ export default function SoftwareMarketplace() {
                 onClose={() => setPinModalOpen(false)}
                 onVerify={handlePinSubmit}
                 loading={loading}
+                error={error}
                 title="Authorize Software Purchase"
             />
 

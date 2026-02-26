@@ -16,11 +16,12 @@ router.get('/notifications', authenticateToken, getNotifications);
 router.post('/notifications/read', authenticateToken, markRead);
 
 // User Profile Routes
-import { getProfile, updateProfile, changePassword, submitKyc, setPin, getReferralStats } from '../controllers/user.controller';
+import { getProfile, updateProfile, changePassword, submitKyc, setPin, getReferralStats, updateUserTag } from '../controllers/user.controller';
 import kycRoutes from './kyc.routes';
 
 router.get('/user/profile', authenticateToken, getProfile);
 router.put('/user/profile', authenticateToken, updateProfile);
+router.put('/user/tag', authenticateToken, updateUserTag);
 router.put('/profile/password', authenticateToken, changePassword);
 router.post('/user/pin', authenticateToken, setPin);
 router.post('/kyc', authenticateToken, submitKyc);
@@ -31,6 +32,8 @@ router.get('/referrals', authenticateToken, getReferralStats);
 router.use('/kyc', kycRoutes);
 
 // Wallet Routes
+import { getBalance, simulateFund, getUserTransactions, initiateFunding, verifyFunding, getVirtualAccount, transferFunds, lookupUser } from '../controllers/wallet.controller';
+// ... existing wallet routes
 router.get('/wallet/balance', authenticateToken, getBalance);
 router.get('/wallet/transactions', authenticateToken, getUserTransactions);
 router.post('/wallet/fund', authenticateToken, simulateFund); // Legacy/Simulated
@@ -38,6 +41,7 @@ router.post('/wallet/fund/initialize', authenticateToken, initiateFunding);
 router.get('/wallet/fund/verify', authenticateToken, verifyFunding);
 router.get('/wallet/virtual-account', authenticateToken, getVirtualAccount);
 router.post('/wallet/transfer', authenticateToken, transferFunds);
+router.post('/wallet/transfer/lookup', authenticateToken, lookupUser);
 
 // Product Routes (Modern)
 // Product Routes (Modern)

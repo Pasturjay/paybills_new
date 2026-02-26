@@ -141,3 +141,39 @@ export const getReferralStats = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Failed to fetch referral stats' });
     }
 };
+
+export const updateUserTag = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.userId;
+        let { tag } = req.body;
+
+        if (!tag || tag.length < 3) {
+            return res.status(400).json({ error: 'Tag must be at least 3 characters long' });
+        }
+
+        if (!tag.startsWith('@')) {
+            tag = '@' + tag;
+        }
+
+        // Check for disallowed characters
+        if (!/^@[a-zA-Z0-9_]+$/.test(tag)) {
+            return res.status(400).json({ error: 'Tag can only contain letters, numbers, and underscores' });
+        }
+
+        // Check availability
+        const existing = await prisma.user.findUnique({ where: { userTag: tag } });
+        if (existing && existing.id !== userId) {
+            return res.status(400).json({ error: 'This tag is already taken' });
+        }
+
+        const user = await prisma.user.update({
+            where: { id: userId },
+            data: { userTag: tag },
+            select: { id: true, userTag: true }
+        });
+
+        res.json({ message: 'Tag updated successfully', userTag: user.userTag });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update user tag' });
+    }
+};

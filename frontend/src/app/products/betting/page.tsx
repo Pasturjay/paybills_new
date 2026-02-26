@@ -23,6 +23,7 @@ export default function Betting() {
     const [checkoutOpen, setCheckoutOpen] = useState(false);
     const [pinModalOpen, setPinModalOpen] = useState(false);
     const [processing, setProcessing] = useState(false);
+    const [error, setError] = useState("");
 
     const handleVerify = () => {
         if (userId.length > 5) {
@@ -42,6 +43,7 @@ export default function Betting() {
 
     const handlePinSubmit = async (pin: string) => {
         setProcessing(true);
+        setError("");
         try {
             const token = localStorage.getItem("token");
             if (!token) throw new Error("Please login to continue");
@@ -58,8 +60,8 @@ export default function Betting() {
             setAmount("");
             setUserId("");
             setVerifiedName("");
-        } catch (error: any) {
-            alert(error.message || "Transaction failed");
+        } catch (err: any) {
+            setError(err.message || "Transaction failed");
         } finally {
             setProcessing(false);
         }
@@ -184,6 +186,7 @@ export default function Betting() {
                 onClose={() => setPinModalOpen(false)}
                 onVerify={handlePinSubmit}
                 loading={processing}
+                error={error}
                 title="Authorize Betting Funding"
             />
 

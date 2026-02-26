@@ -116,6 +116,18 @@ The platform is optimized for seamless deployment on Vercel.
 - Ensure all environment variables are properly mapped in your Vercel project settings.
 - The build command (`npm run build`) automatically generates optimized static pages, compiles the Next.js routes, and enforces strict type checking.
 
+### GitHub Push Instructions
+If you need to push updates to the repository, use the following commands from your terminal (make sure you are in the project root):
+```bash
+echo "# paybills_new" >> README.md
+git init
+git add README.md
+git commit -m "first commit"
+git branch -M main
+git remote add origin https://github.com/Pasturjay/paybills_new.git
+git push -u origin main
+```
+
 ---
 
 ## 📜 License

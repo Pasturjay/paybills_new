@@ -390,3 +390,45 @@ export const transferFunds = async (req: Request, res: Response) => {
         res.status(400).json({ error: error.message || 'Transfer failed' });
     }
 };
+
+export const lookupUser = async (req: Request, res: Response) => {
+    try {
+        const { query } = req.body;
+        if (!query) {
+            return res.status(400).json({ error: 'Query is required' });
+        }
+
+        let searchCriteria: any = {};
+
+        if (query.startsWith('@')) {
+            searchCriteria.userTag = query;
+        } else if (query.includes('@')) {
+            searchCriteria.email = query;
+        } else {
+            searchCriteria.phone = query;
+        }
+
+        const user = await prisma.user.findFirst({
+            where: searchCriteria,
+            select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                userTag: true,
+            }
+        });
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.json({
+            name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Unknown User',
+            userTag: user.userTag
+        });
+
+    } catch (error: any) {
+        console.error('Lookup Error:', error);
+        res.status(500).json({ error: 'Lookup failed' });
+    }
+};

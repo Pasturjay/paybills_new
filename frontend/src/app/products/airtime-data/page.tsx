@@ -221,6 +221,7 @@ export default function AirtimeData() {
                 onClose={() => setPinModalOpen(false)}
                 onVerify={handlePinSubmit}
                 loading={loading}
+                error={error}
                 title="Authorize Transaction"
             />
 
