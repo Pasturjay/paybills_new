@@ -113,6 +113,7 @@ export const initiateFunding = async (req: Request, res: Response) => {
         // Assuming localhost or the deployed URL.
         const callbackUrl = `${process.env.APP_URL || 'http://localhost:3000'}/dashboard/fund/verify`;
 
+        if (!user.email) return res.status(400).json({ error: 'Email address required to fund wallet. Please update your profile.' });
         const initResponse = await paystackService.initializeTransaction(user.email, Number(amount), callbackUrl);
 
         res.json({
@@ -231,6 +232,7 @@ export const getVirtualAccount = async (req: Request, res: Response) => {
             }
 
             const txRef = `VA-${userId}-${Date.now()}`;
+            if (!user.email) return res.status(400).json({ error: 'Email address required to create virtual account. Please update your profile.' });
             const flwAccount = await flutterwaveService.createVirtualAccount(
                 user.email,
                 user.bvn,
@@ -252,6 +254,7 @@ export const getVirtualAccount = async (req: Request, res: Response) => {
 
         } else {
             // PAYSTACK Logic
+            if (!user.email) return res.status(400).json({ error: 'Email address required to create virtual account. Please update your profile.' });
             const paystackAccount = await paystackService.createDedicatedAccount(
                 user.email,
                 user.firstName,
