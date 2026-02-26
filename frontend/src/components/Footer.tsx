@@ -12,8 +12,11 @@ export function Footer() {
                                 Paybills
                             </span>
                         </Link>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 max-w-xs">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-1 max-w-xs">
                             The most reliable way to access everyday digital services in Nigeria. Secure, fast, and easy.
+                        </p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                            A product of <span className="font-medium text-gray-600 dark:text-gray-300">Fecund Integrated Technology Limited</span>
                         </p>
                     </div>
 
@@ -68,9 +71,13 @@ export function Footer() {
                     </div>
                 </div>
 
-                <div className="pt-8 border-t border-gray-200 dark:border-zinc-800 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500 gap-4">
-                    <div>
-                        &copy; {new Date().getFullYear()} Paybills.ng. All rights reserved. &bull; Address: 35 Aka itiam lane
+                {/* Bottom bar */}
+                <div className="pt-8 border-t border-gray-200 dark:border-zinc-800 flex flex-col md:flex-row justify-between items-center text-xs text-gray-400 gap-3">
+                    <div className="text-center md:text-left space-y-0.5">
+                        <p>
+                            &copy; {new Date().getFullYear()} <span className="font-medium text-gray-500 dark:text-gray-300">Paybills.ng</span> — operated by Fecund Integrated Technology Limited. All rights reserved.
+                        </p>
+                        <p className="text-gray-400 dark:text-gray-500">📍 36 Aka Itiam Lane, Uyo, Akwa Ibom State, Nigeria</p>
                     </div>
                     <div className="flex gap-4">
                         <a href="https://instagram.com/usepaybills" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 transition-colors" aria-label="Instagram">
