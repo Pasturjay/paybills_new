@@ -114,6 +114,26 @@ export const register = async (req: Request, res: Response) => {
             return user;
         });
 
+        // Send Welcome Email (Non-blocking)
+        try {
+            const { EmailService } = await import('../services/email.service');
+            const emailService = new EmailService();
+            const subject = "Welcome to Paybills!";
+            const text = `Hello ${firstName || 'User'},\n\nWelcome to Paybills.ng! We are thrilled to have you onboard.\n\nBest regards,\nThe Paybills Team`;
+            const html = `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <h2 style="color: #4F46E5;">Welcome to Paybills.ng, ${firstName || ''}!</h2>
+                    <p>We are thrilled to have you onboard. You can now easily fund your wallet, pay bills, and manage your finances seamlessly.</p>
+                    <br/>
+                    <p>Best regards,<br/><strong>The Paybills Team</strong></p>
+                </div>
+            `;
+
+            emailService.sendEmail(email, subject, text, html, "Welcome Email").catch(e => console.error("Non-fatal email error:", e));
+        } catch (e) {
+            console.error('Failed to instantiate EmailService during registration', e);
+        }
+
         res.status(201).json({ message: 'User registered successfully', userId: result.id });
     } catch (error) {
         console.error('Registration Error:', error);
