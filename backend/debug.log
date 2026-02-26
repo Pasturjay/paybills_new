@@ -1,0 +1,12 @@
+2026-02-05T18:38:09.317Z: Register Body: {"email":"test1770316689202@example.com","phone":"08017703166","password":"password123","firstName":"Test","lastName":"User"}
+2026-02-05T18:38:12.636Z: Register Error: 
+Invalid `prisma.user.findFirst()` invocation in
+C:\Users\FECUND INTEGRATED\Desktop\paybills\backend\src\controllers\auth.controller.ts:21:48
+
+  18 const { email, phone, password, firstName, lastName } = req.body;
+  19 
+  20 // Check if user exists
+→ 21 const existingUser = await prisma.user.findFirst(
+The column `User.userTag` does not exist in the current database.
+2026-02-05T18:44:52.311Z: Register Body: {"email":"test1770317092253@example.com","phone":"08017703170","password":"password123","firstName":"Test","lastName":"User"}
+2026-02-05T18:44:56.674Z: Login Body: {"email":"test1770317092253@example.com","password":"password123"}
