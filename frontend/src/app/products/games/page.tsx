@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -38,7 +38,7 @@ export default function Games() {
             <Navbar />
 
             {/* Header */}
-            <section className="pt-32 pb-12 bg-[#0f172a] text-white relative overflow-hidden">
+            <section className="pt-28 pb-10 sm:pt-32 sm:pb-12 bg-[#0f172a] text-white relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-b from-purple-900/50 to-transparent"></div>
                 <div className="container mx-auto px-6 relative z-10 text-center">
                     <h1 className="text-4xl font-bold mb-4 flex items-center justify-center gap-3">
@@ -109,9 +109,9 @@ export default function Games() {
                                             required
                                         >
                                             <option value="">Select Package</option>
-                                            <option value="1000">100 {selectedGame.currency} - ₦1,000</option>
-                                            <option value="2500">300 {selectedGame.currency} - ₦2,500</option>
-                                            <option value="5000">600 {selectedGame.currency} - ₦5,000</option>
+                                            <option value="1000">100 {selectedGame.currency} - â‚¦1,000</option>
+                                            <option value="2500">300 {selectedGame.currency} - â‚¦2,500</option>
+                                            <option value="5000">600 {selectedGame.currency} - â‚¦5,000</option>
                                         </select>
                                     </div>
 
@@ -145,3 +145,4 @@ export default function Games() {
         </main>
     );
 }
+

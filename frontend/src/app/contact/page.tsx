@@ -7,37 +7,34 @@ export default function Contact() {
         <main className="min-h-screen bg-gray-50/50">
             <Navbar />
 
-            <section className="pt-32 pb-20">
-                <div className="container mx-auto px-6">
-                    <div className="text-center max-w-2xl mx-auto mb-16">
-                        <h1 className="text-4xl font-bold text-gray-900 mb-4">Get in Touch</h1>
-                        <p className="text-gray-600 text-lg">
+            <section className="pt-28 pb-16 sm:pt-32 sm:pb-20">
+                <div className="container mx-auto px-4 sm:px-6">
+                    <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-16">
+                        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Get in Touch</h1>
+                        <p className="text-gray-600 text-base sm:text-lg">
                             Have questions or need support? We are here to help you.
                         </p>
                     </div>
 
-                    <div className="grid lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
                         {/* Contact Info */}
-                        <div className="space-y-6">
-                            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                                <Mail className="w-6 h-6 text-blue-600 mb-4" />
-                                <h3 className="font-bold text-gray-900 mb-2">Email Us</h3>
+                        <div className="flex sm:flex-col flex-row sm:space-y-6 gap-4 sm:gap-0 sm:col-span-1">
+                            <div className="bg-white p-5 sm:p-8 rounded-2xl shadow-sm border border-gray-100 flex-1">
+                                <Mail className="w-6 h-6 text-blue-600 mb-3" />
+                                <h3 className="font-bold text-gray-900 mb-1 text-sm sm:text-base">Email Us</h3>
                                 <p className="text-gray-500">support@paybills.ng</p>
                                 <p className="text-gray-500">partners@paybills.ng</p>
                             </div>
-
-                            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                                <Phone className="w-6 h-6 text-blue-600 mb-4" />
-                                <h3 className="font-bold text-gray-900 mb-2">Call Us</h3>
+                            <div className="bg-white p-5 sm:p-8 rounded-2xl shadow-sm border border-gray-100 flex-1">
+                                <Phone className="w-6 h-6 text-blue-600 mb-3" />
+                                <h3 className="font-bold text-gray-900 mb-1 text-sm sm:text-base">Call Us</h3>
                                 <p className="text-gray-500">+234 800 PAYBILLS</p>
-                                <p className="text-gray-500">Mon - Fri, 9am - 5pm</p>
+                                <p className="text-gray-500 text-sm">Mon - Fri, 9am - 5pm</p>
                             </div>
-
-
                         </div>
 
                         {/* Contact Form */}
-                        <div className="lg:col-span-2 bg-white p-8 lg:p-12 rounded-2xl shadow-sm border border-gray-100">
+                        <div className="sm:col-span-2 bg-white p-6 sm:p-8 lg:p-12 rounded-2xl shadow-sm border border-gray-100">
                             <form className="space-y-6">
                                 <div className="grid md:grid-cols-2 gap-6">
                                     <div>

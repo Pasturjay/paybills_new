@@ -107,23 +107,23 @@ export default function Home() {
             <Navbar />
 
             {/* Top Section */}
-            <div className="pt-28 pb-8 px-6 container mx-auto">
+            <div className="pt-24 pb-8 px-4 sm:px-6 container mx-auto">
                 {/* Hero / Welcome */}
-                <div className="relative overflow-hidden rounded-3xl p-10 mb-10 text-white shadow-2xl">
+                <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl p-6 sm:p-10 mb-8 text-white shadow-2xl">
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-900 via-indigo-900 to-[#0f172a] z-0"></div>
                     <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
                     <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
 
-                    <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div className="relative z-10 flex flex-col md:flex-row justify-between items-start gap-4">
                         <div className="max-w-xl">
-                            <h1 className="text-3xl md:text-5xl font-bold mb-4 leading-tight">
+                            <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-3 leading-tight">
                                 One App for<br />
                                 <span className="text-blue-400">Everything Digital.</span>
                             </h1>
-                            <p className="text-gray-300 text-lg mb-6">
+                            <p className="text-gray-300 text-sm sm:text-lg mb-5">
                                 Pay bills, buy software, top-up games, and more. Instant delivery, zero transaction fees.
                             </p>
-                            <Link href="/products" className="inline-flex items-center gap-2 px-6 py-3 bg-white text-blue-900 rounded-full font-bold hover:bg-blue-50 transition-colors">
+                            <Link href="/products" className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-blue-900 rounded-full font-bold hover:bg-blue-50 transition-colors text-sm">
                                 Explore Products <ArrowRight className="w-4 h-4" />
                             </Link>
                         </div>
@@ -132,17 +132,17 @@ export default function Home() {
                 </div>
 
                 {/* Quick Actions */}
-                <div className="mb-12">
-                    <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-                        <Zap className="w-5 h-5 text-blue-500" /> Quick Actions
+                <div className="mb-10">
+                    <h2 className="text-base font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                        <Zap className="w-4 h-4 text-blue-500" /> Quick Actions
                     </h2>
-                    <div className="grid grid-cols-4 md:grid-cols-7 gap-4">
+                    <div className="grid grid-cols-4 sm:grid-cols-7 gap-3">
                         {quickActions.map((action, i) => (
-                            <Link key={i} href={action.href} className="flex flex-col items-center gap-3 group">
-                                <div className={`w-16 h-16 rounded-2xl ${action.bg} flex items-center justify-center ${action.color} shadow-sm group-hover:scale-110 group-hover:shadow-md transition-all duration-300`}>
-                                    <action.icon className="w-7 h-7" />
+                            <Link key={i} href={action.href} className="flex flex-col items-center gap-2 group">
+                                <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl ${action.bg} flex items-center justify-center ${action.color} shadow-sm group-hover:scale-110 group-hover:shadow-md transition-all duration-300`}>
+                                    <action.icon className="w-5 h-5 sm:w-7 sm:h-7" />
                                 </div>
-                                <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 text-center group-hover:text-blue-500 transition-colors">{action.name}</span>
+                                <span className="text-[10px] sm:text-xs font-semibold text-gray-600 dark:text-gray-400 text-center group-hover:text-blue-500 transition-colors leading-tight">{action.name}</span>
                             </Link>
                         ))}
                     </div>

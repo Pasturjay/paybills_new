@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -109,7 +109,7 @@ function EducationContent() {
             <Navbar />
 
             {/* Header */}
-            <section className="pt-32 pb-12 bg-[#0f172a] text-white relative overflow-hidden">
+            <section className="pt-28 pb-10 sm:pt-32 sm:pb-12 bg-[#0f172a] text-white relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-b from-green-900/50 to-transparent"></div>
                 <div className="container mx-auto px-6 relative z-10 text-center">
                     <h1 className="text-4xl font-bold mb-4 flex items-center justify-center gap-3">
@@ -178,7 +178,7 @@ function EducationContent() {
                                         <div className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-900/30">
                                             <div>
                                                 <div className="text-xs text-blue-600 dark:text-blue-400 font-bold uppercase mb-1">Price Per PIN</div>
-                                                <div className="text-xl font-bold text-gray-900 dark:text-white">₦{selectedExam.price.toLocaleString()}</div>
+                                                <div className="text-xl font-bold text-gray-900 dark:text-white">â‚¦{selectedExam.price.toLocaleString()}</div>
                                             </div>
                                             <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-800 text-blue-600 flex items-center justify-center">
                                                 <BookOpen className="w-5 h-5" />
@@ -211,7 +211,7 @@ function EducationContent() {
                                         <div>
                                             <div className="flex justify-between items-center mb-4 text-sm font-bold text-gray-500">
                                                 <span>Total Amount</span>
-                                                <span className="text-xl text-gray-900 dark:text-white">₦{(selectedExam.price * quantity).toLocaleString()}</span>
+                                                <span className="text-xl text-gray-900 dark:text-white">â‚¦{(selectedExam.price * quantity).toLocaleString()}</span>
                                             </div>
 
                                             {error && (
@@ -271,3 +271,4 @@ export default function Education() {
         </Suspense>
     );
 }
+

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -72,7 +72,7 @@ export default function AirtimeData() {
             <Navbar />
 
             {/* Header */}
-            <section className="pt-32 pb-12 bg-[#0f172a] text-white relative overflow-hidden">
+            <section className="pt-28 pb-10 sm:pt-32 sm:pb-12 bg-[#0f172a] text-white relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-b from-blue-900/50 to-transparent"></div>
                 <div className="container mx-auto px-6 relative z-10 text-center">
                     <h1 className="text-4xl font-bold mb-4">Airtime & Data</h1>
@@ -108,7 +108,7 @@ export default function AirtimeData() {
                                     <CheckCircle2 className="w-8 h-8" />
                                 </div>
                                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Top-up Successful!</h3>
-                                <p className="text-gray-500 mb-6">₦{amount} sent to {phone}</p>
+                                <p className="text-gray-500 mb-6">â‚¦{amount} sent to {phone}</p>
                                 <button
                                     onClick={() => setSuccess(null)}
                                     className="px-6 py-2 bg-gray-900 dark:bg-white text-white dark:text-black rounded-lg font-medium hover:opacity-90"
@@ -153,9 +153,9 @@ export default function AirtimeData() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Amount (₦)</label>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Amount (â‚¦)</label>
                                     <div className="relative">
-                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">₦</div>
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">â‚¦</div>
                                         <input
                                             type="number"
                                             value={amount}
@@ -174,7 +174,7 @@ export default function AirtimeData() {
                                                 onClick={() => setAmount(amt.toString())}
                                                 className="px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 font-bold text-xs rounded-lg hover:bg-blue-100"
                                             >
-                                                ₦{amt}
+                                                â‚¦{amt}
                                             </button>
                                         ))}
                                     </div>
@@ -192,7 +192,7 @@ export default function AirtimeData() {
                                     className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-blue-500/20 transition-all disabled:opacity-50"
                                 >
                                     {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <CreditCard className="w-5 h-5" />}
-                                    {loading ? "Processing..." : `Pay ₦${amount || "0"}`}
+                                    {loading ? "Processing..." : `Pay â‚¦${amount || "0"}`}
                                 </button>
                             </form>
                         )}
@@ -229,3 +229,4 @@ export default function AirtimeData() {
         </main>
     );
 }
+

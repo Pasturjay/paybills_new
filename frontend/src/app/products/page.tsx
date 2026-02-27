@@ -29,35 +29,35 @@ export default function ProductsHub() {
         <main className="min-h-screen bg-white dark:bg-zinc-950">
             <Navbar />
 
-            <section className="pt-32 pb-12 bg-gray-50 dark:bg-zinc-900/50">
-                <div className="container mx-auto px-6 text-center">
-                    <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">All Products</h1>
-                    <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+            <section className="pt-28 pb-8 sm:pt-32 sm:pb-12 bg-gray-50 dark:bg-zinc-900/50">
+                <div className="container mx-auto px-4 sm:px-6 text-center">
+                    <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-3">All Products</h1>
+                    <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto text-sm sm:text-base">
                         Everything you need to manage your digital life, all in one place.
                     </p>
                 </div>
             </section>
 
-            <section className="py-16">
-                <div className="container mx-auto px-6 max-w-5xl">
+            <section className="py-10 sm:py-16">
+                <div className="container mx-auto px-4 sm:px-6 max-w-5xl">
                     {products.map((section, idx) => (
-                        <div key={idx} className="mb-16">
-                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 border-l-4 border-blue-600 pl-4">
+                        <div key={idx} className="mb-10 sm:mb-16">
+                            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-5 sm:mb-8 border-l-4 border-blue-600 pl-4">
                                 {section.category}
                             </h2>
-                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                                 {section.items.map((item, i) => (
-                                    <Link key={i} href={item.href} className="group bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-3xl p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                                        <div className="flex items-start justify-between mb-6">
-                                            <div className={`w-14 h-14 rounded-2xl ${item.bg} flex items-center justify-center ${item.color}`}>
-                                                <item.icon className="w-7 h-7" />
-                                            </div>
-                                            <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-zinc-800 flex items-center justify-center text-gray-400 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                                                <ArrowRight className="w-4 h-4" />
-                                            </div>
+                                    <Link key={i} href={item.href} className="group bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-2xl p-5 sm:p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex items-start gap-4">
+                                        <div className={`w-12 h-12 rounded-xl flex-shrink-0 ${item.bg} flex items-center justify-center ${item.color}`}>
+                                            <item.icon className="w-6 h-6" />
                                         </div>
-                                        <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-2">{item.name}</h3>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400">{item.desc}</p>
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="font-bold text-base text-gray-900 dark:text-white mb-1">{item.name}</h3>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400 leading-tight">{item.desc}</p>
+                                        </div>
+                                        <div className="w-7 h-7 rounded-full bg-gray-50 dark:bg-zinc-800 flex items-center justify-center text-gray-400 group-hover:bg-blue-600 group-hover:text-white transition-colors flex-shrink-0 self-center">
+                                            <ArrowRight className="w-3.5 h-3.5" />
+                                        </div>
                                     </Link>
                                 ))}
                             </div>

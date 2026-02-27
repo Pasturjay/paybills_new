@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -100,7 +100,7 @@ export default function GiftCards() {
             <Navbar />
 
             {/* Header */}
-            <section className="pt-32 pb-12 bg-[#0f172a] text-white relative overflow-hidden">
+            <section className="pt-28 pb-10 sm:pt-32 sm:pb-12 bg-[#0f172a] text-white relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-b from-purple-900/50 to-transparent"></div>
                 <div className="container mx-auto px-6 relative z-10 text-center">
                     <h1 className="text-4xl font-bold mb-4 flex items-center justify-center gap-3">
@@ -215,7 +215,7 @@ export default function GiftCards() {
                                             <div className="pt-4 border-t border-gray-100 dark:border-zinc-800">
                                                 <div className="flex justify-between items-center mb-4">
                                                     <span className="text-gray-500 text-sm">Total Estimate</span>
-                                                    <span className="text-xl font-bold text-purple-600">₦{((amount * quantity) * 1650).toLocaleString()}</span>
+                                                    <span className="text-xl font-bold text-purple-600">â‚¦{((amount * quantity) * 1650).toLocaleString()}</span>
                                                 </div>
                                                 <button
                                                     onClick={handleCheckout}
@@ -292,3 +292,4 @@ export default function GiftCards() {
         </main>
     );
 }
+
