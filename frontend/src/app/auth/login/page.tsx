@@ -1,7 +1,7 @@
 "use client";
 
 // Prevent Next.js from statically prerendering this page at build time.
-// Firebase requires browser environment and NEXT_PUBLIC_ env vars to be set at runtime.
+// Firebase requires browser environment at runtime.
 export const dynamic = "force-dynamic";
 
 import { useState, useRef, useEffect } from "react";
@@ -12,94 +12,118 @@ import {
     OAuthProvider,
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
+    sendPasswordResetEmail,
     RecaptchaVerifier,
     signInWithPhoneNumber,
     ConfirmationResult,
 } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
+import { Lock, Mail, Phone, Eye, EyeOff, ArrowLeft, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 
 type AuthMode = "signin" | "signup";
-type InputMode = "social" | "email" | "phone";
+type InputMode = "email" | "phone";
+type AppView = "main" | "forgot-password";
 
-export default function LoginPage() {
+export default function AuthPage() {
     const router = useRouter();
-
     const [authMode, setAuthMode] = useState<AuthMode>("signin");
-    const [inputMode, setInputMode] = useState<InputMode>("social");
+    const [inputMode, setInputMode] = useState<InputMode>("email");
+    const [view, setView] = useState<AppView>("main");
 
+    // Email/Password state
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+
+    // Phone state
     const [phone, setPhone] = useState("");
     const [otp, setOtp] = useState("");
-    const [confirmResult, setConfirmResult] = useState<ConfirmationResult | null>(null);
     const [otpSent, setOtpSent] = useState(false);
+    const [confirmResult, setConfirmResult] = useState<ConfirmationResult | null>(null);
 
+    // UI state
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [info, setInfo] = useState("");
-    const [loading, setLoading] = useState(false);
 
     const recaptchaContainerRef = useRef<HTMLDivElement>(null);
     const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
 
-    // Setup reCAPTCHA verifier for phone sign-in
+    // Setup invisible reCAPTCHA for phone sign-in
     useEffect(() => {
-        if (inputMode === "phone" && recaptchaContainerRef.current && !recaptchaVerifierRef.current && auth) {
-            recaptchaVerifierRef.current = new RecaptchaVerifier(auth!, recaptchaContainerRef.current, {
+        if (inputMode === "phone" && recaptchaContainerRef.current && !recaptchaVerifierRef.current) {
+            recaptchaVerifierRef.current = new RecaptchaVerifier(auth, recaptchaContainerRef.current, {
                 size: "invisible",
             });
         }
     }, [inputMode]);
 
+    // Sync with backend after successful Firebase auth
     const syncWithBackend = async (idToken: string) => {
         const res = await fetch("/api/auth/sync", {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
         });
         if (!res.ok) {
-            const e = await res.json();
-            throw new Error(e.error || "Server sync failed");
+            const e = await res.json().catch(() => ({}));
+            // Backend sync is best-effort; don't block the user
+            console.warn("Backend sync failed:", e.error || "unknown error");
         }
         localStorage.setItem("firebaseToken", idToken);
         router.push("/dashboard");
     };
 
+    // ── Google Sign-in ──────────────────────────────────────
     const handleGoogle = async () => {
-        setLoading(true); setError("");
+        setLoading(true);
+        setError("");
         try {
-            if (!auth || !googleProvider) { setError("Auth not ready. Please refresh."); setLoading(false); return; }
-            const result = await signInWithPopup(auth!, googleProvider!);
+            const result = await signInWithPopup(auth, googleProvider);
             await syncWithBackend(await result.user.getIdToken());
         } catch (err: any) {
-            if (err.code === "auth/popup-closed-by-user") setError("Sign-in was cancelled.");
-            else setError(err.message || "Google sign-in failed.");
-        } finally { setLoading(false); }
+            if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") {
+                setError("Sign-in was cancelled.");
+            } else {
+                setError(err.message || "Google sign-in failed. Please try again.");
+            }
+        } finally {
+            setLoading(false);
+        }
     };
 
+    // ── Apple Sign-in ───────────────────────────────────────
     const handleApple = async () => {
-        setLoading(true); setError("");
+        setLoading(true);
+        setError("");
         try {
-            if (!auth) { setError("Auth not ready. Please refresh."); setLoading(false); return; }
             const provider = new OAuthProvider("apple.com");
             provider.addScope("email");
             provider.addScope("name");
-            const result = await signInWithPopup(auth!, provider);
+            const result = await signInWithPopup(auth, provider);
             await syncWithBackend(await result.user.getIdToken());
         } catch (err: any) {
-            if (err.code === "auth/popup-closed-by-user") setError("Sign-in was cancelled.");
-            else setError(err.message || "Apple sign-in failed.");
-        } finally { setLoading(false); }
+            if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") {
+                setError("Sign-in was cancelled.");
+            } else {
+                setError(err.message || "Apple sign-in failed. Please try again.");
+            }
+        } finally {
+            setLoading(false);
+        }
     };
 
+    // ── Email / Password ────────────────────────────────────
     const handleEmailSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true); setError(""); setInfo("");
-        if (!auth) { setError("Auth not ready. Please refresh."); setLoading(false); return; }
+        setLoading(true);
+        setError("");
+        setInfo("");
         try {
             let result;
             if (authMode === "signin") {
-                result = await signInWithEmailAndPassword(auth!, email, password);
+                result = await signInWithEmailAndPassword(auth, email, password);
             } else {
-                result = await createUserWithEmailAndPassword(auth!, email, password);
+                result = await createUserWithEmailAndPassword(auth, email, password);
             }
             await syncWithBackend(await result.user.getIdToken());
         } catch (err: any) {
@@ -109,189 +133,355 @@ export default function LoginPage() {
                 "auth/email-already-in-use": "An account with this email already exists. Try signing in.",
                 "auth/weak-password": "Password must be at least 6 characters.",
                 "auth/invalid-email": "Please enter a valid email address.",
-                "auth/invalid-credential": "Incorrect email or password.",
+                "auth/invalid-credential": "Incorrect email or password. Please try again.",
+                "auth/too-many-requests": "Too many attempts. Please wait a moment and try again.",
             };
-            setError(msg[err.code] || err.message || "Authentication failed.");
-        } finally { setLoading(false); }
+            setError(msg[err.code] || err.message || "Authentication failed. Please try again.");
+        } finally {
+            setLoading(false);
+        }
     };
 
+    // ── Phone / OTP ─────────────────────────────────────────
     const handleSendOtp = async () => {
         if (!phone) { setError("Please enter a phone number."); return; }
-        if (!auth) { setError("Auth not ready. Please refresh."); return; }
-        setLoading(true); setError(""); setInfo("");
+        setLoading(true);
+        setError("");
+        setInfo("");
         try {
-            if (!recaptchaVerifierRef.current) throw new Error("reCAPTCHA not ready. Please try again.");
-            const confirm = await signInWithPhoneNumber(auth!, phone, recaptchaVerifierRef.current);
+            if (!recaptchaVerifierRef.current) {
+                recaptchaVerifierRef.current = new RecaptchaVerifier(auth, recaptchaContainerRef.current!, { size: "invisible" });
+            }
+            const confirm = await signInWithPhoneNumber(auth, phone, recaptchaVerifierRef.current);
             setConfirmResult(confirm);
             setOtpSent(true);
             setInfo(`Verification code sent to ${phone}`);
         } catch (err: any) {
             const msg: Record<string, string> = {
-                "auth/invalid-phone-number": "Please enter a valid phone number with country code (e.g. +2348012345678).",
+                "auth/invalid-phone-number": "Please include the country code, e.g. +2348012345678",
                 "auth/too-many-requests": "Too many attempts. Please try again later.",
+                "auth/quota-exceeded": "SMS quota exceeded. Try email sign-in instead.",
             };
             setError(msg[err.code] || err.message || "Failed to send OTP.");
-            // Reset reCAPTCHA after failure
+            recaptchaVerifierRef.current?.clear();
             recaptchaVerifierRef.current = null;
-        } finally { setLoading(false); }
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleVerifyOtp = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!confirmResult || !otp) { setError("Enter the code you received."); return; }
-        setLoading(true); setError("");
+    const handleVerifyOtp = async () => {
+        if (!otp || !confirmResult) { setError("Enter the code you received."); return; }
+        setLoading(true);
+        setError("");
         try {
             const result = await confirmResult.confirm(otp);
             await syncWithBackend(await result.user.getIdToken());
         } catch (err: any) {
-            const msg: Record<string, string> = {
-                "auth/invalid-verification-code": "Incorrect code. Please check and try again.",
-                "auth/code-expired": "The code has expired. Please request a new one.",
-            };
-            setError(msg[err.code] || err.message || "Verification failed.");
-        } finally { setLoading(false); }
+            setError(err.code === "auth/invalid-verification-code"
+                ? "Invalid code. Please check and try again."
+                : err.message || "Verification failed.");
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const tabClass = (active: boolean) =>
-        `flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${active ? "bg-indigo-600 text-white shadow" : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
-        }`;
+    // ── Forgot Password ─────────────────────────────────────
+    const handleForgotPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!email) { setError("Please enter your email address above."); return; }
+        setLoading(true);
+        setError("");
+        setInfo("");
+        try {
+            await sendPasswordResetEmail(auth, email);
+            setInfo(`Password reset email sent to ${email}. Check your inbox (and spam folder).`);
+        } catch (err: any) {
+            const msg: Record<string, string> = {
+                "auth/user-not-found": "No account found with this email address.",
+                "auth/invalid-email": "Please enter a valid email address.",
+                "auth/too-many-requests": "Too many requests. Please wait before trying again.",
+            };
+            setError(msg[err.code] || err.message || "Password reset failed.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    return (
-        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-indigo-50 dark:from-gray-950 dark:to-indigo-950 px-4 py-12">
-            {/* Invisible reCAPTCHA container */}
-            <div ref={recaptchaContainerRef} id="recaptcha-container" />
+    // ── Forgot Password View ────────────────────────────────
+    if (view === "forgot-password") {
+        return (
+            <main className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+                <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-8">
+                    <button onClick={() => { setView("main"); setError(""); setInfo(""); }} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 mb-6 transition-colors">
+                        <ArrowLeft className="w-4 h-4" /> Back to Sign In
+                    </button>
 
-            <div className="w-full max-w-md">
-                {/* Card */}
-                <div className="rounded-2xl bg-white dark:bg-gray-900 shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
-                    {/* Header */}
-                    <div className="px-8 pt-8 pb-6 text-center border-b border-gray-100 dark:border-gray-800">
-                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-indigo-600 mb-4">
-                            <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                            </svg>
+                    <div className="text-center mb-8">
+                        <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <Mail className="w-7 h-7 text-blue-600" />
                         </div>
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Welcome to Paybills</h1>
-                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                            {authMode === "signin" ? "Sign in to continue to your account" : "Create your free account today"}
+                        <h1 className="text-2xl font-bold text-gray-900">Forgot Password?</h1>
+                        <p className="text-gray-500 text-sm mt-2">Enter your email and we'll send you a reset link</p>
+                    </div>
+
+                    {error && (
+                        <div className="flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-4 text-sm">
+                            <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                            <span>{error}</span>
+                        </div>
+                    )}
+                    {info && (
+                        <div className="flex items-start gap-3 bg-green-50 border border-green-200 text-green-700 rounded-xl p-4 mb-4 text-sm">
+                            <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                            <span>{info}</span>
+                        </div>
+                    )}
+
+                    <form onSubmit={handleForgotPassword} className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="you@example.com"
+                                required
+                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+                        >
+                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Send Reset Link"}
+                        </button>
+                    </form>
+                </div>
+            </main>
+        );
+    }
+
+    // ── Main Auth View ──────────────────────────────────────
+    return (
+        <main className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+            <div className="w-full max-w-md">
+                <div className="bg-white rounded-3xl shadow-xl p-8">
+
+                    {/* Logo */}
+                    <div className="text-center mb-8">
+                        <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-indigo-200">
+                            <Lock className="w-8 h-8 text-white" />
+                        </div>
+                        <h1 className="text-2xl font-bold text-gray-900">Welcome to Paybills</h1>
+                        <p className="text-gray-500 text-sm mt-1">
+                            {authMode === "signin" ? "Sign in to your account" : "Create your free account today"}
                         </p>
-                        {/* Sign in / Sign up Toggle */}
-                        <div className="mt-5 flex gap-1 rounded-xl bg-gray-100 dark:bg-gray-800 p-1">
-                            <button onClick={() => { setAuthMode("signin"); setError(""); setInfo(""); }} className={tabClass(authMode === "signin")}>Sign In</button>
-                            <button onClick={() => { setAuthMode("signup"); setError(""); setInfo(""); }} className={tabClass(authMode === "signup")}>Create Account</button>
+                    </div>
+
+                    {/* Sign In / Create Account Toggle */}
+                    <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
+                        <button
+                            onClick={() => { setAuthMode("signin"); setError(""); setInfo(""); }}
+                            className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all ${authMode === "signin" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}
+                        >
+                            Sign In
+                        </button>
+                        <button
+                            onClick={() => { setAuthMode("signup"); setError(""); setInfo(""); }}
+                            className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all ${authMode === "signup" ? "bg-indigo-600 text-white shadow-sm" : "text-gray-500"}`}
+                        >
+                            Create Account
+                        </button>
+                    </div>
+
+                    {/* Error / Info */}
+                    {error && (
+                        <div className="flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 mb-4 text-sm">
+                            <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                            <span>{error}</span>
+                        </div>
+                    )}
+                    {info && !error && (
+                        <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-xl p-3 mb-4 text-sm">
+                            <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                            <span>{info}</span>
+                        </div>
+                    )}
+
+                    {/* Social Buttons */}
+                    <div className="grid grid-cols-2 gap-3 mb-6">
+                        <button
+                            onClick={handleGoogle}
+                            disabled={loading}
+                            className="flex items-center justify-center gap-2.5 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-50 transition-colors text-sm font-medium text-gray-700"
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24">
+                                <path fill="#4285F4" d="M23.745 12.27c0-.79-.07-1.54-.19-2.27h-11.3v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z" />
+                                <path fill="#34A853" d="M12.255 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96h-3.98v3.09C3.515 21.3 7.615 24 12.255 24z" />
+                                <path fill="#FBBC05" d="M5.525 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.62h-3.98a11.86 11.86 0 0 0 0 10.76l3.98-3.09z" />
+                                <path fill="#EA4335" d="M12.255 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C18.205 1.19 15.495 0 12.255 0c-4.64 0-8.74 2.7-10.71 6.62l3.98 3.09c.95-2.85 3.6-4.96 6.73-4.96z" />
+                            </svg>
+                            Google
+                        </button>
+                        <button
+                            onClick={handleApple}
+                            disabled={loading}
+                            className="flex items-center justify-center gap-2.5 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-50 transition-colors text-sm font-medium text-gray-700"
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+                            </svg>
+                            Apple
+                        </button>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="relative mb-5">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-gray-100"></div>
+                        </div>
+                        <div className="relative flex justify-center">
+                            <span className="px-3 bg-white text-xs text-gray-400">or continue with</span>
                         </div>
                     </div>
 
-                    <div className="px-8 py-6 space-y-4">
-                        {/* Alerts */}
-                        {error && (
-                            <div className="rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 flex gap-2 items-start">
-                                <svg className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
-                                <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+                    {/* Email / Phone Toggle */}
+                    <div className="flex gap-2 mb-5">
+                        <button
+                            onClick={() => { setInputMode("email"); setError(""); setInfo(""); setOtpSent(false); }}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-medium transition-all ${inputMode === "email" ? "bg-indigo-50 border-indigo-300 text-indigo-700" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}
+                        >
+                            <Mail className="w-4 h-4" /> Email
+                        </button>
+                        <button
+                            onClick={() => { setInputMode("phone"); setError(""); setInfo(""); }}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-medium transition-all ${inputMode === "phone" ? "bg-indigo-50 border-indigo-300 text-indigo-700" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}
+                        >
+                            <Phone className="w-4 h-4" /> Phone
+                        </button>
+                    </div>
+
+                    {/* Email Form */}
+                    {inputMode === "email" && (
+                        <form onSubmit={handleEmailSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="you@example.com"
+                                    required
+                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all text-sm"
+                                />
                             </div>
-                        )}
-                        {info && (
-                            <div className="rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-3">
-                                <p className="text-sm text-green-700 dark:text-green-400">{info}</p>
-                            </div>
-                        )}
-
-                        {/* Social Buttons — always visible */}
-                        <div className="grid grid-cols-2 gap-3">
-                            {/* Google */}
-                            <button onClick={handleGoogle} disabled={loading}
-                                className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-750 shadow-sm transition-all disabled:opacity-50">
-                                <svg className="h-4 w-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                                </svg>
-                                Google
-                            </button>
-
-                            {/* Apple */}
-                            <button onClick={handleApple} disabled={loading}
-                                className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-750 shadow-sm transition-all disabled:opacity-50">
-                                <svg className="h-4 w-4" viewBox="0 0 814 1000" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                                    <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-42.1-147.1-102.3C345 885 221 813.7 221 650.7c0-28.1 5.5-56.8 17.9-82.8 50-105.4 163.1-175.8 282.8-175.8 43.8 0 101.5 14.1 139.5 41.2l.5.2zM534.1.3c33.9 0 67.8 10.8 97 30.5-53.4 30.5-82 85.4-82 138.5 0 52.8 29 110.8 83.7 141.5l-.2.2c-25.9 2.6-53.8-5.8-80.5-5.8-42.3 0-83.7 14.1-118.7 39.5-49.1 34.4-79.3 90.2-79.3 149.6 0 22.4 4.5 44.8 13 65.7-54.1-31.4-80.1-87.5-80.1-155.9C286.1 276.2 411.4.3 534.1.3z" />
-                                </svg>
-                                Apple
-                            </button>
-                        </div>
-
-                        {/* Divider */}
-                        <div className="relative">
-                            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200 dark:border-gray-700" /></div>
-                            <div className="relative flex justify-center text-xs">
-                                <span className="bg-white dark:bg-gray-900 px-3 text-gray-400">or continue with</span>
-                            </div>
-                        </div>
-
-                        {/* Email / Phone Mode Switcher */}
-                        <div className="flex gap-2">
-                            <button onClick={() => { setInputMode("email"); setError(""); }} className={`flex-1 py-2 text-xs font-medium rounded-lg border transition-all ${inputMode === "email" ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400" : "border-gray-200 dark:border-gray-700 text-gray-500 hover:border-gray-300"}`}>
-                                📧 Email
-                            </button>
-                            <button onClick={() => { setInputMode("phone"); setError(""); }} className={`flex-1 py-2 text-xs font-medium rounded-lg border transition-all ${inputMode === "phone" ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400" : "border-gray-200 dark:border-gray-700 text-gray-500 hover:border-gray-300"}`}>
-                                📱 Phone
-                            </button>
-                        </div>
-
-                        {/* Email form */}
-                        {inputMode === "email" && (
-                            <form onSubmit={handleEmailSubmit} className="space-y-3">
-                                <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="Email address"
-                                    className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
-                                <input type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="Password (min 6 characters)"
-                                    className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
-                                <button type="submit" disabled={loading}
-                                    className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50 transition-all shadow-md shadow-indigo-200 dark:shadow-none">
-                                    {loading ? "Please wait..." : authMode === "signin" ? "Sign In with Email" : "Create Account"}
-                                </button>
-                            </form>
-                        )}
-
-                        {/* Phone form */}
-                        {inputMode === "phone" && (
-                            <div className="space-y-3">
-                                {!otpSent ? (
-                                    <>
-                                        <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+234 801 234 5678 (with country code)"
-                                            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
-                                        <button onClick={handleSendOtp} disabled={loading}
-                                            className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50 transition-all shadow-md shadow-indigo-200 dark:shadow-none">
-                                            {loading ? "Sending..." : "Send Verification Code"}
-                                        </button>
-                                    </>
-                                ) : (
-                                    <form onSubmit={handleVerifyOtp} className="space-y-3">
-                                        <input type="text" value={otp} onChange={e => setOtp(e.target.value)} required placeholder="Enter 6-digit code" maxLength={6}
-                                            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 tracking-widest text-center text-lg" />
-                                        <button type="submit" disabled={loading}
-                                            className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50 transition-all shadow-md shadow-indigo-200 dark:shadow-none">
-                                            {loading ? "Verifying..." : "Verify & Continue"}
-                                        </button>
-                                        <button type="button" onClick={() => { setOtpSent(false); setInfo(""); setError(""); }} className="w-full text-center text-xs text-indigo-600 hover:underline">
-                                            ← Change phone number
-                                        </button>
-                                    </form>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+                                <div className="relative">
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder={authMode === "signup" ? "Min. 6 characters" : "••••••••"}
+                                        required
+                                        className="w-full px-4 py-3 pr-12 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all text-sm"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+                                    >
+                                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                    </button>
+                                </div>
+                                {authMode === "signin" && (
+                                    <button
+                                        type="button"
+                                        onClick={() => { setView("forgot-password"); setError(""); setInfo(""); }}
+                                        className="text-xs text-indigo-600 hover:underline mt-1.5 block"
+                                    >
+                                        Forgot password?
+                                    </button>
                                 )}
                             </div>
-                        )}
-                    </div>
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+                            >
+                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : authMode === "signin" ? "Sign In" : "Create Account"}
+                            </button>
+                        </form>
+                    )}
+
+                    {/* Phone Form */}
+                    {inputMode === "phone" && (
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Phone Number</label>
+                                <input
+                                    type="tel"
+                                    value={phone}
+                                    onChange={(e) => setPhone(e.target.value)}
+                                    placeholder="+2348012345678"
+                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all text-sm"
+                                />
+                                <p className="text-xs text-gray-400 mt-1">Include country code, e.g. +234 for Nigeria</p>
+                            </div>
+
+                            {!otpSent ? (
+                                <button
+                                    onClick={handleSendOtp}
+                                    disabled={loading}
+                                    className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+                                >
+                                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Send Verification Code"}
+                                </button>
+                            ) : (
+                                <>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1.5">Verification Code</label>
+                                        <input
+                                            type="number"
+                                            value={otp}
+                                            onChange={(e) => setOtp(e.target.value)}
+                                            placeholder="123456"
+                                            maxLength={6}
+                                            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all text-sm tracking-widest font-mono"
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={handleVerifyOtp}
+                                        disabled={loading}
+                                        className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verify & Sign In"}
+                                    </button>
+                                    <button
+                                        onClick={() => { setOtpSent(false); setOtp(""); setConfirmResult(null); recaptchaVerifierRef.current?.clear(); recaptchaVerifierRef.current = null; }}
+                                        className="w-full text-sm text-gray-500 hover:text-gray-700"
+                                    >
+                                        ← Change number
+                                    </button>
+                                </>
+                            )}
+
+                            {/* Invisible reCAPTCHA container */}
+                            <div ref={recaptchaContainerRef} />
+                        </div>
+                    )}
 
                     {/* Footer */}
-                    <div className="px-8 pb-6 text-center">
-                        <p className="text-xs text-gray-400 dark:text-gray-500">
-                            By continuing, you agree to our{" "}
-                            <Link href="/legal/terms" className="text-indigo-600 hover:underline">Terms</Link>
-                            {" "}&amp;{" "}
-                            <Link href="/legal/privacy" className="text-indigo-600 hover:underline">Privacy Policy</Link>
-                        </p>
-                    </div>
+                    <p className="text-center text-xs text-gray-400 mt-6">
+                        By continuing you agree to our{" "}
+                        <Link href="/legal/terms" className="text-indigo-600 hover:underline">Terms</Link>
+                        {" & "}
+                        <Link href="/legal/privacy" className="text-indigo-600 hover:underline">Privacy Policy</Link>
+                    </p>
                 </div>
             </div>
-        </div>
+        </main>
     );
 }
