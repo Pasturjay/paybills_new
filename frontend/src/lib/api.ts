@@ -3,7 +3,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 // Retrieves the current Firebase ID Token from local storage
 const getFirebaseToken = (): string | null => {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem('firebaseToken');
+    return localStorage.getItem('token');
 };
 
 export const api = {

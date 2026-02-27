@@ -60,17 +60,38 @@ export default function AuthPage() {
 
     // Sync with backend after successful Firebase auth
     const syncWithBackend = async (idToken: string) => {
-        const res = await fetch("/api/auth/sync", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
-        });
-        if (!res.ok) {
-            const e = await res.json().catch(() => ({}));
-            // Backend sync is best-effort; don't block the user
-            console.warn("Backend sync failed:", e.error || "unknown error");
+        try {
+            const res = await fetch("/api/auth/sync", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                localStorage.setItem("token", idToken);
+                localStorage.setItem("user", JSON.stringify(data.user));
+                return true;
+            } else {
+                const e = await res.json().catch(() => ({}));
+                console.error("Backend sync failed:", e.error || "unknown error");
+                setError(`Sync failed: ${e.error || "Please contact support"}`);
+                return false;
+            }
+        } catch (err) {
+            console.error("Backend sync network error:", err);
+            setError("Unable to connect to service. Please check your internet.");
+            return false;
         }
-        localStorage.setItem("firebaseToken", idToken);
-        router.push("/dashboard");
+    };
+
+    const handlePostAuth = async (user: any) => {
+        const idToken = await user.getIdToken();
+        const success = await syncWithBackend(idToken);
+        if (success) {
+            router.push("/dashboard");
+        } else {
+            setLoading(false);
+        }
     };
 
     // ── Google Sign-in ──────────────────────────────────────
@@ -79,7 +100,7 @@ export default function AuthPage() {
         setError("");
         try {
             const result = await signInWithPopup(auth, googleProvider);
-            await syncWithBackend(await result.user.getIdToken());
+            await handlePostAuth(result.user);
         } catch (err: any) {
             if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") {
                 setError("Sign-in was cancelled.");
@@ -100,7 +121,7 @@ export default function AuthPage() {
             provider.addScope("email");
             provider.addScope("name");
             const result = await signInWithPopup(auth, provider);
-            await syncWithBackend(await result.user.getIdToken());
+            await handlePostAuth(result.user);
         } catch (err: any) {
             if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") {
                 setError("Sign-in was cancelled.");
@@ -125,7 +146,7 @@ export default function AuthPage() {
             } else {
                 result = await createUserWithEmailAndPassword(auth, email, password);
             }
-            await syncWithBackend(await result.user.getIdToken());
+            await handlePostAuth(result.user);
         } catch (err: any) {
             const msg: Record<string, string> = {
                 "auth/user-not-found": "No account found with this email.",
@@ -135,6 +156,7 @@ export default function AuthPage() {
                 "auth/invalid-email": "Please enter a valid email address.",
                 "auth/invalid-credential": "Incorrect email or password. Please try again.",
                 "auth/too-many-requests": "Too many attempts. Please wait a moment and try again.",
+                "auth/operation-not-allowed": "This sign-in method is currently disabled. Please contact the administrator.",
             };
             setError(msg[err.code] || err.message || "Authentication failed. Please try again.");
         } finally {
@@ -176,7 +198,7 @@ export default function AuthPage() {
         setError("");
         try {
             const result = await confirmResult.confirm(otp);
-            await syncWithBackend(await result.user.getIdToken());
+            await handlePostAuth(result.user);
         } catch (err: any) {
             setError(err.code === "auth/invalid-verification-code"
                 ? "Invalid code. Please check and try again."
