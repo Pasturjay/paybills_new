@@ -107,31 +107,71 @@ export function Navbar() {
 
             {/* Mobile Menu Drawer */}
             {isMenuOpen && (
-                <div className="absolute top-16 left-0 w-full h-[calc(100vh-4rem)] bg-white dark:bg-[#0f172a] border-t border-gray-100 dark:border-gray-800 overflow-y-auto p-6 animate-in slide-in-from-left duration-300 md:hidden">
-                    <div className="space-y-6 pb-24">
-                        {/* Main Links */}
-                        <div className="space-y-2">
-                            <Link href="/dashboard" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 font-bold">
-                                <CreditCard className="w-5 h-5" /> Dashboard
+                <div className="absolute top-16 left-0 w-full h-[calc(100vh-4rem)] bg-white/95 dark:bg-[#0f172a]/95 backdrop-blur-xl border-t border-gray-100 dark:border-gray-800 overflow-y-auto p-6 animate-in slide-in-from-top-4 duration-300 md:hidden flex flex-col">
+                    <div className="space-y-8 pb-10 flex-1">
+                        {/* Auth Priority Action */}
+                        {!isAuthenticated && (
+                            <Link
+                                href="/auth/register"
+                                onClick={() => setIsMenuOpen(false)}
+                                className="block w-full py-4 bg-blue-600 text-white text-center rounded-2xl font-bold shadow-lg shadow-blue-600/20"
+                            >
+                                Get Started Free
                             </Link>
-                            <Link href="/products/airtime-data" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-800">
-                                <Smartphone className="w-5 h-5" /> Buy Airtime & Data
-                            </Link>
-                            <Link href="/products/bill-payment" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-800">
-                                <Zap className="w-5 h-5" /> Pay Bills
-                            </Link>
-                        </div>
+                        )}
 
-                        <div className="border-t border-gray-100 dark:border-zinc-800 pt-6">
-                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Support</h3>
-                            <Link href="/contact" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 p-3 text-sm text-gray-600 dark:text-gray-300">
-                                <Globe className="w-4 h-4" /> Help Center
-                            </Link>
-                            <Link href="/legal/privacy" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 p-3 text-sm text-gray-600 dark:text-gray-300">
-                                <Shield className="w-4 h-4" /> Privacy & Terms
-                            </Link>
-                        </div>
+                        {/* Navigation Sections */}
+                        {menuSections.map((section, idx) => (
+                            <div key={idx} className="space-y-4">
+                                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em] pl-2">{section.title}</h3>
+                                <div className="grid grid-cols-1 gap-1">
+                                    {section.items.map((item, i) => (
+                                        <Link
+                                            key={i}
+                                            href={item.href}
+                                            onClick={() => setIsMenuOpen(false)}
+                                            className="flex items-center gap-4 p-4 rounded-2xl hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-all active:scale-[0.98]"
+                                        >
+                                            <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-zinc-800 flex items-center justify-center text-gray-600 dark:text-gray-300">
+                                                <item.icon className="w-5 h-5" />
+                                            </div>
+                                            <span className="font-semibold text-gray-900 dark:text-gray-100">{item.name}</span>
+                                            <ChevronRight className="w-4 h-4 ml-auto text-gray-300" />
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+
+                        {isAuthenticated && (
+                            <div className="pt-4 border-t border-gray-100 dark:border-zinc-800">
+                                <Link
+                                    href="/dashboard"
+                                    onClick={() => setIsMenuOpen(false)}
+                                    className="flex items-center gap-4 p-4 rounded-2xl bg-blue-50 dark:bg-blue-900/10 text-blue-600 font-bold"
+                                >
+                                    <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                                        <CreditCard className="w-5 h-5" />
+                                    </div>
+                                    <span>Personal Dashboard</span>
+                                </Link>
+                            </div>
+                        )}
                     </div>
+
+                    {!isAuthenticated ? (
+                        <div className="py-6 border-t border-gray-100 dark:border-zinc-800 text-center">
+                            <span className="text-sm text-gray-500">Already have an account? </span>
+                            <Link href="/auth/login" onClick={() => setIsMenuOpen(false)} className="text-sm font-bold text-blue-600">Log In</Link>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={() => { logout(); setIsMenuOpen(false); }}
+                            className="w-full py-4 text-red-500 font-bold border border-red-100 dark:border-red-900/30 rounded-2xl hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+                        >
+                            Sign Out
+                        </button>
+                    )}
                 </div>
             )}
         </nav>

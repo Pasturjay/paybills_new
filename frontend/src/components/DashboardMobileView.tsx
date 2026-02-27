@@ -64,7 +64,7 @@ export function DashboardMobileView({ user, balance, onAddMoney, onSendMoney }: 
     };
 
     return (
-        <div className="min-h-screen bg-[#020617] text-white pb-24 md:hidden font-sans pt-4">
+        <div className="min-h-screen bg-[#0f172a] text-white pb-24 md:hidden font-sans pt-4">
 
             {/* Mobile Sidebar usage is moved to Layout, so we remove internal drawer logic */}
 
@@ -75,8 +75,9 @@ export function DashboardMobileView({ user, balance, onAddMoney, onSendMoney }: 
                 </div>
 
                 {/* Balance Card */}
-                <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-6 relative overflow-hidden shadow-2xl shadow-blue-900/20 min-h-[180px]">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
+                <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[2.5rem] p-8 relative overflow-hidden shadow-2xl shadow-blue-500/20 border border-white/10">
+                    <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-400/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2"></div>
 
                     {balance === null ? (
                         <div className="relative z-10 animate-pulse">
@@ -138,12 +139,12 @@ export function DashboardMobileView({ user, balance, onAddMoney, onSendMoney }: 
                             <button
                                 key={i}
                                 onClick={() => handleQuickAction(item.id)}
-                                className="flex flex-col items-center gap-2 min-w-[72px]"
+                                className="flex flex-col items-center gap-3 min-w-[72px]"
                             >
-                                <div className={`w-16 h-16 rounded-2xl ${item.bg} flex items-center justify-center ${item.color}`}>
+                                <div className={`w-16 h-16 rounded-[1.5rem] ${item.bg} flex items-center justify-center ${item.color} shadow-sm border border-white/5`}>
                                     {item.icon}
                                 </div>
-                                <span className="text-xs text-gray-400 font-medium whitespace-nowrap">{item.name}</span>
+                                <span className="text-xs text-gray-400 font-bold whitespace-nowrap">{item.name}</span>
                             </button>
                         ))}
                     </div>

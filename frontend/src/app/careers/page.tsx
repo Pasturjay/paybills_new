@@ -8,20 +8,20 @@ export default function Careers() {
             <Navbar />
 
             {/* Hero */}
-            <section className="pt-32 pb-20 bg-blue-50/50">
-                <div className="container mx-auto px-6 text-center">
-                    <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">Join the Revolution</h1>
-                    <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+            <section className="pt-28 pb-14 sm:pt-32 sm:pb-20 bg-blue-50/50">
+                <div className="container mx-auto px-4 sm:px-6 text-center">
+                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">Join the Revolution</h1>
+                    <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
                         We are building the future of payments in Africa. Come build with us.
                     </p>
                 </div>
             </section>
 
             {/* Why Join Us */}
-            <section className="py-20">
-                <div className="container mx-auto px-6">
-                    <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center">Why Join Paybills?</h2>
-                    <div className="grid md:grid-cols-3 gap-8">
+            <section className="py-14 sm:py-20">
+                <div className="container mx-auto px-4 sm:px-6">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-10 sm:mb-12 text-center">Why Join Paybills?</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
                         <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
                             <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 mb-6">
                                 <Rocket className="w-6 h-6" />
@@ -54,26 +54,26 @@ export default function Careers() {
             </section>
 
             {/* Open Positions */}
-            <section className="py-20 bg-gray-50">
-                <div className="container mx-auto px-6">
-                    <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center">Open Positions</h2>
-                    <div className="max-w-4xl mx-auto space-y-4">
+            <section className="py-14 sm:py-20 bg-gray-50">
+                <div className="container mx-auto px-4 sm:px-6">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-10 sm:mb-12 text-center">Open Positions</h2>
+                    <div className="max-w-4xl mx-auto space-y-3 sm:space-y-4">
                         {[
                             { title: "Senior Frontend Engineer", dept: "Engineering", loc: "Remote" },
                             { title: "Product Designer", dept: "Design", loc: "Lagos, Nigeria" },
                             { title: "Customer Success Lead", dept: "Operations", loc: "Remote" },
                             { title: "Backend Developer (Node.js)", dept: "Engineering", loc: "Remote" }
                         ].map((job, i) => (
-                            <div key={i} className="bg-white p-6 rounded-xl border border-gray-100 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer group">
-                                <div>
-                                    <h3 className="font-bold text-lg text-gray-900 group-hover:text-blue-600 transition-colors">{job.title}</h3>
-                                    <div className="flex gap-4 text-sm text-gray-500 mt-1">
+                            <div key={i} className="bg-white p-5 sm:p-6 rounded-2xl border border-gray-100 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer group active:scale-[0.99]">
+                                <div className="min-w-0 flex-1 pr-4">
+                                    <h3 className="font-bold text-base sm:text-lg text-gray-900 group-hover:text-blue-600 transition-colors truncate">{job.title}</h3>
+                                    <div className="flex gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500 mt-1">
                                         <span>{job.dept}</span>
                                         <span>•</span>
                                         <span>{job.loc}</span>
                                     </div>
                                 </div>
-                                <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-blue-600" />
+                                <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-blue-600 flex-shrink-0" />
                             </div>
                         ))}
                     </div>
