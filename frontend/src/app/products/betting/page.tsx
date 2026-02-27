@@ -129,9 +129,9 @@ export default function Betting() {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Amount (â‚¦)</label>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Amount (₦)</label>
                                 <div className="relative">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">â‚¦</div>
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">₦</div>
                                     <input
                                         type="number"
                                         value={amount}
@@ -149,7 +149,7 @@ export default function Betting() {
                                             onClick={() => setAmount(amt.toString())}
                                             className="py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
                                         >
-                                            â‚¦{amt.toLocaleString()}
+                                            ₦{amt.toLocaleString()}
                                         </button>
                                     ))}
                                 </div>
@@ -194,4 +194,5 @@ export default function Betting() {
         </main>
     );
 }
+
 

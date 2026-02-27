@@ -215,7 +215,7 @@ export default function GiftCards() {
                                             <div className="pt-4 border-t border-gray-100 dark:border-zinc-800">
                                                 <div className="flex justify-between items-center mb-4">
                                                     <span className="text-gray-500 text-sm">Total Estimate</span>
-                                                    <span className="text-xl font-bold text-purple-600">â‚¦{((amount * quantity) * 1650).toLocaleString()}</span>
+                                                    <span className="text-xl font-bold text-purple-600">₦{((amount * quantity) * 1650).toLocaleString()}</span>
                                                 </div>
                                                 <button
                                                     onClick={handleCheckout}
@@ -292,4 +292,5 @@ export default function GiftCards() {
         </main>
     );
 }
+
 

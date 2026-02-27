@@ -109,9 +109,9 @@ export default function Games() {
                                             required
                                         >
                                             <option value="">Select Package</option>
-                                            <option value="1000">100 {selectedGame.currency} - â‚¦1,000</option>
-                                            <option value="2500">300 {selectedGame.currency} - â‚¦2,500</option>
-                                            <option value="5000">600 {selectedGame.currency} - â‚¦5,000</option>
+                                            <option value="1000">100 {selectedGame.currency} - ₦1,000</option>
+                                            <option value="2500">300 {selectedGame.currency} - ₦2,500</option>
+                                            <option value="5000">600 {selectedGame.currency} - ₦5,000</option>
                                         </select>
                                     </div>
 
@@ -145,4 +145,5 @@ export default function Games() {
         </main>
     );
 }
+
 

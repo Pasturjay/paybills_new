@@ -226,9 +226,9 @@ function BillPaymentContent() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2 text-left">Amount (â‚¦)</label>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2 text-left">Amount (₦)</label>
                                     <div className="relative">
-                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">â‚¦</div>
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">₦</div>
                                         <input
                                             type="number"
                                             value={amount}
@@ -300,4 +300,5 @@ export default function BillPayment() {
         </Suspense>
     );
 }
+
 
