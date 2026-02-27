@@ -22,8 +22,8 @@ class PaystackService {
             console.warn('PAYSTACK_SECRET_KEY is not set.');
         }
     }
-    initializeTransaction(email, amount, callbackUrl) {
-        return __awaiter(this, void 0, void 0, function* () {
+    initializeTransaction(email_1, amount_1, callbackUrl_1) {
+        return __awaiter(this, arguments, void 0, function* (email, amount, callbackUrl, metadata = {}) {
             var _a, _b, _c;
             try {
                 // Amount in Kobo
@@ -32,6 +32,7 @@ class PaystackService {
                     email,
                     amount: amountInKobo,
                     callback_url: callbackUrl,
+                    metadata: metadata,
                     channels: ['card', 'bank', 'ussd', 'qr', 'mobile_money', 'bank_transfer']
                 }, {
                     headers: {

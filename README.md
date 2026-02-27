@@ -14,18 +14,32 @@ Paybills is a comprehensive digital services and lifestyle management platform d
 - **Cable TV:** Instant subscription renewals for DSTV, GOTV, Startimes, and Showmax.
 - Features real-time meter and IUC number validation before purchase.
 
-### 3. Education PINs
-- Instant delivery of Exam Result Checkers and Registration PINs.
-- Supported examination bodies include: WAEC, NECO, JAMB, NABTEB, and NBAIS.
+### 3. Virtual VISA/Mastercards
+- Create and manage virtual dollar cards for global online payments.
+- Instant funding, freezing, and transaction monitoring directly from your dashboard.
 
-### 4. Secure Wallet System & Transactions
-- Centralized user wallet for easy funding and seamless, one-click checkouts.
-- Mandatory secure PIN verification for all out-going transactions.
-- Webhook integration with payment gateways (e.g., Paystack) for automated wallet funding.
+### 4. Virtual Numbers (DID)
+- Rent temporary or permanent phone numbers from 20+ countries.
+- Receive secure SMS verification codes and OTPs via a terminal-inspired console.
 
-### 5. Robust Admin & Management Console
-- Dedicated dashboard for administrators to monitor transactions, user activity, and platform metrics.
-- Service and product management controls.
+### 5. Genuine Software Marketplace
+- Instant delivery of trusted software licenses and keys.
+- Categories include: OS (Windows), Productivity (Office), Security (Antivirus), and Creative (Adobe).
+
+### 6. Betting & Gaming
+- Instant wallet funding for major sports betting platforms.
+- Top-up popular games including PUBG, Free Fire, and more.
+
+### 7. Education PINs
+- Instant delivery of Exam Result Checkers (WAEC, NECO) and Registration PINs (JAMB, NABTEB).
+
+### 8. Wallet System & Peer-to-Peer Transfers
+- Centralized user wallet with Paystack/Flutterwave integration.
+- **Internal Transfers:** Send and receive funds instantly using User Tags.
+- Mandatory secure PIN verification for all outgoing transactions.
+
+### 9. Referral & Rewards
+- Monetize your network with a robust referral system and real-time tracking.
 
 ---
 
@@ -34,16 +48,9 @@ Paybills is a comprehensive digital services and lifestyle management platform d
 - **Frontend:** Next.js 14 (App Router), React, Tailwind CSS, Lucide Icons
 - **Backend:** Node.js, Express/TypeScript, Prisma ORM
 - **Database:** PostgreSQL (via Prisma)
-- **Authentication:** JWT, Custom API Auth, PIN verification logic
-- **Deployment:** Vercel (Optimized for static prerendering, edge execution, and SSR)
-
----
-
-## 🛠️ Use Cases
-
-- **Everyday Consumers:** Looking for a fast, reliable, and single portal to pay electricity bills, top-up data/airtime, or renew their TV subscription without toggling between multiple bank apps.
-- **Students & Parents:** Need immediate access to examination tokens (WAEC, NECO) without visiting physical vendors or experiencing delays.
-- **Digital Resellers:** Merchants who want to fund their wallets in bulk and process multiple utility requests for their own customer base efficiently.
+- **Authentication:** Firebase Auth integration with JWT-based session management
+- **Infrastructure:** Docker Support (`docker-compose.yml`), GitHub Actions (CI/CD)
+- **Deployment:** Vercel (Optimized for edge execution and SSR)
 
 ---
 
@@ -52,7 +59,7 @@ Paybills is a comprehensive digital services and lifestyle management platform d
 ### Prerequisites
 - Node.js 18.x or later
 - npm or yarn
-- PostgreSQL database
+- PostgreSQL database (or Docker)
 
 ### Installation
 
@@ -62,21 +69,16 @@ Paybills is a comprehensive digital services and lifestyle management platform d
    cd paybills
    ```
 
-2. **Install dependencies for both frontend and backend:**
+2. **Unified Setup (Recommended):**
+   Install all dependencies for both frontend and backend from the root:
    ```bash
-   # Frontend
-   cd frontend
-   npm install
-
-   # Backend
-   cd ../backend
    npm install
    ```
 
 3. **Set up Environment Variables:**
    Create `.env` files in both the `frontend` and `backend` directories using the provided `*.env` templates.
    - Configure your `DATABASE_URL` in the backend.
-   - Set up your API keys (Paystack, etc.) and JWT secrets.
+   - Set up your Firebase service account and API keys.
 
 4. **Initialize the Database:**
    ```bash
@@ -86,18 +88,17 @@ Paybills is a comprehensive digital services and lifestyle management platform d
    ```
 
 5. **Run the Development Servers:**
+   From the project root, run both servers concurrently:
    ```bash
-   # Start backend
-   cd backend
-   npm run dev
-
-   # Start frontend (in a new terminal)
-   cd frontend
    npm run dev
    ```
+   - Frontend: [http://localhost:3000](http://localhost:3000)
+   - Backend: [http://localhost:5000](http://localhost:5000)
 
-6. **Access the Application:**
-   Open [http://localhost:3000](http://localhost:3000) in your browser.
+**Alternative: Docker Setup**
+```bash
+docker-compose up --build
+```
 
 ---
 
@@ -110,25 +111,6 @@ Paybills is built with a strong focus on compliance, particularly aligned with N
 
 ---
 
-## 🚀 Deployment
-
-The platform is optimized for seamless deployment on Vercel. 
-- Ensure all environment variables are properly mapped in your Vercel project settings.
-- The build command (`npm run build`) automatically generates optimized static pages, compiles the Next.js routes, and enforces strict type checking.
-
-### GitHub Push Instructions
-If you need to push updates to the repository, use the following commands from your terminal (make sure you are in the project root):
-```bash
-echo "# paybills_new" >> README.md
-git init
-git add README.md
-git commit -m "first commit"
-git branch -M main
-git remote add origin https://github.com/Pasturjay/paybills_new.git
-git push -u origin main
-```
-
----
-
 ## 📜 License
-© 2026 Paybills. All Rights Reserved.
+© 2026 Paybills. All Rights Reserved. Operated by Fecund Integrated Technology Limited.
+

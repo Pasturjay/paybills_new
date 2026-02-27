@@ -19,12 +19,16 @@ if (fs.existsSync(serviceAccountPath)) {
 
 if (!admin.apps.length) {
     if (serviceAccount) {
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount)
-        });
-        console.log('Firebase Admin SDK initialized successfully.');
+        try {
+            admin.initializeApp({
+                credential: admin.credential.cert(serviceAccount)
+            });
+            console.log('✅ Firebase Admin SDK initialized successfully.');
+        } catch (error: any) {
+            console.error('❌ Firebase Admin initialization failed:', error.message);
+        }
     } else {
-        console.warn('Firebase Admin SDK not initialized: No service account provided.');
+        console.warn('⚠️ Firebase Admin SDK not initialized: No service account provided.');
     }
 }
 

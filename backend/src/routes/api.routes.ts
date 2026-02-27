@@ -9,6 +9,7 @@ router.post('/auth/sync', syncFirebaseUser); // Primary: Firebase token sync (lo
 router.post('/auth/request-otp', requestOtp); // Deprecated (kept for stability)
 router.post('/auth/register', register);       // Deprecated (kept for stability)
 router.post('/auth/login', login);             // Deprecated (kept for stability)
+router.post('/webhooks/paystack', require('../controllers/paystack.webhook').handlePaystackWebhook);
 
 // Notification Routes
 import { getNotifications, markRead } from '../controllers/notification.controller';
@@ -26,8 +27,14 @@ router.put('/profile/password', authenticateToken, changePassword);
 router.post('/user/pin', authenticateToken, setPin);
 router.post('/kyc', authenticateToken, submitKyc);
 
+import { deleteAccount } from '../controllers/user.controller';
+router.delete('/user/account', authenticateToken, deleteAccount);
+
 // Referral Route
 router.get('/referrals', authenticateToken, getReferralStats);
+
+import { getPurchaseContext } from '../controllers/purchase.controller';
+router.get('/purchase/context', authenticateToken, getPurchaseContext);
 
 router.use('/kyc', kycRoutes);
 
@@ -43,13 +50,9 @@ router.get('/wallet/virtual-account', authenticateToken, getVirtualAccount);
 router.post('/wallet/transfer', authenticateToken, transferFunds);
 router.post('/wallet/transfer/lookup', authenticateToken, lookupUser);
 
-// Product Routes (Modern)
-// Product Routes (Modern)
 import productRoutes from './product.routes';
-import { purchaseSoftware } from '../controllers/software.controller';
 
 router.use('/products', productRoutes);
-router.post('/products/software/purchase', authenticateToken, purchaseSoftware);
 
 // Virtual Numbers
 import * as virtualNumberController from '../controllers/virtual-number.controller';

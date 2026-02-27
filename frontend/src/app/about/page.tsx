@@ -1,6 +1,12 @@
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Users, Target, Shield } from "lucide-react";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+    title: "About Us",
+    description: "Learn more about PayBills, our mission to simplify digital payments in Africa, and the values that drive our innovation.",
+};
 
 export default function About() {
     return (

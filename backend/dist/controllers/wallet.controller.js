@@ -42,7 +42,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.transferFunds = exports.getVirtualAccount = exports.verifyFunding = exports.initiateFunding = exports.simulateFund = exports.getUserTransactions = exports.getBalance = void 0;
+exports.lookupUser = exports.transferFunds = exports.getVirtualAccount = exports.verifyFunding = exports.initiateFunding = exports.simulateFund = exports.getUserTransactions = exports.getBalance = void 0;
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
 const paystack_service_1 = require("../services/paystack.service");
@@ -140,7 +140,12 @@ const initiateFunding = (req, res) => __awaiter(void 0, void 0, void 0, function
         // Use process.env.FRONTEND_URL usually, hardcoding for now based on user context if needed, or relative.
         // Assuming localhost or the deployed URL.
         const callbackUrl = `${process.env.APP_URL || 'http://localhost:3000'}/dashboard/fund/verify`;
-        const initResponse = yield paystackService.initializeTransaction(user.email, Number(amount), callbackUrl);
+        if (!user.email)
+            return res.status(400).json({ error: 'Email address required to fund wallet. Please update your profile.' });
+        const initResponse = yield paystackService.initializeTransaction(user.email, Number(amount), callbackUrl, {
+            type: 'funding',
+            userId: userId
+        });
         res.json({
             message: 'Authorization URL created',
             authorization_url: initResponse.authorization_url,
@@ -237,6 +242,8 @@ const getVirtualAccount = (req, res) => __awaiter(void 0, void 0, void 0, functi
                 return res.status(400).json({ error: 'BVN is required to generate a Flutterwave Virtual Account. Please complete KYC.' });
             }
             const txRef = `VA-${userId}-${Date.now()}`;
+            if (!user.email)
+                return res.status(400).json({ error: 'Email address required to create virtual account. Please update your profile.' });
             const flwAccount = yield flutterwaveService.createVirtualAccount(user.email, user.bvn, txRef, user.firstName, user.lastName, user.phone);
             newAccountData = {
                 userId,
@@ -250,6 +257,8 @@ const getVirtualAccount = (req, res) => __awaiter(void 0, void 0, void 0, functi
         }
         else {
             // PAYSTACK Logic
+            if (!user.email)
+                return res.status(400).json({ error: 'Email address required to create virtual account. Please update your profile.' });
             const paystackAccount = yield paystackService.createDedicatedAccount(user.email, user.firstName, user.lastName, user.phone);
             // Adjusting based on standard Paystack DVA response which might be nested
             // Typically: { bank: { name, ... }, account_number, account_name, ... }
@@ -372,3 +381,42 @@ const transferFunds = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
 });
 exports.transferFunds = transferFunds;
+const lookupUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { query } = req.body;
+        if (!query) {
+            return res.status(400).json({ error: 'Query is required' });
+        }
+        let searchCriteria = {};
+        if (query.startsWith('@')) {
+            searchCriteria.userTag = query;
+        }
+        else if (query.includes('@')) {
+            searchCriteria.email = query;
+        }
+        else {
+            searchCriteria.phone = query;
+        }
+        const user = yield prisma.user.findFirst({
+            where: searchCriteria,
+            select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                userTag: true,
+            }
+        });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        res.json({
+            name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Unknown User',
+            userTag: user.userTag
+        });
+    }
+    catch (error) {
+        console.error('Lookup Error:', error);
+        res.status(500).json({ error: 'Lookup failed' });
+    }
+});
+exports.lookupUser = lookupUser;

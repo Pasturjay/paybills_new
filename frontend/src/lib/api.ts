@@ -73,5 +73,31 @@ export const api = {
         }
 
         return res.json();
+    },
+
+    async delete(endpoint: string, token?: string) {
+        const authToken = token || getFirebaseToken();
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+        };
+        if (authToken) {
+            headers['Authorization'] = `Bearer ${authToken}`;
+        }
+
+        const res = await fetch(`${API_URL}${endpoint}`, {
+            method: 'DELETE',
+            headers,
+        });
+
+        if (!res.ok) {
+            const error = await res.json();
+            throw new Error(error.error || 'Something went wrong');
+        }
+
+        return res.json();
+    },
+
+    async getPurchaseContext(type: string, token?: string) {
+        return this.get(`/purchase/context?type=${type}`, token);
     }
 };

@@ -37,7 +37,7 @@ export class PaystackService {
         }
     }
 
-    async initializeTransaction(email: string, amount: number, callbackUrl: string): Promise<PaystackInitializeResponse['data']> {
+    async initializeTransaction(email: string, amount: number, callbackUrl: string, metadata: any = {}): Promise<PaystackInitializeResponse['data']> {
         try {
             // Amount in Kobo
             const amountInKobo = Math.round(amount * 100);
@@ -48,6 +48,7 @@ export class PaystackService {
                     email,
                     amount: amountInKobo,
                     callback_url: callbackUrl,
+                    metadata: metadata,
                     channels: ['card', 'bank', 'ussd', 'qr', 'mobile_money', 'bank_transfer']
                 },
                 {

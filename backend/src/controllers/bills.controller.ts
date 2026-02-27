@@ -17,7 +17,7 @@ export const getAirtimeProviders = async (req: Request, res: Response) => {
 export const purchaseAirtime = async (req: Request, res: Response) => {
     try {
         // @ts-ignore
-        const userId = req.user.userId;
+        const userId = (req as any).user.id;
         const { networkId, phoneNumber, amount } = req.body;
 
         if (!networkId || !phoneNumber || !amount) {

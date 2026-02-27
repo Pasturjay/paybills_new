@@ -1,19 +1,19 @@
 {
-    "name": "Paybills App",
-    "short_name": "Paybills",
+    "name": "PayBills",
+    "short_name": "PayBills",
+    "description": "Seamless utility payments, virtual cards, and digital lifestyle management.",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#0f172a",
     "theme_color": "#0f172a",
-    "orientation": "portrait",
     "icons": [
         {
-            "src": "/icon-192x192.png",
+            "src": "/favicon.png",
             "sizes": "192x192",
             "type": "image/png"
         },
         {
-            "src": "/icon-512x512.png",
+            "src": "/favicon.png",
             "sizes": "512x512",
             "type": "image/png"
         }

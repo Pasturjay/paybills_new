@@ -13,7 +13,7 @@ const securityService = new SecurityService();
 export const getBalance = async (req: Request, res: Response) => {
     try {
         // @ts-ignore - UserId attached by auth middleware
-        const userId = req.user.userId;
+        const userId = req.user.id;
 
         const wallet = await prisma.wallet.findFirst({
             where: { userId, currency: 'NGN' },
@@ -33,7 +33,7 @@ export const getBalance = async (req: Request, res: Response) => {
 // Get User Transactions
 export const getUserTransactions = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
+        const userId = (req as any).user.id;
         const transactions = await prisma.transaction.findMany({
             where: { userId },
             orderBy: { createdAt: 'desc' },
@@ -50,7 +50,7 @@ export const getUserTransactions = async (req: Request, res: Response) => {
 export const simulateFund = async (req: Request, res: Response) => {
     try {
         // @ts-ignore
-        const userId = req.user.userId;
+        const userId = req.user.id;
         const { amount } = req.body;
 
         // Check KYC Level
@@ -98,7 +98,7 @@ export const simulateFund = async (req: Request, res: Response) => {
 export const initiateFunding = async (req: Request, res: Response) => {
     try {
         // @ts-ignore
-        const userId = req.user.userId;
+        const userId = req.user.id;
         const { amount } = req.body;
 
         if (!amount || Number(amount) <= 0) {
@@ -114,7 +114,10 @@ export const initiateFunding = async (req: Request, res: Response) => {
         const callbackUrl = `${process.env.APP_URL || 'http://localhost:3000'}/dashboard/fund/verify`;
 
         if (!user.email) return res.status(400).json({ error: 'Email address required to fund wallet. Please update your profile.' });
-        const initResponse = await paystackService.initializeTransaction(user.email, Number(amount), callbackUrl);
+        const initResponse = await paystackService.initializeTransaction(user.email, Number(amount), callbackUrl, {
+            type: 'funding',
+            userId: userId
+        });
 
         res.json({
             message: 'Authorization URL created',
@@ -131,7 +134,7 @@ export const initiateFunding = async (req: Request, res: Response) => {
 export const verifyFunding = async (req: Request, res: Response) => {
     try {
         // @ts-ignore
-        const userId = req.user.userId;
+        const userId = req.user.id;
         const { reference } = req.query;
 
         if (!reference || typeof reference !== 'string') {
@@ -202,7 +205,7 @@ const flutterwaveService = new FlutterwaveService();
 export const getVirtualAccount = async (req: Request, res: Response) => {
     try {
         // @ts-ignore
-        const userId = req.user.userId;
+        const userId = req.user.id;
         const provider = (req.query.provider as string)?.toUpperCase() || 'PAYSTACK'; // Default to Paystack
 
         // 1. Check if exists in DB for this provider
@@ -291,7 +294,7 @@ export const getVirtualAccount = async (req: Request, res: Response) => {
 export const transferFunds = async (req: Request, res: Response) => {
     try {
         // @ts-ignore
-        const userId = req.user.userId;
+        const userId = req.user.id;
         const { recipientEmail, recipientPhone, amount, pin, description } = req.body;
 
         if (!amount || Number(amount) <= 0) {

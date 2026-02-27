@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticateToken } from '../middleware/auth.middleware';
-import { getProducts, purchaseEducation, purchaseGiftCard, sellGiftCard, purchaseAirtime, purchaseData, validateCable, purchaseCable, purchaseElectricity, purchaseBetting, purchaseSoftware } from '../controllers/product.controller';
+import { getProducts, purchaseEducation, purchaseGiftCard, sellGiftCard, purchaseAirtime, purchaseData, validateCable, purchaseCable, purchaseElectricity, purchaseBetting } from '../controllers/product.controller';
+import { purchaseSoftware, verifySoftwarePurchase } from '../controllers/software.controller';
 import { getAvailableNumbers, rentNumber } from '../controllers/virtual-number.controller';
 
 const router = Router();
@@ -30,5 +31,6 @@ router.post('/betting/purchase', authenticateToken, purchaseBetting);
 
 // Software
 router.post('/software/purchase', authenticateToken, purchaseSoftware);
+router.get('/software/verify', authenticateToken, verifySoftwarePurchase);
 
 export default router;

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { User, Mail, Phone, Lock, Bell, CheckCircle, AlertCircle, Save, Shield, AtSign } from "lucide-react";
+import { User, Mail, Phone, Lock, Bell, CheckCircle, AlertCircle, Save, Shield, AtSign, Trash2, Headphones } from "lucide-react";
 import { api } from "@/lib/api";
 import PinModal from "@/components/PinModal";
 
@@ -126,6 +126,24 @@ export default function Profile() {
         }
     };
 
+    const handleDeleteAccount = async () => {
+        if (!window.confirm("CRITICAL: Are you sure you want to delete your account? This action will disable your access and scrub your personal data. This cannot be undone.")) {
+            return;
+        }
+
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        try {
+            await api.delete("/user/account", token);
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            window.location.href = "/auth/login?message=Account+deleted+successfully";
+        } catch (error: any) {
+            setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to delete account' });
+        }
+    };
+
     if (loading) {
         return (
             <div className="p-12 text-center text-gray-500">
@@ -233,6 +251,31 @@ export default function Profile() {
                             </button>
                         </div>
                     </form>
+                </section>
+
+                {/* Support & Help */}
+                <section className="bg-white dark:bg-zinc-900 rounded-3xl p-8 shadow-sm border border-gray-100 dark:border-zinc-800">
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                        <Headphones className="w-5 h-5 text-blue-600" /> Support & Help
+                    </h2>
+                    <div className="grid md:grid-cols-2 gap-6">
+                        <a
+                            href="https://wa.me/2348135216820"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl hover:shadow-md transition-all group"
+                        >
+                            <h3 className="font-bold text-green-700 dark:text-green-400 mb-1">WhatsApp Support</h3>
+                            <p className="text-sm text-green-600/80 dark:text-green-500/60 font-medium">Chat with our team instantly.</p>
+                        </a>
+                        <a
+                            href="mailto:support@paybills.ng"
+                            className="p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl hover:shadow-md transition-all group"
+                        >
+                            <h3 className="font-bold text-blue-700 dark:text-blue-400 mb-1">Email Support</h3>
+                            <p className="text-sm text-blue-600/80 dark:text-blue-500/60 font-medium">Get help via email within 24 hours.</p>
+                        </a>
+                    </div>
                 </section>
 
                 {/* Identity Verification (KYC) */}
@@ -357,6 +400,30 @@ export default function Profile() {
                         <Bell className="w-5 h-5 text-blue-600" /> Notifications
                     </h2>
                     <p className="text-gray-500">Notification settings coming soon.</p>
+                </section>
+
+                {/* Danger Zone */}
+                <section className="bg-red-50 dark:bg-red-900/10 rounded-3xl p-8 shadow-sm border border-red-100 dark:border-red-900/20">
+                    <h2 className="text-xl font-bold text-red-600 dark:text-red-400 mb-6 flex items-center gap-2">
+                        <Trash2 className="w-5 h-5" /> Danger Zone
+                    </h2>
+                    <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 border border-red-100 dark:border-red-900/20">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <div>
+                                <h3 className="font-bold text-gray-900 dark:text-white mb-1">Delete Account</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    Permanently delete your account and all associated data.
+                                    This cannot be undone.
+                                </p>
+                            </div>
+                            <button
+                                onClick={handleDeleteAccount}
+                                className="px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-colors whitespace-nowrap"
+                            >
+                                Delete My Account
+                            </button>
+                        </div>
+                    </div>
                 </section>
             </div>
 

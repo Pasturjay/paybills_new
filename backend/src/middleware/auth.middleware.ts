@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { auth } from '../config/firebase.config';
-import { PrismaClient } from '@prisma/client';
+import jwt from 'jsonwebtoken';
+import prisma from '../prisma';
 
-const prisma = new PrismaClient();
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_dev_only';
 
 export const authenticateToken = async (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers['authorization'];
@@ -11,28 +11,22 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
     if (!token) return res.status(401).json({ error: 'Unauthorized: No token provided' });
 
     try {
-        const decodedToken = await auth.verifyIdToken(token);
+        const decoded = jwt.verify(token, JWT_SECRET) as any;
 
-        // Find existing user in Prisma by firebaseUid or email
-        const user = await prisma.user.findFirst({
-            where: {
-                OR: [
-                    { firebaseUid: decodedToken.uid },
-                    { email: decodedToken.email }
-                ]
-            }
+        const user = await prisma.user.findUnique({
+            where: { id: decoded.id }
         });
 
-        if (!user) {
-            return res.status(401).json({ error: 'Unauthorized: User record mapping not found' });
+        if (!user || !user.isActive) {
+            return res.status(401).json({ error: 'Unauthorized: User account is inactive or not found' });
         }
 
         // @ts-ignore
-        req.user = user;
+        req.user = { ...user, userId: user.id };
         next();
     } catch (error) {
-        console.error("Firebase token verification failed", error);
-        return res.status(403).json({ error: 'Forbidden: Invalid or expired token' });
+        console.error("JWT verification failed", error);
+        return res.status(403).json({ error: 'Forbidden: Invalid or expired session' });
     }
 };
 

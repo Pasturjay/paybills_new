@@ -2,6 +2,12 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import Link from "next/link";
 import { Smartphone, Zap, Tv, BookOpen, Trophy, Gamepad2, Gift, ArrowRight, Download } from "lucide-react";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+    title: "Our Products",
+    description: "Explore the wide range of services on PayBills, including airtime, data, utility bills, gift cards, and genuine software licenses.",
+};
 
 const products = [
     {

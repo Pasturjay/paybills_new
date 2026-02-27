@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 export const purchaseAirtime = async (req: Request, res: Response) => {
     try {
         // @ts-ignore
-        const userId = req.user.userId;
+        const userId = (req as any).user.id;
         const { providerCode, amount, phone, network } = req.body;
 
         // 1. Validate Balance
@@ -80,7 +80,7 @@ export const purchaseAirtime = async (req: Request, res: Response) => {
 export const purchaseData = async (req: Request, res: Response) => {
     try {
         // @ts-ignore
-        const userId = req.user.userId;
+        const userId = (req as any).user.id;
         const { providerCode, planCode, amount, phone, network } = req.body;
 
         // 1. Validate Balance
@@ -181,7 +181,7 @@ export const verifyCustomer = async (req: Request, res: Response) => {
 export const purchaseBill = async (req: Request, res: Response) => {
     try {
         // @ts-ignore
-        const userId = req.user.userId;
+        const userId = (req as any).user.id;
         const { serviceCode, customerId, amount, phone, type, providerCode } = req.body;
         // type: 'ELECTRICITY' | 'TV'
 

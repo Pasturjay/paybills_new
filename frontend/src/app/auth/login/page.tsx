@@ -63,18 +63,22 @@ export default function AuthPage() {
         try {
             const res = await fetch("/api/auth/sync", {
                 method: "POST",
-                headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${idToken}`
+                },
             });
 
             if (res.ok) {
                 const data = await res.json();
-                localStorage.setItem("token", idToken);
+                // Store the platform-specific JWT token, not the Firebase ID token
+                localStorage.setItem("token", data.token);
                 localStorage.setItem("user", JSON.stringify(data.user));
                 return true;
             } else {
                 const e = await res.json().catch(() => ({}));
                 console.error("Backend sync failed:", e.error || "unknown error");
-                setError(`Sync failed: ${e.error || "Please contact support"}`);
+                setError(e.error || "Sync failed. Please contact support.");
                 return false;
             }
         } catch (err) {

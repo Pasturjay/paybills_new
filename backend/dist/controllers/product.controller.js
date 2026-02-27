@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.purchaseSoftware = exports.purchaseBetting = exports.purchaseElectricity = exports.purchaseCable = exports.validateCable = exports.purchaseData = exports.purchaseAirtime = exports.sellGiftCard = exports.purchaseGiftCard = exports.purchaseEducation = exports.getProducts = void 0;
+exports.purchaseBetting = exports.purchaseElectricity = exports.purchaseCable = exports.validateCable = exports.purchaseData = exports.purchaseAirtime = exports.sellGiftCard = exports.purchaseGiftCard = exports.purchaseEducation = exports.getProducts = void 0;
 const client_1 = require("@prisma/client");
 const clubkonnect_provider_1 = require("../providers/clubkonnect.provider");
 const security_service_1 = require("../services/security.service");
@@ -389,53 +389,3 @@ const purchaseBetting = (req, res) => __awaiter(void 0, void 0, void 0, function
     }
 });
 exports.purchaseBetting = purchaseBetting;
-const purchaseSoftware = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const userId = req.user.userId;
-        const { itemCode, amount, pin } = req.body;
-        if (!itemCode || !amount || !pin) {
-            return res.status(400).json({ error: 'Missing required fields' });
-        }
-        // 1. Verify PIN
-        yield securityService.validateRequestPin(userId, pin);
-        // 2. Process Transaction
-        const result = yield prisma.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
-            const wallet = yield tx.wallet.findFirst({ where: { userId, currency: 'NGN' } });
-            if (!wallet || wallet.balance.toNumber() < Number(amount)) {
-                throw new Error('Insufficient funds');
-            }
-            // Debit Wallet
-            yield tx.wallet.update({
-                where: { id: wallet.id },
-                data: { balance: { decrement: Number(amount) } }
-            });
-            // Mock Provider Call (Software not yet integrated in provider)
-            const ref = 'SOFT_' + Date.now();
-            const mockLicenseKey = 'XXXX-YYYY-ZZZZ-' + Math.floor(Math.random() * 10000);
-            // Create Transaction
-            yield tx.transaction.create({
-                data: {
-                    userId,
-                    walletId: wallet.id,
-                    amount: Number(amount),
-                    total: Number(amount),
-                    type: 'BILL_PAYMENT',
-                    status: 'SUCCESS',
-                    reference: ref,
-                    metadata: JSON.stringify({
-                        itemCode,
-                        licenseKey: mockLicenseKey
-                    }),
-                    description: `Software Purchase ${itemCode}`
-                }
-            });
-            return { status: 'SUCCESS', licenseKey: mockLicenseKey, reference: ref };
-        }));
-        res.json({ message: 'Software license purchased successfully', data: result });
-    }
-    catch (error) {
-        console.error('Software Purchase Error:', error);
-        res.status(400).json({ error: error.message || 'Transaction failed' });
-    }
-});
-exports.purchaseSoftware = purchaseSoftware;

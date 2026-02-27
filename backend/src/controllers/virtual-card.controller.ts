@@ -13,7 +13,7 @@ const FORCE_EXCHANGE_RATE = 1650.00; // Mock Rate 1 USD = 1650 NGN
 export const createCard = async (req: Request, res: Response) => {
     try {
         // @ts-ignore
-        const userId = req.user.userId;
+        const userId = req.user.id;
         const { amount, billingName, color } = req.body; // Amount in USD to fund
 
         if (!amount || Number(amount) < 5) return res.status(400).json({ error: 'Minimum funding amount is $5' });
@@ -89,7 +89,7 @@ export const createCard = async (req: Request, res: Response) => {
 export const getMyCards = async (req: Request, res: Response) => {
     try {
         // @ts-ignore
-        const userId = req.user.userId;
+        const userId = req.user.id;
         const cards = await prisma.virtualCard.findMany({
             where: { userId },
             orderBy: { createdAt: 'desc' }
@@ -103,7 +103,7 @@ export const getMyCards = async (req: Request, res: Response) => {
 export const getCardDetails = async (req: Request, res: Response) => {
     try {
         // @ts-ignore
-        const userId = req.user.userId;
+        const userId = req.user.id;
         const { cardId } = req.params;
 
         const card = await prisma.virtualCard.findFirst({ where: { id: cardId, userId } });
@@ -129,7 +129,7 @@ export const getCardDetails = async (req: Request, res: Response) => {
 export const toggleCardFreeze = async (req: Request, res: Response) => {
     try {
         // @ts-ignore
-        const userId = req.user.userId;
+        const userId = req.user.id;
         const { cardId } = req.body;
 
         const card = await prisma.virtualCard.findFirst({ where: { id: cardId, userId } });
@@ -160,7 +160,7 @@ export const toggleCardFreeze = async (req: Request, res: Response) => {
 export const fundCard = async (req: Request, res: Response) => {
     try {
         // @ts-ignore
-        const userId = req.user.userId;
+        const userId = req.user.id;
         const { cardId, amount } = req.body;
 
         if (!amount || Number(amount) < 1) return res.status(400).json({ error: 'Minimum funding amount is $1' });

@@ -1,10 +1,13 @@
-import { Eye, EyeOff, Smartphone, Wifi, Tv, Zap, Wallet, Send, Gamepad2, BookOpen, Download, Trophy, Gift, Clock, CreditCard, ArrowDownLeft } from "lucide-react";
+"use client";
+
+import { Eye, EyeOff, Smartphone, Zap, Wallet, Send, Download, Gamepad2, BookOpen, Clock, CreditCard, ArrowDownLeft, Star, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ServiceModal } from "./ServiceModal";
 import GiftCardModal from "./GiftCardModal";
 import { useTransactions } from "@/hooks/useData";
+import { SkeletonLoader } from "./ui/Skeleton";
 
 export function DashboardMobileView({ user, balance, onAddMoney, onSendMoney }: { user: any, balance: any, onAddMoney: () => void, onSendMoney: () => void }) {
     const [showBalance, setShowBalance] = useState(true);
@@ -13,178 +16,141 @@ export function DashboardMobileView({ user, balance, onAddMoney, onSendMoney }: 
     const { transactions, isLoading: txLoading } = useTransactions();
 
     const handleQuickAction = (id: string) => {
-        if (id === 'education') {
-            router.push('/products/education');
-            return;
-        }
-        if (id === 'software') {
-            router.push('/products/software');
-            return;
-        }
-        if (id === 'betting') {
-            router.push('/products/betting');
-            return;
-        }
-        if (id === 'airtime' || id === 'data') {
-            router.push('/products/airtime-data');
-            return;
-        }
-        if (id === 'electricity') {
-            router.push('/products/bill-payment?type=electricity');
-            return;
-        }
-        setActiveModal(id);
-    };
-
-    const getServiceName = (id: string) => {
-        switch (id) {
-            case 'airtime': return 'Airtime';
-            case 'data': return 'Data Bundles';
-            case 'electricity': return 'Electricity';
-            case 'software': return 'Software';
-            case 'betting': return 'Betting';
-            case 'education': return 'Education';
-            default: return '';
+        const routes: any = {
+            'airtime': '/dashboard/services/airtime',
+            'data': '/dashboard/services/data',
+            'electricity': '/dashboard/services/electricity',
+            'software': '/dashboard/services/software',
+            'education': '/dashboard/services/education',
+            'betting': '/dashboard/services/betting'
+        };
+        if (routes[id]) {
+            router.push(routes[id]);
+        } else {
+            setActiveModal(id);
         }
     };
 
     const getTransactionIcon = (type: string, description: string) => {
-        if (type === 'FUNDING') return <ArrowDownLeft className="w-5 h-5" />;
-        if (type === 'P2P_TRANSFER') return <Send className="w-5 h-5" />;
-
         const descLower = description?.toLowerCase() || '';
         if (descLower.includes('airtime') || descLower.includes('data')) return <Smartphone className="w-5 h-5" />;
         if (descLower.includes('electricity')) return <Zap className="w-5 h-5" />;
-        if (descLower.includes('tv') || descLower.includes('cable') || descLower.includes('dstv') || descLower.includes('gotv')) return <Tv className="w-5 h-5" />;
-        if (descLower.includes('bet') || descLower.includes('sport')) return <Gamepad2 className="w-5 h-5" />;
-        if (descLower.includes('education') || descLower.includes('waec') || descLower.includes('jamb')) return <BookOpen className="w-5 h-5" />;
-        if (descLower.includes('software')) return <Download className="w-5 h-5" />;
-
         return <CreditCard className="w-5 h-5" />;
     };
 
     return (
-        <div className="min-h-screen bg-[#0f172a] text-white pb-24 md:hidden font-sans pt-4">
+        <div className="min-h-screen bg-[#fafafa] dark:bg-[#09090b] text-zinc-900 dark:text-white pb-24 md:hidden font-sans overflow-x-hidden">
 
-            {/* Mobile Sidebar usage is moved to Layout, so we remove internal drawer logic */}
+            {/* Header / Mesh Section */}
+            <div className="mesh-gradient h-[320px] rounded-b-[3.5rem] p-8 pt-12 relative flex flex-col justify-between shadow-2xl shadow-indigo-500/30">
+                <div className="relative z-10">
+                    <div className="flex justify-between items-center mb-8">
+                        <div>
+                            <h2 className="text-white/70 text-sm font-bold tracking-tight">System Operator</h2>
+                            <p className="text-white text-2xl font-black">{user.firstName}</p>
+                        </div>
+                        <div className="w-12 h-12 bg-white/20 backdrop-blur-xl rounded-2xl border border-white/30 flex items-center justify-center font-black text-white">
+                            {user.firstName?.[0]}
+                        </div>
+                    </div>
 
-            <div className="px-6 space-y-6">
-                {/* Welcome & Balance Section */}
-                <div>
-                    <h2 className="text-xl font-bold mb-4">Welcome back, {user.firstName}</h2>
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-white/70 text-xs font-black uppercase tracking-widest">
+                            Main Vault Balance
+                            <button onClick={() => setShowBalance(!showBalance)}>
+                                {showBalance ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                            </button>
+                        </div>
+                        <div className="text-5xl font-black text-white tracking-tighter transition-all">
+                            {showBalance ? `₦${Number(balance?.balance || 0).toLocaleString()}` : "••••••••"}
+                        </div>
+                    </div>
                 </div>
 
-                {/* Balance Card */}
-                <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[2.5rem] p-8 relative overflow-hidden shadow-2xl shadow-blue-500/20 border border-white/10">
-                    <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-400/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2"></div>
+                <div className="relative z-10 flex gap-4">
+                    <button onClick={onAddMoney} className="flex-1 bg-white text-indigo-600 py-3.5 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-xl shadow-indigo-900/20 active:scale-95 transition-all">
+                        <Wallet className="w-4 h-4" /> Fund
+                    </button>
+                    <button onClick={onSendMoney} className="flex-1 bg-indigo-500 text-white py-3.5 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-xl shadow-indigo-900/20 active:scale-95 transition-all border border-indigo-400">
+                        <Send className="w-4 h-4" /> Transfer
+                    </button>
+                </div>
+            </div>
 
-                    {balance === null ? (
-                        <div className="relative z-10 animate-pulse">
-                            {/* ... (Skeleton) ... */}
-                            <div className="flex justify-between items-center mb-4">
-                                <div className="h-4 bg-white/20 rounded w-24"></div>
-                                <div className="h-4 bg-white/20 rounded w-4"></div>
-                            </div>
-                            <div className="h-10 bg-white/20 rounded w-48 mb-8"></div>
-                            <div className="flex gap-3">
-                                <div className="flex-1 h-12 bg-white/20 rounded-xl"></div>
-                                <div className="flex-1 h-12 bg-white/20 rounded-xl"></div>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="relative z-10">
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-blue-100 text-sm font-medium">Available Balance</span>
-                                <button onClick={() => setShowBalance(!showBalance)} className="text-blue-200">
-                                    {showBalance ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                                </button>
-                            </div>
-                            <div className="text-3xl font-bold mb-6 tracking-tight flex items-center gap-3">
-                                {showBalance ? `₦${Number(balance?.balance || 0).toLocaleString()}` : "••••••••"}
-                                <button onClick={onAddMoney} className="bg-white/20 p-1.5 rounded-full" title="Fund Wallet">
-                                    <div className="w-3 h-3 flex items-center justify-center font-bold">+</div>
-                                </button>
-                            </div>
+            <div className="px-6 -mt-8 relative z-20 space-y-10">
 
-                            <div className="flex gap-3">
-                                <button onClick={onAddMoney} className="flex-1 bg-white text-blue-700 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-sm">
-                                    <Wallet className="w-4 h-4" /> Top-up
-                                </button>
-                                <button onClick={onSendMoney} className="flex-1 bg-blue-500/30 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 backdrop-blur-sm border border-white/10">
-                                    <Send className="w-4 h-4" /> Gift User
-                                </button>
+                {/* Quick Actions Grid */}
+                <div className="grid grid-cols-4 gap-4 bg-white dark:bg-zinc-900 p-6 rounded-[2.5rem] shadow-xl shadow-indigo-500/5 border border-gray-100 dark:border-white/5">
+                    {[
+                        { id: 'airtime', name: "Airtime", icon: <Smartphone className="w-5 h-5" />, color: "text-blue-500", bg: "bg-blue-500/10" },
+                        { id: 'data', name: "Data", icon: <Smartphone className="w-5 h-5" />, color: "text-indigo-500", bg: "bg-indigo-500/10" },
+                        { id: 'electricity', name: "Bills", icon: <Zap className="w-5 h-5" />, color: "text-amber-500", bg: "bg-amber-500/10" },
+                        { id: 'gift_cards', name: "Gift", icon: <Star className="w-5 h-5" />, color: "text-purple-500", bg: "bg-purple-500/10" },
+                    ].map((item) => (
+                        <button key={item.id} onClick={() => handleQuickAction(item.id)} className="flex flex-col items-center gap-2">
+                            <div className={`w-14 h-14 rounded-2xl ${item.bg} flex items-center justify-center ${item.color} active:scale-90 transition-all`}>
+                                {item.icon}
                             </div>
-                        </div>
-                    )}
+                            <span className="text-[10px] font-black uppercase text-zinc-500 dark:text-zinc-400">{item.name}</span>
+                        </button>
+                    ))}
                 </div>
 
-                {/* Quick Actions */}
+                {/* More Services Section */}
                 <div>
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="font-bold text-lg">Quick Actions</h2>
-                        <Link href="/dashboard/services" className="text-xs text-blue-500 font-medium">See all</Link>
+                        <h3 className="font-black text-lg tracking-tight">Ecosystem</h3>
+                        <Link href="/dashboard/services" className="text-xs font-black text-indigo-500 flex items-center">
+                            Explore All <ChevronRight className="w-3 h-3" />
+                        </Link>
                     </div>
-                    {/* Horizontal Scroll Container */}
-                    <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide -mx-6 px-6">
+                    <div className="space-y-3">
                         {[
-                            { id: 'airtime', name: "Airtime", icon: <Smartphone className="w-6 h-6" />, color: "text-blue-500", bg: "bg-blue-500/10" },
-                            { id: 'electricity', name: "Bills", icon: <Zap className="w-6 h-6" />, color: "text-yellow-500", bg: "bg-yellow-500/10" },
-                            { id: 'software', name: "Software", icon: <Download className="w-6 h-6" />, color: "text-purple-500", bg: "bg-purple-500/10" },
-                            { id: 'betting', name: "Games", icon: <Gamepad2 className="w-6 h-6" />, color: "text-pink-500", bg: "bg-pink-500/10" },
-                            { id: 'education', name: "Education", icon: <BookOpen className="w-6 h-6" />, color: "text-green-500", bg: "bg-green-500/10" },
-                            { id: 'betting', name: "Betting", icon: <Trophy className="w-6 h-6" />, color: "text-orange-500", bg: "bg-orange-500/10" },
-                            { id: 'gift_cards', name: "Gift Cards", icon: <Gift className="w-6 h-6" />, color: "text-red-500", bg: "bg-red-500/10" },
-                        ].map((item, i) => (
-                            <button
-                                key={i}
-                                onClick={() => handleQuickAction(item.id)}
-                                className="flex flex-col items-center gap-3 min-w-[72px]"
-                            >
-                                <div className={`w-16 h-16 rounded-[1.5rem] ${item.bg} flex items-center justify-center ${item.color} shadow-sm border border-white/5`}>
-                                    {item.icon}
+                            { id: 'software', name: "Digital Tools", desc: "Software & Downloads", icon: <Download />, color: "bg-emerald-500" },
+                            { id: 'betting', name: "Entertainment", desc: "Betting & Games", icon: <Gamepad2 />, color: "bg-rose-500" },
+                            { id: 'education', name: "Study Space", desc: "WAEC, JAMB, Exams", icon: <BookOpen />, color: "bg-blue-500" },
+                        ].map(svc => (
+                            <button key={svc.id} onClick={() => handleQuickAction(svc.id)} className="w-full flex items-center gap-4 p-4 bg-white dark:bg-zinc-900 rounded-3xl border border-gray-100 dark:border-white/5 active:scale-[0.98] transition-all">
+                                <div className={`w-12 h-12 rounded-2xl ${svc.color} text-white flex items-center justify-center shadow-lg shadow-indigo-500/10`}>
+                                    {svc.icon}
                                 </div>
-                                <span className="text-xs text-gray-400 font-bold whitespace-nowrap">{item.name}</span>
+                                <div className="text-left flex-1">
+                                    <h4 className="font-black text-sm">{svc.name}</h4>
+                                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">{svc.desc}</p>
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-zinc-300" />
                             </button>
                         ))}
                     </div>
                 </div>
 
-                {/* Recent Transactions */}
+                {/* Ledger */}
                 <div>
-                    <h2 className="font-bold text-lg mb-4">Recent Transactions</h2>
-
+                    <h3 className="font-black text-lg mb-4 tracking-tight">Recent Ledger</h3>
                     {txLoading ? (
-                        <div className="flex justify-center items-center py-12">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                        </div>
+                        <SkeletonLoader type="list" />
                     ) : transactions?.length === 0 ? (
-                        <div className="text-center py-12 bg-[#1e293b]/50 rounded-2xl border border-gray-800">
-                            <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-500">
-                                <Clock className="w-8 h-8" />
-                            </div>
-                            <h3 className="text-md font-bold text-white mb-2">No Transactions Yet</h3>
-                            <p className="text-gray-500 text-xs px-4">Your recent activity will appear here once you start using the platform.</p>
+                        <div className="py-12 text-center bg-gray-50 dark:bg-white/5 rounded-3xl border border-dashed border-gray-200 dark:border-white/10">
+                            <Clock className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                            <p className="text-xs font-bold text-gray-400 uppercase">No active records</p>
                         </div>
                     ) : (
                         <div className="space-y-3">
-                            {transactions?.slice(0, 5).map((tx: any) => {
+                            {transactions.slice(0, 5).map((tx: any) => {
                                 const isCredit = tx.type === 'FUNDING' || (tx.type === 'P2P_TRANSFER' && tx.reference?.includes('_CR'));
                                 return (
-                                    <div key={tx.id} className="bg-[#1e293b]/50 p-4 rounded-2xl flex items-center justify-between border border-gray-800">
+                                    <div key={tx.id} className="p-4 bg-white dark:bg-zinc-900 rounded-3xl flex items-center justify-between border border-gray-50 dark:border-white/5">
                                         <div className="flex items-center gap-3">
-                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isCredit ? 'bg-green-500/10 text-green-500' : 'bg-blue-500/10 text-blue-500'}`}>
+                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isCredit ? 'bg-green-500/10 text-green-500' : 'bg-indigo-500/10 text-indigo-500'}`}>
                                                 {getTransactionIcon(tx.type, tx.description)}
                                             </div>
                                             <div>
-                                                <div className="font-bold text-sm text-white truncate max-w-[150px]">{tx.description || tx.type.replace(/_/g, ' ')}</div>
-                                                <div className="text-xs text-gray-500">
-                                                    {new Date(tx.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, {new Date(tx.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                </div>
+                                                <div className="font-black text-sm truncate max-w-[120px]">{tx.description || tx.type}</div>
+                                                <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{new Date(tx.createdAt).toLocaleDateString()}</div>
                                             </div>
                                         </div>
-                                        <div className={`font-bold text-sm ${isCredit ? 'text-green-500' : 'text-white'}`}>
-                                            {isCredit ? '+' : '-'}₦{parseFloat(tx.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        <div className={`font-black text-base ${isCredit ? 'text-green-500' : 'text-zinc-900 dark:text-white'}`}>
+                                            {isCredit ? '+' : '-'}₦{parseFloat(tx.amount || 0).toLocaleString()}
                                         </div>
                                     </div>
                                 );
@@ -194,18 +160,14 @@ export function DashboardMobileView({ user, balance, onAddMoney, onSendMoney }: 
                 </div>
             </div>
 
-            {/* Modals */}
+            {/* Service & Gift Card Modals */}
             {activeModal && activeModal !== 'gift_cards' && (
                 <ServiceModal
-                    service={{
-                        title: getServiceName(activeModal),
-                        icon: null // Icon handled by mapped modal or not needed
-                    }}
+                    service={{ title: activeModal.toUpperCase(), icon: null }}
                     onClose={() => setActiveModal(null)}
                 />
             )}
             <GiftCardModal isOpen={activeModal === 'gift_cards'} onClose={() => setActiveModal(null)} />
-
-        </div >
+        </div>
     );
 }

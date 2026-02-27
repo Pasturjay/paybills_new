@@ -35,7 +35,7 @@ export const getAvailableNumbers = async (req: Request, res: Response) => {
 export const rentNumber = async (req: Request, res: Response) => {
     try {
         // @ts-ignore
-        const userId = req.user.userId;
+        const userId = req.user.id;
         const { msisdn, country, pin } = req.body;
 
         if (!msisdn) return res.status(400).json({ error: 'Phone number is required' });
@@ -119,7 +119,7 @@ export const rentNumber = async (req: Request, res: Response) => {
 export const getMyNumbers = async (req: Request, res: Response) => {
     try {
         // @ts-ignore
-        const userId = req.user.userId;
+        const userId = req.user.id;
         // @ts-ignore
         const numbers = await prisma.virtualNumber.findMany({
             where: { userId },
@@ -136,7 +136,7 @@ export const getMyNumbers = async (req: Request, res: Response) => {
 export const getNumberMessages = async (req: Request, res: Response) => {
     try {
         // @ts-ignore
-        const userId = req.user.userId;
+        const userId = req.user.id;
         const { id } = req.params;
 
         // Verify ownership
@@ -164,7 +164,7 @@ export const getNumberMessages = async (req: Request, res: Response) => {
 export const cancelNumberSubscription = async (req: Request, res: Response) => {
     try {
         // @ts-ignore
-        const userId = req.user.userId;
+        const userId = req.user.id;
         const { id } = req.body;
 
         // @ts-ignore

@@ -12,6 +12,7 @@ const links = [
     { name: "History", href: "/dashboard/history", icon: Clock },
     { name: "Referrals", href: "/dashboard/referrals", icon: User },
     { name: "Profile", href: "/dashboard/profile", icon: User },
+    { name: "Support", href: "https://wa.me/2348135216820", icon: Phone },
 ];
 
 export function MobileSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
@@ -34,8 +35,8 @@ export function MobileSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: (
                             href={link.href}
                             onClick={onClose}
                             className={`flex items-center gap-3 px-4 py-3.5 rounded-xl font-medium transition-all ${pathname === link.href
-                                    ? "bg-blue-600 text-white"
-                                    : "text-gray-300 hover:bg-white/5 hover:text-white"
+                                ? "bg-blue-600 text-white"
+                                : "text-gray-300 hover:bg-white/5 hover:text-white"
                                 }`}
                         >
                             <link.icon className="w-5 h-5" />

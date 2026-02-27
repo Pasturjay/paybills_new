@@ -38,13 +38,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const auth_controller_1 = require("../controllers/auth.controller");
-const wallet_controller_1 = require("../controllers/wallet.controller");
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const router = (0, express_1.Router)();
-// Auth Routes
-// Auth Routes
-router.post('/auth/register', auth_controller_1.register);
-router.post('/auth/login', auth_controller_1.login);
+// Auth Routes - Firebase
+router.post('/auth/sync', auth_controller_1.syncFirebaseUser); // Primary: Firebase token sync (login + register)
+router.post('/auth/request-otp', auth_controller_1.requestOtp); // Deprecated (kept for stability)
+router.post('/auth/register', auth_controller_1.register); // Deprecated (kept for stability)
+router.post('/auth/login', auth_controller_1.login); // Deprecated (kept for stability)
+router.post('/webhooks/paystack', require('../controllers/paystack.webhook').handlePaystackWebhook);
 // Notification Routes
 const notification_controller_1 = require("../controllers/notification.controller");
 router.get('/notifications', auth_middleware_1.authenticateToken, notification_controller_1.getNotifications);
@@ -54,6 +55,7 @@ const user_controller_1 = require("../controllers/user.controller");
 const kyc_routes_1 = __importDefault(require("./kyc.routes"));
 router.get('/user/profile', auth_middleware_1.authenticateToken, user_controller_1.getProfile);
 router.put('/user/profile', auth_middleware_1.authenticateToken, user_controller_1.updateProfile);
+router.put('/user/tag', auth_middleware_1.authenticateToken, user_controller_1.updateUserTag);
 router.put('/profile/password', auth_middleware_1.authenticateToken, user_controller_1.changePassword);
 router.post('/user/pin', auth_middleware_1.authenticateToken, user_controller_1.setPin);
 router.post('/kyc', auth_middleware_1.authenticateToken, user_controller_1.submitKyc);
@@ -61,6 +63,8 @@ router.post('/kyc', auth_middleware_1.authenticateToken, user_controller_1.submi
 router.get('/referrals', auth_middleware_1.authenticateToken, user_controller_1.getReferralStats);
 router.use('/kyc', kyc_routes_1.default);
 // Wallet Routes
+const wallet_controller_1 = require("../controllers/wallet.controller");
+// ... existing wallet routes
 router.get('/wallet/balance', auth_middleware_1.authenticateToken, wallet_controller_1.getBalance);
 router.get('/wallet/transactions', auth_middleware_1.authenticateToken, wallet_controller_1.getUserTransactions);
 router.post('/wallet/fund', auth_middleware_1.authenticateToken, wallet_controller_1.simulateFund); // Legacy/Simulated
@@ -68,12 +72,9 @@ router.post('/wallet/fund/initialize', auth_middleware_1.authenticateToken, wall
 router.get('/wallet/fund/verify', auth_middleware_1.authenticateToken, wallet_controller_1.verifyFunding);
 router.get('/wallet/virtual-account', auth_middleware_1.authenticateToken, wallet_controller_1.getVirtualAccount);
 router.post('/wallet/transfer', auth_middleware_1.authenticateToken, wallet_controller_1.transferFunds);
-// Product Routes (Modern)
-// Product Routes (Modern)
+router.post('/wallet/transfer/lookup', auth_middleware_1.authenticateToken, wallet_controller_1.lookupUser);
 const product_routes_1 = __importDefault(require("./product.routes"));
-const software_controller_1 = require("../controllers/software.controller");
 router.use('/products', product_routes_1.default);
-router.post('/products/software/purchase', auth_middleware_1.authenticateToken, software_controller_1.purchaseSoftware);
 // Virtual Numbers
 const virtualNumberController = __importStar(require("../controllers/virtual-number.controller"));
 router.get('/virtual-numbers/available', auth_middleware_1.authenticateToken, virtualNumberController.getAvailableNumbers);

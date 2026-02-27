@@ -21,6 +21,7 @@ export function DashboardSidebar() {
         { name: "History", href: "/dashboard/history", icon: Clock },
         { name: "Referrals", href: "/dashboard/referrals", icon: User },
         { name: "Profile", href: "/dashboard/profile", icon: User },
+        { name: "Support", href: "https://wa.me/2348135216820", icon: Phone },
     ];
 
     return (
