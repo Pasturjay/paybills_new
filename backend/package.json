@@ -4,11 +4,9 @@
   "description": "Backend for Fintech Super App",
   "main": "dist/server.js",
   "scripts": {
-    "start": "node dist/server.js",
     "dev": "nodemon src/server.ts",
     "build": "tsc",
-    "test": "jest --passWithNoTests",
-    "promote-admin": "ts-node src/scripts/promoteAdmin.ts"
+    "start": "node dist/server.js"
   },
   "keywords": [],
   "author": "",

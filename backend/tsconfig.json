@@ -1,13 +1,11 @@
 {
     "compilerOptions": {
-        "target": "es2016",
+        "target": "ES2019",
         "module": "commonjs",
         "rootDir": "./src",
-        "moduleResolution": "node",
         "outDir": "./dist",
         "esModuleInterop": true,
-        "forceConsistentCasingInFileNames": true,
-        "strict": true,
+        "strict": false,
         "skipLibCheck": true
     },
     "include": [
