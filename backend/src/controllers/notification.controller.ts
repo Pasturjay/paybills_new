@@ -3,7 +3,7 @@ import { notificationService } from '../services/notification.service';
 
 export const getNotifications = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
+        const userId = (req as any).user.id;
         const notifications = await notificationService.getUserNotifications(userId);
         const unreadCount = await notificationService.getUnreadCount(userId);
         res.json({ notifications, unreadCount });
@@ -14,7 +14,7 @@ export const getNotifications = async (req: Request, res: Response) => {
 
 export const markRead = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
+        const userId = (req as any).user.id;
         const { id } = req.body;
 
         if (id === 'all') {

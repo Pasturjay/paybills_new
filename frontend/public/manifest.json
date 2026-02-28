@@ -1,7 +1,7 @@
 {
     "name": "PayBills",
     "short_name": "PayBills",
-    "description": "Seamless utility payments, virtual cards, and digital lifestyle management.",
+    "description": "Utility Payments, Simplified. Seamless data, airtime, and bill payments.",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#0f172a",

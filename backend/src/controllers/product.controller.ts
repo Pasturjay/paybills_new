@@ -26,7 +26,7 @@ export const getProducts = async (req: Request, res: Response) => {
 
 export const purchaseEducation = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
+        const userId = (req as any).user.id;
         const { type, quantity = 1, pin } = req.body;
 
         // 1. Verify PIN
@@ -94,7 +94,7 @@ export const purchaseEducation = async (req: Request, res: Response) => {
 
 export const purchaseGiftCard = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
+        const userId = (req as any).user.id;
         const { cardId, amount, quantity = 1, pin } = req.body;
 
         await securityService.validateRequestPin(userId, pin);
@@ -135,7 +135,7 @@ export const purchaseGiftCard = async (req: Request, res: Response) => {
 
 export const sellGiftCard = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
+        const userId = (req as any).user.id;
         const { cardType, amount, cardCode, pin } = req.body;
         // Selling doesn't necessarily need PIN if it's incoming money, but good for confirmation? 
         // Maybe optional. Let's enforce for now to prevent accidental trades.
@@ -156,7 +156,7 @@ export const sellGiftCard = async (req: Request, res: Response) => {
 
 export const purchaseAirtime = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
+        const userId = (req as any).user.id;
         const { networkId, phoneNumber, amount, pin } = req.body;
 
         await securityService.validateRequestPin(userId, pin);
@@ -204,7 +204,7 @@ export const purchaseAirtime = async (req: Request, res: Response) => {
 
 export const purchaseData = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
+        const userId = (req as any).user.id;
         const { networkId, planId, phoneNumber, amount, pin } = req.body; // Amount needed if we don't look it up yet
 
         await securityService.validateRequestPin(userId, pin);
@@ -263,7 +263,7 @@ export const validateCable = async (req: Request, res: Response) => {
 
 export const purchaseCable = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
+        const userId = (req as any).user.id;
         const { providerId, packageId, smartcardNumber, amount, pin } = req.body;
 
         await securityService.validateRequestPin(userId, pin);
@@ -307,7 +307,7 @@ export const purchaseCable = async (req: Request, res: Response) => {
 
 export const purchaseElectricity = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
+        const userId = (req as any).user.id;
         const { providerId, meterNumber, amount, pin } = req.body;
 
         if (!providerId || !meterNumber || !amount || !pin) {
@@ -373,7 +373,7 @@ export const purchaseElectricity = async (req: Request, res: Response) => {
 
 export const purchaseBetting = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
+        const userId = (req as any).user.id;
         const { customerId, bookmaker, amount, pin } = req.body;
 
         if (!customerId || !bookmaker || !amount || !pin) {
