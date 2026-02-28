@@ -78,6 +78,7 @@ export default function AdminDashboard() {
                     {[
                         { title: 'User Management', desc: 'Verify & Manage Users', icon: '👤', link: '/admin/users', color: 'bg-blue-50 dark:bg-blue-500/10 text-blue-600' },
                         { title: 'Transactions', desc: 'Audit & Track Ledger', icon: '📊', link: '/admin/transactions', color: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600' },
+                        { title: 'Software Inventory', desc: 'Edit Products & Pricing', icon: '💾', link: '/admin/software', color: 'bg-violet-50 dark:bg-violet-500/10 text-violet-600' },
                         { title: 'System Config', desc: 'Fees, Limits & Toggle', icon: '⚙️', link: '/admin/config', color: 'bg-purple-50 dark:bg-purple-500/10 text-purple-600' },
                         { title: 'Service Health', desc: 'Provider Status', icon: '⚡', link: '/admin/config', color: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600' },
                     ].map((item, idx) => (

@@ -12,6 +12,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         { name: "Dashboard", href: "/admin/dashboard" },
         { name: "Users", href: "/admin/users" },
         { name: "Transactions", href: "/admin/transactions" },
+        { name: "Software", href: "/admin/software" },
         { name: "System Config", href: "/admin/config" },
     ];
 
@@ -32,8 +33,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                         key={item.name}
                                         href={item.href}
                                         className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${isActive
-                                                ? "bg-gray-900 text-white"
-                                                : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                                            ? "bg-gray-900 text-white"
+                                            : "text-gray-300 hover:bg-gray-700 hover:text-white"
                                             }`}
                                     >
                                         {item.name}
