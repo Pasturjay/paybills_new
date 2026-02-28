@@ -6,9 +6,35 @@ import { configureSecurity } from './middleware/security.middleware';
 
 const app: Application = express();
 
-// Middlewares
-configureSecurity(app); // Helmet + Rate Limiter
-app.use(cors());
+// CORS Configuration
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map(o => o.trim())
+    .filter(Boolean);
+
+// Always allow localhost in development
+if (process.env.NODE_ENV !== 'production') {
+    allowedOrigins.push('http://localhost:3000', 'http://127.0.0.1:3000');
+}
+
+app.use(cors({
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error(`CORS policy: origin ${origin} is not allowed`));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+// Security Middleware (Helmet + Rate Limiter)
+configureSecurity(app);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
