@@ -138,18 +138,18 @@ function BillPaymentContent() {
                 <div className="container mx-auto max-w-lg">
                     <div className="bg-white dark:bg-zinc-900 p-8 rounded-3xl shadow-xl border border-gray-100 dark:border-zinc-800">
                         {/* Tabs */}
-                        <div className="flex bg-gray-100 dark:bg-zinc-800 p-1 rounded-xl mb-8">
+                        <div className="grid grid-cols-2 bg-gray-100 dark:bg-zinc-800 p-1 rounded-xl mb-8">
                             <button
                                 onClick={() => { setActiveTab("electricity"); setProvider(""); setIdentifier(""); setValidatedName(""); }}
-                                className={`flex-1 py-3 px-6 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${activeTab === "electricity" ? "bg-white dark:bg-zinc-700 text-yellow-600 dark:text-yellow-400 shadow-sm" : "text-gray-500 hover:text-gray-900 dark:text-gray-400"}`}
+                                className={`py-3 px-2 rounded-lg font-bold text-[13px] sm:text-sm transition-all flex items-center justify-center gap-2 ${activeTab === "electricity" ? "bg-white dark:bg-zinc-700 text-yellow-600 dark:text-yellow-400 shadow-sm" : "text-gray-500 hover:text-gray-900 dark:text-gray-400"}`}
                             >
-                                <Zap className="w-4 h-4" /> Electricity
+                                <Zap className="w-4 h-4 flex-shrink-0" /> <span className="truncate">Electricity</span>
                             </button>
                             <button
                                 onClick={() => { setActiveTab("cable"); setProvider(""); setIdentifier(""); setValidatedName(""); }}
-                                className={`flex-1 py-3 px-6 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${activeTab === "cable" ? "bg-white dark:bg-zinc-700 text-blue-600 dark:text-blue-400 shadow-sm" : "text-gray-500 hover:text-gray-900 dark:text-gray-400"}`}
+                                className={`py-3 px-2 rounded-lg font-bold text-[13px] sm:text-sm transition-all flex items-center justify-center gap-2 ${activeTab === "cable" ? "bg-white dark:bg-zinc-700 text-blue-600 dark:text-blue-400 shadow-sm" : "text-gray-500 hover:text-gray-900 dark:text-gray-400"}`}
                             >
-                                <Tv className="w-4 h-4" /> Cable TV
+                                <Tv className="w-4 h-4 flex-shrink-0" /> <span className="truncate">Cable TV</span>
                             </button>
                         </div>
 
@@ -178,13 +178,13 @@ function BillPaymentContent() {
                             <form onSubmit={handlePurchase} className="space-y-6">
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase mb-3 text-left">Select Provider</label>
-                                    <div className="grid grid-cols-3 gap-3">
+                                    <div className="grid grid-cols-2 xs:grid-cols-3 gap-2 sm:gap-3">
                                         {(activeTab === "electricity" ? electricityProviders : cableProviders).map((p) => (
                                             <button
                                                 key={p.id}
                                                 type="button"
                                                 onClick={() => setProvider(p.id)}
-                                                className={`py-3 px-4 rounded-xl flex items-center justify-center font-bold text-[10px] md:text-md text-center transition-all border-2 min-h-[60px] ${provider === p.id
+                                                className={`py-2 px-3 sm:py-3 sm:px-4 rounded-xl flex items-center justify-center font-bold text-[10px] sm:text-xs text-center transition-all border-2 min-h-[50px] sm:min-h-[60px] ${provider === p.id
                                                     ? `${p.color} ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-zinc-900`
                                                     : "bg-gray-50 dark:bg-zinc-800 text-gray-500 border-transparent grayscale hover:grayscale-0"
                                                     }`}

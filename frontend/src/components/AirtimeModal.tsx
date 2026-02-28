@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { X, Smartphone, ChevronRight, AlertCircle, Loader2 } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
 import { api } from '@/lib/api';
 import PinModal from './PinModal';
 
@@ -23,10 +24,13 @@ export default function AirtimeModal({ isOpen, onClose }: AirtimeModalProps) {
     const [amount, setAmount] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [idempotencyKey, setIdempotencyKey] = useState(uuidv4());
     const [success, setSuccess] = useState('');
     const [isPinOpen, setIsPinOpen] = useState(false);
 
     const handlePurchase = async (pin: string) => {
+        if (loading) return;
+
         setIsPinOpen(false);
         setLoading(true);
         setError('');
@@ -36,16 +40,16 @@ export default function AirtimeModal({ isOpen, onClose }: AirtimeModalProps) {
                 networkId: network,
                 phoneNumber: phone,
                 amount: Number(amount),
-                pin
+                pin,
+                idempotencyKey
             });
             setSuccess('Airtime purchase successful!');
+            setIdempotencyKey(uuidv4());
             setTimeout(() => {
-                setSuccess('');
                 onClose();
-            }, 2000);
+            }, 1500);
         } catch (err: any) {
             setError(err.message || 'Purchase failed');
-        } finally {
             setLoading(false);
         }
     };

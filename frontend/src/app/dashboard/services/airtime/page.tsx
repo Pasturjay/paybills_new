@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { v4 as uuidv4 } from "uuid";
 import { api } from "@/lib/api";
 import { Wallet, Phone, RotateCcw, AlertTriangle } from "lucide-react";
 import { SkeletonLoader } from "@/components/ui/Skeleton";
@@ -13,8 +14,10 @@ export default function AirtimePage() {
         network: "MTN",
         phone: "",
         amount: "",
+        pin: "",
     });
     const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+    const [idempotencyKey, setIdempotencyKey] = useState(uuidv4());
     const [pageLoading, setPageLoading] = useState(true);
     const [message, setMessage] = useState("");
     const [context, setContext] = useState<any>(null);
@@ -43,6 +46,14 @@ export default function AirtimePage() {
     const handlePurchase = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        if (status === "loading") return;
+
+        if (!formData.pin || formData.pin.length !== 4) {
+            setStatus("error");
+            setMessage("Please enter your 4-digit transaction PIN");
+            return;
+        }
+
         if (context && Number(formData.amount) > context.dailyLimit) {
             setStatus("error");
             setMessage(`Transaction exceeds your daily limit of ₦${context.dailyLimit.toLocaleString()}. Please upgrade your KYC.`);
@@ -62,11 +73,14 @@ export default function AirtimePage() {
             await api.post("/services/airtime", {
                 ...formData,
                 providerCode: "VTPASS",
+                idempotencyKey
             }, token);
 
             setStatus("success");
-            // Reset amount but keep phone for potential repeat
-            setFormData({ ...formData, amount: "" });
+            // Refresh key for NEXT purchase
+            setIdempotencyKey(uuidv4());
+            // Reset amount and pin but keep phone
+            setFormData({ ...formData, amount: "", pin: "" });
         } catch (err: any) {
             setStatus("error");
             setMessage(err.message || "Transaction failed");
@@ -179,6 +193,24 @@ export default function AirtimePage() {
                                     placeholder="Min. 50"
                                     value={formData.amount}
                                     onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5 flex items-center">
+                                    <div className="w-4 h-4 mr-1 text-gray-400 flex items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                    </div>
+                                    Transaction PIN
+                                </label>
+                                <input
+                                    type="password"
+                                    required
+                                    maxLength={4}
+                                    className="block w-full rounded-2xl border-gray-200 dark:border-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-900 dark:text-white sm:text-sm p-4 border transition-all"
+                                    placeholder="••••"
+                                    value={formData.pin}
+                                    onChange={(e) => setFormData({ ...formData, pin: e.target.value })}
                                 />
                             </div>
                         </div>

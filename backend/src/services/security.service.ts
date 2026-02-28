@@ -11,7 +11,7 @@ export class SecurityService {
             throw new Error('PIN must be exactly 4 digits');
         }
 
-        const hashedPin = await bcrypt.hash(pin, 10);
+        const hashedPin = await bcrypt.hash(pin, 8);
 
         await prisma.user.update({
             where: { id: userId },

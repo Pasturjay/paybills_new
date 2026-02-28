@@ -14,9 +14,9 @@ export function MobileBottomNav() {
     };
 
     const navItems = [
-        { name: "Home", href: "/dashboard", icon: Home },
+        { name: "Home", href: "/", icon: Home },
         { name: "Cards", href: "/dashboard/virtual-cards", icon: CreditCard },
-        { name: "Transactions", href: "/dashboard/history", icon: Clock },
+        { name: "Ledger", href: "/dashboard/history", icon: Clock },
         { name: "Profile", href: "/dashboard/profile", icon: User },
     ];
 

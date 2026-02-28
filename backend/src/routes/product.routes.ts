@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authenticateToken } from '../middleware/auth.middleware';
 import { getProducts, purchaseEducation, purchaseGiftCard, sellGiftCard, purchaseAirtime, purchaseData, validateCable, purchaseCable, purchaseElectricity, purchaseBetting } from '../controllers/product.controller';
-import { purchaseSoftware, verifySoftwarePurchase } from '../controllers/software.controller';
+import { purchaseSoftware, verifySoftwarePurchase, getSoftwareProducts, createSoftwareProduct, updateSoftwareProduct, deleteSoftwareProduct, bulkUploadSoftware } from '../controllers/software.controller';
 import { getAvailableNumbers, rentNumber } from '../controllers/virtual-number.controller';
 
 const router = Router();
@@ -30,7 +30,14 @@ router.post('/electricity/purchase', authenticateToken, purchaseElectricity);
 router.post('/betting/purchase', authenticateToken, purchaseBetting);
 
 // Software
+router.get('/software', getSoftwareProducts); // Public listing
 router.post('/software/purchase', authenticateToken, purchaseSoftware);
 router.get('/software/verify', authenticateToken, verifySoftwarePurchase);
+
+// Software Admin
+router.post('/software', authenticateToken, createSoftwareProduct);
+router.put('/software/:id', authenticateToken, updateSoftwareProduct);
+router.delete('/software/:id', authenticateToken, deleteSoftwareProduct);
+router.post('/software/bulk-upload', authenticateToken, bulkUploadSoftware);
 
 export default router;

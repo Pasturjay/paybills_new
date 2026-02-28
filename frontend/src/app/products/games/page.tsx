@@ -58,19 +58,19 @@ export default function Games() {
                             {/* Game Selector */}
                             <div>
                                 <h3 className="text-sm font-bold text-gray-500 uppercase mb-4">Select Game</h3>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-2 gap-3 sm:gap-4">
                                     {games.map((g) => (
                                         <button
                                             key={g.id}
                                             onClick={() => setSelectedGame(g)}
-                                            className={`p-4 rounded-2xl border-2 text-left transition-all ${selectedGame.id === g.id
+                                            className={`p-3 sm:p-4 rounded-2xl border-2 text-left transition-all ${selectedGame.id === g.id
                                                 ? `border-purple-500 bg-purple-50 dark:bg-purple-900/10 ring-1 ring-purple-500`
                                                 : "border-gray-100 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800 hover:border-purple-200 dark:hover:border-purple-900"
                                                 }`}
                                         >
-                                            <Gamepad2 className={`w-6 h-6 mb-3 ${g.id === selectedGame.id ? "text-purple-600 dark:text-purple-400" : "text-gray-400"}`} />
-                                            <div className="font-bold text-sm text-gray-900 dark:text-white">{g.name}</div>
-                                            <div className="text-[10px] font-bold text-gray-500">{g.currency}</div>
+                                            <Gamepad2 className={`w-5 h-5 sm:w-6 sm:h-6 mb-2 sm:mb-3 ${g.id === selectedGame.id ? "text-purple-600 dark:text-purple-400" : "text-gray-400"}`} />
+                                            <div className="font-extrabold text-[11px] sm:text-sm text-gray-900 dark:text-white truncate">{g.name}</div>
+                                            <div className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest">{g.currency}</div>
                                         </button>
                                     ))}
                                 </div>

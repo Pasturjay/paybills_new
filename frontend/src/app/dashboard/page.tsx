@@ -9,6 +9,8 @@ import GiftUserModal from "@/components/GiftUserModal";
 import { useUser, useWallet } from "@/hooks/useData";
 import { useIsMobile } from "@/hooks/useIsMobile";
 
+import { SkeletonLoader } from "@/components/ui/Skeleton";
+
 export default function DashboardPage() {
     const router = useRouter();
     const { user, isLoading: userLoading, isError: userError } = useUser();
@@ -33,7 +35,26 @@ export default function DashboardPage() {
         }
     }, [user, userLoading, userError, router]);
 
-    if (userLoading) return <div className="min-h-screen flex items-center justify-center dark:bg-zinc-950 dark:text-white">Loading...</div>;
+    if (userLoading) return (
+        <div className="p-4 md:p-8 space-y-8 animate-in fade-in duration-500">
+            <div className="flex justify-between items-center">
+                <div className="space-y-2">
+                    <SkeletonLoader type="card" />
+                </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[1, 2, 3, 4].map(i => <SkeletonLoader key={i} type="card" />)}
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2">
+                    <SkeletonLoader type="list" />
+                </div>
+                <div className="lg:col-span-1">
+                    <SkeletonLoader type="card" />
+                </div>
+            </div>
+        </div>
+    );
 
     // If we reach here and don't have a user, it's safer to just show nothing while redirecting
     if (!user) return null;

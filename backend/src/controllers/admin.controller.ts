@@ -81,3 +81,69 @@ export const getAdminStats = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 }
+
+// Get All Services and their status
+export const getServiceStatus = async (req: Request, res: Response) => {
+    try {
+        const services = await prisma.service.findMany({
+            include: {
+                provider: {
+                    select: { name: true, code: true }
+                }
+            }
+        });
+        res.json(services);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch services' });
+    }
+};
+
+// Toggle Service Active Status
+export const updateServiceStatus = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { isActive } = req.body;
+
+        const updatedService = await prisma.service.update({
+            where: { id },
+            data: { isActive }
+        });
+
+        res.json(updatedService);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update service' });
+    }
+};
+
+// Get Providers and their balances
+export const getProviderStatus = async (req: Request, res: Response) => {
+    try {
+        const providers = await prisma.provider.findMany();
+        res.json(providers);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch providers' });
+    }
+};
+
+// Toggle User Active Status (Block/Unblock)
+export const updateUserStatus = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { isActive } = req.body;
+
+        const updatedUser = await prisma.user.update({
+            where: { id },
+            data: { isActive },
+            select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                isActive: true
+            }
+        });
+
+        res.json(updatedUser);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update user status' });
+    }
+};

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { v4 as uuidv4 } from "uuid";
 import { api } from "@/lib/api";
 import { Wallet, Phone, RotateCcw, AlertTriangle, Layers } from "lucide-react";
 import { SkeletonLoader } from "@/components/ui/Skeleton";
@@ -16,6 +17,7 @@ export default function DataBundlePage() {
         amount: "0"
     });
     const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+    const [idempotencyKey, setIdempotencyKey] = useState(uuidv4());
     const [pageLoading, setPageLoading] = useState(true);
     const [message, setMessage] = useState("");
     const [context, setContext] = useState<any>(null);
@@ -93,9 +95,11 @@ export default function DataBundlePage() {
             await api.post("/services/data", {
                 ...formData,
                 providerCode: "VTPASS",
+                idempotencyKey
             }, token);
 
             setStatus("success");
+            setIdempotencyKey(uuidv4());
             setFormData({ ...formData, planCode: "", amount: "0" });
         } catch (err: any) {
             setStatus("error");

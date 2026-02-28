@@ -5,11 +5,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const links = [
-    { name: "Dashboard", href: "/dashboard", icon: Home },
+    { name: "Home", href: "/", icon: Home },
+    { name: "Overview", href: "/dashboard", icon: LayoutGrid },
     { name: "Services", href: "/dashboard/services", icon: LayoutGrid },
     { name: "Virtual Cards", href: "/dashboard/virtual-cards", icon: CreditCard },
     { name: "Virtual Numbers", href: "/dashboard/virtual-numbers", icon: Phone },
-    { name: "History", href: "/dashboard/history", icon: Clock },
+    { name: "Ledger", href: "/dashboard/history", icon: Clock },
     { name: "Referrals", href: "/dashboard/referrals", icon: User },
     { name: "Profile", href: "/dashboard/profile", icon: User },
     { name: "Support", href: "https://wa.me/2348135216820", icon: Phone },
@@ -24,7 +25,8 @@ export function MobileSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm md:hidden" onClick={onClose}>
             <div className="absolute top-0 left-0 w-[80%] max-w-[300px] h-full bg-[#0f172a] shadow-2xl animate-in slide-in-from-left duration-200 flex flex-col" onClick={e => e.stopPropagation()}>
                 <div className="p-6 flex-shrink-0 flex justify-between items-center border-b border-white/5">
-                    <span className="text-xl font-bold text-white tracking-tight">PayBills</span>
+                    -                    <span className="text-xl font-bold text-white tracking-tight">PayBills</span>
+                    +                    <Link href="/" className="text-xl font-bold text-white tracking-tight hover:text-blue-400 transition-colors" onClick={onClose}>PayBills</Link>
                     <button onClick={onClose} className="p-2 -mr-2 text-gray-400 hover:text-white"><X className="w-6 h-6" /></button>
                 </div>
 
@@ -57,7 +59,7 @@ export function MobileSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: (
                         <LogOut className="w-5 h-5" /> Logout
                     </button>
                     <div className="text-center mt-4 text-[10px] text-gray-600">
-                        v1.0.2 • Securing Payments
+                        v1.0.2 • Securing Your Vault
                     </div>
                 </div>
             </div>

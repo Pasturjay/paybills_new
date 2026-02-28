@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma, Wallet } from '@prisma/client';
 import { ClubKonnectProvider } from '../providers/clubkonnect.provider';
 import { SecurityService } from '../services/security.service';
 
@@ -8,7 +8,6 @@ const clubKonnectProvider = new ClubKonnectProvider();
 const securityService = new SecurityService();
 
 export const getProducts = async (req: Request, res: Response) => {
-    // Return list of available services
     res.json({
         education: [
             { id: 'WAEC', name: 'WAEC Result Checker', price: 3800 },
@@ -27,21 +26,30 @@ export const getProducts = async (req: Request, res: Response) => {
 export const purchaseEducation = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.id;
-        const { type, quantity = 1, pin } = req.body;
+        const { type, quantity = 1, pin, idempotencyKey } = req.body;
 
-        // 1. Verify PIN
         await securityService.validateRequestPin(userId, pin);
 
-        // 2. Calculate Cost (Hardcoded for checking, should be DB driven)
+        // Idempotency Check
+        if (idempotencyKey) {
+            const existing = await prisma.transaction.findFirst({ where: { userId, idempotencyKey } });
+            if (existing) {
+                return res.json({ message: 'Purchase already processed', type, quantity, status: existing.status });
+            }
+        }
+
         const prices: Record<string, number> = { 'WAEC': 3800, 'NECO': 1200, 'JAMB': 7700, 'NABTEB': 1500, 'NBAIS': 2000 };
         const cost = (prices[type] || 0) * quantity;
 
         if (cost === 0) return res.status(400).json({ error: 'Invalid Product Type' });
 
-        // 3. Process Transaction
         await prisma.$transaction(async (tx) => {
-            const wallet = await tx.wallet.findFirst({ where: { userId, currency: 'NGN' } });
-            if (!wallet || wallet.balance.toNumber() < cost) {
+            const walletResults = await tx.$queryRaw<Wallet[]>(
+                Prisma.sql`SELECT * FROM "Wallet" WHERE "userId" = ${userId} AND "currency" = 'NGN' FOR UPDATE`
+            );
+            const wallet = walletResults[0];
+
+            if (!wallet || Number(wallet.balance) < cost) {
                 throw new Error('Insufficient funds');
             }
 
@@ -50,7 +58,6 @@ export const purchaseEducation = async (req: Request, res: Response) => {
                 data: { balance: { decrement: cost } }
             });
 
-            // Call Provider
             const ref = 'EDU_' + Date.now();
             const response = await clubKonnectProvider.purchaseEducationPIN(type, quantity, ref);
 
@@ -58,7 +65,6 @@ export const purchaseEducation = async (req: Request, res: Response) => {
                 throw new Error(response.message || 'Provider failed');
             }
 
-            // Create Transaction
             await tx.transaction.create({
                 data: {
                     userId,
@@ -68,17 +74,17 @@ export const purchaseEducation = async (req: Request, res: Response) => {
                     type: 'BILL_PAYMENT',
                     status: response.status === 'SUCCESS' ? 'SUCCESS' : 'PENDING',
                     reference: ref,
-                    metadata: JSON.stringify({
+                    idempotencyKey,
+                    metadata: {
                         type,
                         quantity,
                         tokens: response.token,
                         providerRef: response.providerReference
-                    }),
+                    },
                     description: `Purchase ${quantity} ${type} PIN(s)`
                 } as any
             });
 
-            // Return tokens to user
             return response;
         });
 
@@ -90,23 +96,27 @@ export const purchaseEducation = async (req: Request, res: Response) => {
     }
 };
 
-
-
 export const purchaseGiftCard = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.id;
-        const { cardId, amount, quantity = 1, pin } = req.body;
+        const { cardId, amount, quantity = 1, pin, idempotencyKey } = req.body;
 
         await securityService.validateRequestPin(userId, pin);
 
-        // Placeholder: Fetch price from DB or Provider
-        // const card = await prisma.giftCard.findUnique({ where: { id: cardId } });
-        // const cost = card.price * quantity;
-        const cost = Number(amount) * quantity; // Dynamic amount for now
+        if (idempotencyKey) {
+            const existing = await prisma.transaction.findFirst({ where: { userId, idempotencyKey } });
+            if (existing) return res.json({ message: 'Purchase already processed' });
+        }
+
+        const cost = Number(amount) * quantity;
 
         await prisma.$transaction(async (tx) => {
-            const wallet = await tx.wallet.findFirst({ where: { userId, currency: 'NGN' } });
-            if (!wallet || wallet.balance.toNumber() < cost) throw new Error('Insufficient funds');
+            const walletResults = await tx.$queryRaw<Wallet[]>(
+                Prisma.sql`SELECT * FROM "Wallet" WHERE "userId" = ${userId} AND "currency" = 'NGN' FOR UPDATE`
+            );
+            const wallet = walletResults[0];
+
+            if (!wallet || Number(wallet.balance) < cost) throw new Error('Insufficient funds');
 
             await tx.wallet.update({
                 where: { id: wallet.id },
@@ -119,9 +129,10 @@ export const purchaseGiftCard = async (req: Request, res: Response) => {
                     walletId: wallet.id,
                     amount: cost,
                     total: cost,
-                    type: 'BILL_PAYMENT', // Or GIFT_CARD if enum added
-                    status: 'PENDING', // Async fulfillment usually
+                    type: 'BILL_PAYMENT',
+                    status: 'PENDING',
                     reference: 'GC_' + Date.now(),
+                    idempotencyKey,
                     description: `Gift Card Purchase`
                 } as any
             });
@@ -135,38 +146,33 @@ export const purchaseGiftCard = async (req: Request, res: Response) => {
 
 export const sellGiftCard = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.id;
-        const { cardType, amount, cardCode, pin } = req.body;
-        // Selling doesn't necessarily need PIN if it's incoming money, but good for confirmation? 
-        // Maybe optional. Let's enforce for now to prevent accidental trades.
-        // Actually, if I'm giving away a card code, I want to be sure.
-
-        // Create a Trade Request
-        // We likely need a Ticket/Trade model. For now, we mock success/pending.
-
         res.json({ message: 'Trade initiated. Please wait for admin verification.' });
-
     } catch (error: any) {
         res.status(400).json({ error: error.message });
     }
 };
-// ... existing imports
-
-// ... existing code
 
 export const purchaseAirtime = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.id;
-        const { networkId, phoneNumber, amount, pin } = req.body;
+        const { networkId, phoneNumber, amount, pin, idempotencyKey } = req.body;
 
         await securityService.validateRequestPin(userId, pin);
 
+        if (idempotencyKey) {
+            const existing = await prisma.transaction.findFirst({ where: { userId, idempotencyKey } });
+            if (existing) return res.json({ message: 'Airtime purchase already processed', status: existing.status });
+        }
+
         const cost = Number(amount);
-        // Can add markup logic here later
 
         await prisma.$transaction(async (tx) => {
-            const wallet = await tx.wallet.findFirst({ where: { userId, currency: 'NGN' } });
-            if (!wallet || wallet.balance.toNumber() < cost) throw new Error('Insufficient funds');
+            const walletResults = await tx.$queryRaw<Wallet[]>(
+                Prisma.sql`SELECT * FROM "Wallet" WHERE "userId" = ${userId} AND "currency" = 'NGN' FOR UPDATE`
+            );
+            const wallet = walletResults[0];
+
+            if (!wallet || Number(wallet.balance) < cost) throw new Error('Insufficient funds');
 
             await tx.wallet.update({
                 where: { id: wallet.id },
@@ -187,7 +193,8 @@ export const purchaseAirtime = async (req: Request, res: Response) => {
                     type: 'AIRTIME',
                     status: response.status === 'SUCCESS' ? 'SUCCESS' : 'PENDING',
                     reference: ref,
-                    metadata: JSON.stringify({ networkId, phoneNumber, providerRef: response.providerReference }),
+                    idempotencyKey,
+                    metadata: { networkId, phoneNumber, providerRef: response.providerReference },
                     description: `Airtime Purchase (${phoneNumber})`
                 } as any
             });
@@ -205,17 +212,24 @@ export const purchaseAirtime = async (req: Request, res: Response) => {
 export const purchaseData = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.id;
-        const { networkId, planId, phoneNumber, amount, pin } = req.body; // Amount needed if we don't look it up yet
+        const { networkId, planId, phoneNumber, amount, pin, idempotencyKey } = req.body;
 
         await securityService.validateRequestPin(userId, pin);
 
-        // For security, we SHOULD fetch price from provider or DB plan list ensuring no tampering
-        // For now, accepting amount from frontend (UNSAFE - TODO: Fix in next iteration) or assume passed correctly
+        if (idempotencyKey) {
+            const existing = await prisma.transaction.findFirst({ where: { userId, idempotencyKey } });
+            if (existing) return res.json({ message: 'Data purchase already processed', status: existing.status });
+        }
+
         const cost = Number(amount);
 
         await prisma.$transaction(async (tx) => {
-            const wallet = await tx.wallet.findFirst({ where: { userId, currency: 'NGN' } });
-            if (!wallet || wallet.balance.toNumber() < cost) throw new Error('Insufficient funds');
+            const walletResults = await tx.$queryRaw<Wallet[]>(
+                Prisma.sql`SELECT * FROM "Wallet" WHERE "userId" = ${userId} AND "currency" = 'NGN' FOR UPDATE`
+            );
+            const wallet = walletResults[0];
+
+            if (!wallet || Number(wallet.balance) < cost) throw new Error('Insufficient funds');
 
             await tx.wallet.update({
                 where: { id: wallet.id },
@@ -236,7 +250,8 @@ export const purchaseData = async (req: Request, res: Response) => {
                     type: 'DATA',
                     status: response.status === 'SUCCESS' ? 'SUCCESS' : 'PENDING',
                     reference: ref,
-                    metadata: JSON.stringify({ networkId, planId, phoneNumber, providerRef: response.providerReference }),
+                    idempotencyKey,
+                    metadata: { networkId, planId, phoneNumber, providerRef: response.providerReference },
                     description: `Data Purchase (${phoneNumber})`
                 } as any
             });
@@ -264,14 +279,24 @@ export const validateCable = async (req: Request, res: Response) => {
 export const purchaseCable = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.id;
-        const { providerId, packageId, smartcardNumber, amount, pin } = req.body;
+        const { providerId, packageId, smartcardNumber, amount, pin, idempotencyKey } = req.body;
 
         await securityService.validateRequestPin(userId, pin);
+
+        if (idempotencyKey) {
+            const existing = await prisma.transaction.findFirst({ where: { userId, idempotencyKey } });
+            if (existing) return res.json({ message: 'Cable subscription already processed', status: existing.status });
+        }
+
         const cost = Number(amount);
 
         await prisma.$transaction(async (tx) => {
-            const wallet = await tx.wallet.findFirst({ where: { userId, currency: 'NGN' } });
-            if (!wallet || wallet.balance.toNumber() < cost) throw new Error('Insufficient funds');
+            const walletResults = await tx.$queryRaw<Wallet[]>(
+                Prisma.sql`SELECT * FROM "Wallet" WHERE "userId" = ${userId} AND "currency" = 'NGN' FOR UPDATE`
+            );
+            const wallet = walletResults[0];
+
+            if (!wallet || Number(wallet.balance) < cost) throw new Error('Insufficient funds');
 
             await tx.wallet.update({
                 where: { id: wallet.id },
@@ -292,7 +317,8 @@ export const purchaseCable = async (req: Request, res: Response) => {
                     type: 'CABLE',
                     status: response.status === 'SUCCESS' ? 'SUCCESS' : 'PENDING',
                     reference: ref,
-                    metadata: JSON.stringify({ providerId, packageId, smartcardNumber, providerRef: response.providerReference }),
+                    idempotencyKey,
+                    metadata: { providerId, packageId, smartcardNumber, providerRef: response.providerReference },
                     description: `Cable TV Purchase (${smartcardNumber})`
                 } as any
             });
@@ -308,31 +334,36 @@ export const purchaseCable = async (req: Request, res: Response) => {
 export const purchaseElectricity = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.id;
-        const { providerId, meterNumber, amount, pin } = req.body;
+        const { providerId, meterNumber, amount, pin, idempotencyKey } = req.body;
 
         if (!providerId || !meterNumber || !amount || !pin) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
-        // 1. Verify PIN
         await securityService.validateRequestPin(userId, pin);
+
+        if (idempotencyKey) {
+            const existing = await prisma.transaction.findFirst({ where: { userId, idempotencyKey } });
+            if (existing) return res.json({ message: 'Electricity purchase already processed', status: existing.status });
+        }
 
         const cost = Number(amount);
 
-        // 2. Process Transaction
         const result = await prisma.$transaction(async (tx) => {
-            const wallet = await tx.wallet.findFirst({ where: { userId, currency: 'NGN' } });
-            if (!wallet || wallet.balance.toNumber() < cost) {
+            const walletResults = await tx.$queryRaw<Wallet[]>(
+                Prisma.sql`SELECT * FROM "Wallet" WHERE "userId" = ${userId} AND "currency" = 'NGN' FOR UPDATE`
+            );
+            const wallet = walletResults[0];
+
+            if (!wallet || Number(wallet.balance) < cost) {
                 throw new Error('Insufficient funds');
             }
 
-            // Debit Wallet
             await tx.wallet.update({
                 where: { id: wallet.id },
                 data: { balance: { decrement: cost } }
             });
 
-            // Call Provider
             const ref = 'ELEC_' + Date.now();
             const response = await clubKonnectProvider.purchaseElectricity(providerId, meterNumber, cost, ref);
 
@@ -340,22 +371,22 @@ export const purchaseElectricity = async (req: Request, res: Response) => {
                 throw new Error(response.message || 'Provider failed');
             }
 
-            // Create Transaction
             await tx.transaction.create({
                 data: {
                     userId,
                     walletId: wallet.id,
                     amount: cost,
                     total: cost,
-                    type: 'BILL_PAYMENT', // or ELECTRICITY if enum exists
+                    type: 'BILL_PAYMENT',
                     status: response.status === 'SUCCESS' ? 'SUCCESS' : 'PENDING',
                     reference: ref,
-                    metadata: JSON.stringify({
+                    idempotencyKey,
+                    metadata: {
                         providerId,
                         meterNumber,
                         token: response.token,
                         providerRef: response.providerReference
-                    }),
+                    },
                     description: `Electricity Token ${cost} for ${meterNumber} (${providerId})`
                 } as any
             });
@@ -374,29 +405,34 @@ export const purchaseElectricity = async (req: Request, res: Response) => {
 export const purchaseBetting = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.id;
-        const { customerId, bookmaker, amount, pin } = req.body;
+        const { customerId, bookmaker, amount, pin, idempotencyKey } = req.body;
 
         if (!customerId || !bookmaker || !amount || !pin) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
-        // 1. Verify PIN
         await securityService.validateRequestPin(userId, pin);
 
-        // 2. Process Transaction
+        if (idempotencyKey) {
+            const existing = await prisma.transaction.findFirst({ where: { userId, idempotencyKey } });
+            if (existing) return res.json({ message: 'Betting topup already processed', status: existing.status });
+        }
+
         const result = await prisma.$transaction(async (tx) => {
-            const wallet = await tx.wallet.findFirst({ where: { userId, currency: 'NGN' } });
-            if (!wallet || wallet.balance.toNumber() < Number(amount)) {
+            const walletResults = await tx.$queryRaw<Wallet[]>(
+                Prisma.sql`SELECT * FROM "Wallet" WHERE "userId" = ${userId} AND "currency" = 'NGN' FOR UPDATE`
+            );
+            const wallet = walletResults[0];
+
+            if (!wallet || Number(wallet.balance) < Number(amount)) {
                 throw new Error('Insufficient funds');
             }
 
-            // Debit Wallet
             await tx.wallet.update({
                 where: { id: wallet.id },
                 data: { balance: { decrement: Number(amount) } }
             });
 
-            // Call Provider
             const ref = 'BET_' + Date.now();
             const response = await clubKonnectProvider.fundBettingWallet(customerId, Number(amount), bookmaker, ref);
 
@@ -404,7 +440,6 @@ export const purchaseBetting = async (req: Request, res: Response) => {
                 throw new Error(response.message || 'Provider failed');
             }
 
-            // Create Transaction
             await tx.transaction.create({
                 data: {
                     userId,
@@ -414,11 +449,12 @@ export const purchaseBetting = async (req: Request, res: Response) => {
                     type: 'BILL_PAYMENT',
                     status: response.status === 'SUCCESS' ? 'SUCCESS' : 'PENDING',
                     reference: ref,
-                    metadata: JSON.stringify({
+                    idempotencyKey,
+                    metadata: {
                         customerId,
                         bookmaker,
                         providerRef: response.providerReference
-                    }),
+                    },
                     description: `Betting Topup ${amount} for ${customerId} (${bookmaker})`
                 } as any
             });
@@ -433,3 +469,4 @@ export const purchaseBetting = async (req: Request, res: Response) => {
         res.status(400).json({ error: error.message || 'Transaction failed' });
     }
 };
+

@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, EyeOff, Smartphone, Zap, Wallet, Send, Download, Gamepad2, BookOpen, Clock, CreditCard, ArrowDownLeft, Star, ChevronRight } from "lucide-react";
+import { Eye, EyeOff, Smartphone, Zap, Wallet, Send, Download, Gamepad2, BookOpen, Clock, CreditCard, ArrowDownLeft, Star, ChevronRight, Gift } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -35,7 +35,23 @@ export function DashboardMobileView({ user, balance, onAddMoney, onSendMoney }: 
         const descLower = description?.toLowerCase() || '';
         if (descLower.includes('airtime') || descLower.includes('data')) return <Smartphone className="w-5 h-5" />;
         if (descLower.includes('electricity')) return <Zap className="w-5 h-5" />;
+        if (descLower.includes('software')) return <Download className="w-5 h-5" />;
+        if (descLower.includes('bet') || descLower.includes('sport')) return <Gamepad2 className="w-5 h-5" />;
+        if (descLower.includes('education')) return <BookOpen className="w-5 h-5" />;
         return <CreditCard className="w-5 h-5" />;
+    };
+
+    const getTransactionStyle = (type: string, description: string, isCredit: boolean) => {
+        if (isCredit) return "bg-gradient-to-br from-emerald-400 to-green-500 text-white shadow-lg shadow-green-500/20 border-green-500/30";
+
+        const descLower = description?.toLowerCase() || '';
+        if (descLower.includes('airtime') || descLower.includes('data')) return "bg-gradient-to-br from-blue-400 to-indigo-500 text-white shadow-lg shadow-blue-500/20 border-blue-500/30";
+        if (descLower.includes('electricity')) return "bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-500/20 border-amber-500/30";
+        if (descLower.includes('software')) return "bg-gradient-to-br from-fuchsia-400 to-purple-600 text-white shadow-lg shadow-purple-500/20 border-purple-500/30";
+        if (descLower.includes('bet') || descLower.includes('sport')) return "bg-gradient-to-br from-pink-400 to-rose-500 text-white shadow-lg shadow-rose-500/20 border-rose-500/30";
+        if (descLower.includes('education')) return "bg-gradient-to-br from-cyan-400 to-blue-500 text-white shadow-lg shadow-cyan-500/20 border-cyan-500/30";
+
+        return "bg-gradient-to-br from-gray-400 to-gray-600 text-white shadow-lg shadow-gray-500/20 border-gray-500/30";
     };
 
     return (
@@ -69,10 +85,10 @@ export function DashboardMobileView({ user, balance, onAddMoney, onSendMoney }: 
 
                 <div className="relative z-10 flex gap-4">
                     <button onClick={onAddMoney} className="flex-1 bg-white text-indigo-600 py-3.5 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-xl shadow-indigo-900/20 active:scale-95 transition-all">
-                        <Wallet className="w-4 h-4" /> Fund
+                        <Wallet className="w-4 h-4" /> Top up
                     </button>
                     <button onClick={onSendMoney} className="flex-1 bg-indigo-500 text-white py-3.5 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-xl shadow-indigo-900/20 active:scale-95 transition-all border border-indigo-400">
-                        <Send className="w-4 h-4" /> Transfer
+                        <Gift className="w-4 h-4" /> Gift Users
                     </button>
                 </div>
             </div>
@@ -138,18 +154,25 @@ export function DashboardMobileView({ user, balance, onAddMoney, onSendMoney }: 
                         <div className="space-y-3">
                             {transactions.slice(0, 5).map((tx: any) => {
                                 const isCredit = tx.type === 'FUNDING' || (tx.type === 'P2P_TRANSFER' && tx.reference?.includes('_CR'));
+                                const styleClass = getTransactionStyle(tx.type, tx.description, isCredit);
                                 return (
-                                    <div key={tx.id} className="p-4 bg-white dark:bg-zinc-900 rounded-3xl flex items-center justify-between border border-gray-50 dark:border-white/5">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isCredit ? 'bg-green-500/10 text-green-500' : 'bg-indigo-500/10 text-indigo-500'}`}>
+                                    <div key={tx.id} className="p-4 bg-white dark:bg-zinc-900 rounded-3xl flex items-center justify-between border border-gray-50 dark:border-white/5 relative overflow-hidden shadow-sm shadow-indigo-500/5 hover:border-indigo-500/30 transition-all">
+                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 dark:via-white/5 to-transparent -translate-x-full opacity-0 hover:opacity-100 hover:animate-[shimmer_1.5s_infinite]"></div>
+                                        <div className="flex items-center gap-3 relative z-10">
+                                            <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${styleClass} scale-100 active:scale-95 transition-transform`}>
                                                 {getTransactionIcon(tx.type, tx.description)}
                                             </div>
                                             <div>
-                                                <div className="font-black text-sm truncate max-w-[120px]">{tx.description || tx.type}</div>
-                                                <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{new Date(tx.createdAt).toLocaleDateString()}</div>
+                                                <div className="font-black text-xs sm:text-sm text-gray-900 dark:text-white truncate max-w-[140px]">{tx.description || tx.type.replace(/_/g, ' ')}</div>
+                                                <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest flex items-center gap-1.5 mt-0.5">
+                                                    {new Date(tx.createdAt).toLocaleDateString()}
+                                                    <span className={`px-1.5 py-0.5 rounded text-[8px] ${tx.status === 'SUCCESS' ? 'text-green-600' : tx.status === 'PENDING' ? 'text-amber-600' : 'text-red-600'}`}>
+                                                        {tx.status}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className={`font-black text-base ${isCredit ? 'text-green-500' : 'text-zinc-900 dark:text-white'}`}>
+                                        <div className={`font-black text-[15px] sm:text-base relative z-10 ${isCredit ? 'text-green-500' : 'text-zinc-900 dark:text-white'}`}>
                                             {isCredit ? '+' : '-'}₦{parseFloat(tx.amount || 0).toLocaleString()}
                                         </div>
                                     </div>

@@ -319,6 +319,27 @@ model ProviderCostLog {
   createdAt DateTime @default(now())
 }
 
+model SoftwareProduct {
+  id             String   @id @default(uuid())
+  name           String
+  description    String
+  category       String
+  brand          String
+  price          Decimal  @db.Decimal(20, 2)
+  originalPrice  Decimal  @db.Decimal(20, 2)
+  platform       Json     // Array of strings
+  licenseType    String
+  image          String
+  rating         Float    @default(0.0)
+  sales          Int      @default(0)
+  bestSeller     Boolean  @default(false)
+  isActive       Boolean  @default(true)
+  stock          Int      @default(-1) // -1 means unlimited API-provided, or generic
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+
 enum Role {
   USER
   ADMIN

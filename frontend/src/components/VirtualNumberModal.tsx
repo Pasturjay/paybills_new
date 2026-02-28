@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { X, Globe, CheckCircle, AlertCircle, Phone, Search, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import PinModal from './PinModal';
@@ -21,6 +22,7 @@ export default function VirtualNumberModal({ isOpen, onClose, onSuccess, initCou
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+    const [idempotencyKey, setIdempotencyKey] = useState(uuidv4());
 
     const prices: Record<string, number> = { 'NG': 5000, 'US': 6000, 'GB': 6000 };
 
@@ -55,8 +57,10 @@ export default function VirtualNumberModal({ isOpen, onClose, onSuccess, initCou
             await api.post('/products/virtual-number/purchase', {
                 msisdn: selectedNumber.number,
                 country,
-                pin
+                pin,
+                idempotencyKey
             }, token);
+            setIdempotencyKey(uuidv4());
             setStep('SUCCESS');
             if (onSuccess) onSuccess();
         } catch (err: any) {

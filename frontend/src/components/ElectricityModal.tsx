@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { X, Zap, ChevronRight, Loader2, CheckCircle2 } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
 import { api } from '@/lib/api';
 import PinModal from './PinModal';
 
@@ -26,6 +27,7 @@ export default function ElectricityModal({ isOpen, onClose }: ElectricityModalPr
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [idempotencyKey, setIdempotencyKey] = useState(uuidv4());
     const [success, setSuccess] = useState('');
     const [isPinOpen, setIsPinOpen] = useState(false);
 
@@ -58,9 +60,11 @@ export default function ElectricityModal({ isOpen, onClose }: ElectricityModalPr
                 providerId: provider,
                 meterNumber,
                 amount: Number(amount),
-                pin
+                pin,
+                idempotencyKey
             });
             setSuccess('Payment successful! Token sent to SMS.');
+            setIdempotencyKey(uuidv4());
             setTimeout(() => {
                 setSuccess('');
                 onClose();
@@ -158,7 +162,7 @@ export default function ElectricityModal({ isOpen, onClose }: ElectricityModalPr
                     </button>
                 </div>
             </div>
-            <PinModal isOpen={isPinOpen} onClose={() => setIsPinOpen(false)} onSuccess={handlePurchase} title="Confirm Payment" description={`Pay ₦${Number(amount).toLocaleString()} for Electricity Token`} />
+            <PinModal isOpen={isPinOpen} onClose={() => setIsPinOpen(false)} onSuccess={handlePurchase} title="Confirm Top Up" description={`Refill ₦${Number(amount).toLocaleString()} for Electricity Token`} />
         </div>
     );
 }

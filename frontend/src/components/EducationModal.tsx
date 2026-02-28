@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { X, BookOpen, ChevronRight, CheckCircle, AlertCircle } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
 import { api } from '@/lib/api';
 import PinModal from './PinModal';
 
@@ -18,6 +19,7 @@ export default function EducationModal({ isOpen, onClose }: EducationModalProps)
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [idempotencyKey, setIdempotencyKey] = useState(uuidv4());
     const [successData, setSuccessData] = useState<any>(null);
     const [isPinModalOpen, setIsPinModalOpen] = useState(false);
 
@@ -33,8 +35,9 @@ export default function EducationModal({ isOpen, onClose }: EducationModalProps)
         if (!token) return;
 
         try {
-            const res = await api.post('/products/education', { ...formData, pin }, token);
+            const res = await api.post('/products/education', { ...formData, pin, idempotencyKey }, token);
             setSuccessData(res);
+            setIdempotencyKey(uuidv4());
             setStep('confirm'); // Reuse confirm step for success view
         } catch (err: any) {
             setError(err.message || 'Purchase failed');
@@ -90,8 +93,8 @@ export default function EducationModal({ isOpen, onClose }: EducationModalProps)
                                         key={type}
                                         onClick={() => setFormData({ ...formData, type })}
                                         className={`p-3 rounded-xl border font-bold text-sm transition-all ${formData.type === type
-                                                ? 'bg-purple-50 border-purple-500 text-purple-700 ring-1 ring-purple-500'
-                                                : 'bg-white border-gray-200 hover:border-gray-300 text-gray-600'
+                                            ? 'bg-purple-50 border-purple-500 text-purple-700 ring-1 ring-purple-500'
+                                            : 'bg-white border-gray-200 hover:border-gray-300 text-gray-600'
                                             }`}
                                     >
                                         {type}

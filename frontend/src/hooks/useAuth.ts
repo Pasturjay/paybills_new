@@ -3,11 +3,21 @@ import { useState, useEffect } from 'react';
 
 export function useAuth() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [user, setUser] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
+        const storedUser = localStorage.getItem('user');
+
         setIsAuthenticated(!!token);
+        if (storedUser) {
+            try {
+                setUser(JSON.parse(storedUser));
+            } catch (e) {
+                console.error("Failed to parse stored user", e);
+            }
+        }
         setIsLoading(false);
     }, []);
 
@@ -15,8 +25,11 @@ export function useAuth() {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         setIsAuthenticated(false);
+        setUser(null);
         window.location.href = '/auth/login';
     };
 
-    return { isAuthenticated, isLoading, logout };
+    const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPERADMIN';
+
+    return { isAuthenticated, user, isAdmin, isLoading, logout };
 }

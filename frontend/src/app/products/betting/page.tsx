@@ -55,7 +55,7 @@ export default function Betting() {
                 pin
             }, token);
 
-            alert("Betting Wallet Funded Successfully!");
+            alert("Betting Wallet Topped Up Successfully!");
             setPinModalOpen(false);
             setAmount("");
             setUserId("");
@@ -91,12 +91,12 @@ export default function Betting() {
 
                         <div className="mb-8">
                             <label className="block text-xs font-bold text-gray-500 uppercase mb-3">Select Bookmaker</label>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                 {bookies.map((b) => (
                                     <button
                                         key={b.id}
                                         onClick={() => setSelectedBookie(b.id)}
-                                        className={`py-3 px-4 rounded-xl flex items-center justify-center font-bold text-xs transition-all border-2 ${selectedBookie === b.id
+                                        className={`py-3 px-2 rounded-xl flex items-center justify-center font-bold text-[11px] sm:text-xs transition-all border-2 min-h-[50px] ${selectedBookie === b.id
                                             ? `${b.color} ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-zinc-900`
                                             : "bg-gray-50 dark:bg-zinc-800 text-gray-500 border-transparent grayscale hover:grayscale-0"
                                             }`}
@@ -141,13 +141,13 @@ export default function Betting() {
                                         required
                                     />
                                 </div>
-                                <div className="grid grid-cols-4 gap-2 mt-3">
+                                <div className="grid grid-cols-4 gap-2 mt-3 text-center">
                                     {[1000, 2000, 5000, 10000].map(amt => (
                                         <button
                                             key={amt}
                                             type="button"
                                             onClick={() => setAmount(amt.toString())}
-                                            className="py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                                            className="py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-lg text-[10px] sm:text-xs font-bold hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
                                         >
                                             ₦{amt.toLocaleString()}
                                         </button>
@@ -160,7 +160,7 @@ export default function Betting() {
                                 className="w-full py-4 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-2xl font-bold shadow-lg hover:shadow-orange-500/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
                             >
                                 <Wallet className="w-5 h-5" />
-                                Fund Wallet
+                                Top up Wallet
                             </button>
                         </form>
                     </div>
@@ -172,7 +172,7 @@ export default function Betting() {
                 onClose={() => setCheckoutOpen(false)}
                 onConfirm={confirmPayment}
                 amount={Number(amount)}
-                title={`Fund ${selectedBookie}`}
+                title={`Top up ${selectedBookie}`}
                 loading={processing}
                 details={[
                     { label: "Bookmaker", value: selectedBookie },
@@ -187,7 +187,7 @@ export default function Betting() {
                 onVerify={handlePinSubmit}
                 loading={processing}
                 error={error}
-                title="Authorize Betting Funding"
+                title="Authorize Betting Top up"
             />
 
             <Footer />

@@ -19,8 +19,8 @@ export default function VirtualCards() {
                         <CreditCard className="w-10 h-10 text-white" />
                     </div>
 
-                    <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
-                        Global Spending Power<br />Coming Soon.
+                    <h1 className="text-3xl sm:text-5xl md:text-6xl font-black mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 leading-tight">
+                        Global Spending Power<br className="hidden sm:block" /> Coming Soon.
                     </h1>
 
                     <p className="text-xl text-gray-400 mb-10 leading-relaxed">

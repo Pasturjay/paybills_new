@@ -18,7 +18,7 @@ import {
     ConfirmationResult,
 } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
-import { Lock, Mail, Phone, Eye, EyeOff, ArrowLeft, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Lock, Mail, Phone, Eye, EyeOff, ArrowLeft, Loader2, AlertCircle, CheckCircle2, Home } from "lucide-react";
 
 type AuthMode = "signin" | "signup";
 type InputMode = "email" | "phone";
@@ -92,6 +92,15 @@ export default function AuthPage() {
         const idToken = await user.getIdToken();
         const success = await syncWithBackend(idToken);
         if (success) {
+            // Check role from local storage saved in syncWithBackend
+            const storedUser = localStorage.getItem("user");
+            if (storedUser) {
+                const userData = JSON.parse(storedUser);
+                if (userData.role === 'ADMIN' || userData.role === 'SUPERADMIN') {
+                    router.push("/admin/dashboard");
+                    return;
+                }
+            }
             router.push("/dashboard");
         } else {
             setLoading(false);
@@ -239,9 +248,14 @@ export default function AuthPage() {
         return (
             <main className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
                 <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-8">
-                    <button onClick={() => { setView("main"); setError(""); setInfo(""); }} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 mb-6 transition-colors">
-                        <ArrowLeft className="w-4 h-4" /> Back to Sign In
-                    </button>
+                    <div className="flex items-center justify-between mb-6">
+                        <button onClick={() => { setView("main"); setError(""); setInfo(""); }} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 transition-colors">
+                            <ArrowLeft className="w-4 h-4" /> Back to Sign In
+                        </button>
+                        <Link href="/" className="flex items-center gap-2 text-sm text-gray-500 hover:text-indigo-600 transition-colors">
+                            <Home className="w-4 h-4" /> Home
+                        </Link>
+                    </div>
 
                     <div className="text-center mb-8">
                         <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -293,7 +307,16 @@ export default function AuthPage() {
     return (
         <main className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
             <div className="w-full max-w-md">
-                <div className="bg-white rounded-3xl shadow-xl p-8">
+                <div className="bg-white rounded-3xl shadow-xl p-8 relative">
+                    {/* Back to Home Link */}
+                    <Link
+                        href="/"
+                        className="absolute top-6 left-8 flex items-center gap-2 text-xs font-medium text-gray-400 hover:text-indigo-600 transition-colors group"
+                    >
+                        <Home className="w-3.5 h-3.5 group-hover:-translate-y-0.5 transition-transform" />
+                        Back to Home
+                    </Link>
+
 
                     {/* Logo */}
                     <div className="text-center mb-8">

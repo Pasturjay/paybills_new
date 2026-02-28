@@ -12,7 +12,7 @@ const navigationItems = [
     { name: "Pay TV Cable", icon: Zap, href: "/dashboard/services/tv", keywords: ["dstv", "gotv", "startimes"] },
     { name: "Virtual Cards", icon: CreditCard, href: "/dashboard/services/cards", keywords: ["dollar", "visa", "mastercard"] },
     { name: "My Profile", icon: User, href: "/dashboard/profile", keywords: ["account", "settings", "kyc"] },
-    { name: "Transaction History", icon: History, href: "/dashboard/history", keywords: ["receipts", "payments", "past"] },
+    { name: "Ledger History", icon: History, href: "/dashboard/history", keywords: ["receipts", "topups", "past"] },
 ];
 
 export function CommandCenter() {

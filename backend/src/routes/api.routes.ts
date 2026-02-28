@@ -17,7 +17,7 @@ router.get('/notifications', authenticateToken, getNotifications);
 router.post('/notifications/read', authenticateToken, markRead);
 
 // User Profile Routes
-import { getProfile, updateProfile, changePassword, submitKyc, setPin, getReferralStats, updateUserTag } from '../controllers/user.controller';
+import { getProfile, updateProfile, changePassword, setPin, getReferralStats, updateUserTag } from '../controllers/user.controller';
 import kycRoutes from './kyc.routes';
 
 router.get('/user/profile', authenticateToken, getProfile);
@@ -25,7 +25,7 @@ router.put('/user/profile', authenticateToken, updateProfile);
 router.put('/user/tag', authenticateToken, updateUserTag);
 router.put('/profile/password', authenticateToken, changePassword);
 router.post('/user/pin', authenticateToken, setPin);
-router.post('/kyc', authenticateToken, submitKyc);
+// Legacy KYC (handled via kycRoutes now)
 
 import { deleteAccount } from '../controllers/user.controller';
 router.delete('/user/account', authenticateToken, deleteAccount);
@@ -72,12 +72,16 @@ router.post('/cards/freeze', authenticateToken, virtualCardController.toggleCard
 router.post('/cards/fund', authenticateToken, virtualCardController.fundCard);
 
 // Admin Routes
-import { getAllUsers, getAllTransactions, getAdminStats } from '../controllers/admin.controller';
+import { getAllUsers, getAllTransactions, getAdminStats, getServiceStatus, updateServiceStatus, getProviderStatus, updateUserStatus } from '../controllers/admin.controller';
 import { authorizeRole } from '../middleware/auth.middleware';
 
 router.get('/admin/users', authenticateToken, authorizeRole(['ADMIN', 'SUPERADMIN']), getAllUsers);
 router.get('/admin/transactions', authenticateToken, authorizeRole(['ADMIN', 'SUPERADMIN']), getAllTransactions);
 router.get('/admin/stats', authenticateToken, authorizeRole(['ADMIN', 'SUPERADMIN']), getAdminStats);
+router.get('/admin/services', authenticateToken, authorizeRole(['ADMIN', 'SUPERADMIN']), getServiceStatus);
+router.put('/admin/services/:id', authenticateToken, authorizeRole(['ADMIN', 'SUPERADMIN']), updateServiceStatus);
+router.get('/admin/providers', authenticateToken, authorizeRole(['ADMIN', 'SUPERADMIN']), getProviderStatus);
+router.put('/admin/users/:id/status', authenticateToken, authorizeRole(['ADMIN', 'SUPERADMIN']), updateUserStatus);
 
 
 

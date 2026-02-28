@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { X, Trophy, ChevronRight, Loader2, User } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
 import { api } from '@/lib/api';
 import PinModal from './PinModal';
 
@@ -26,6 +27,7 @@ export default function BettingModal({ isOpen, onClose }: BettingModalProps) {
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [idempotencyKey, setIdempotencyKey] = useState(uuidv4());
     const [success, setSuccess] = useState('');
     const [isPinOpen, setIsPinOpen] = useState(false);
 
@@ -148,11 +150,11 @@ export default function BettingModal({ isOpen, onClose }: BettingModalProps) {
                         disabled={loading || !verifiedName}
                         className="w-full py-4 bg-green-600 text-white font-bold rounded-xl mt-4 hover:bg-green-700 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {loading ? <Loader2 className="animate-spin" /> : 'Fund Wallet'} <ChevronRight className="w-4 h-4" />
+                        {loading ? <Loader2 className="animate-spin" /> : 'Top up Wallet'} <ChevronRight className="w-4 h-4" />
                     </button>
                 </div>
             </div>
-            <PinModal isOpen={isPinOpen} onClose={() => setIsPinOpen(false)} onSuccess={handleTopUp} title="Confirm Funding" description={`Fund ${bookie} account with ₦${Number(amount).toLocaleString()}`} />
+            <PinModal isOpen={isPinOpen} onClose={() => setIsPinOpen(false)} onSuccess={handleTopUp} title="Confirm Top up" description={`Top up ${bookie} account with ₦${Number(amount).toLocaleString()}`} />
         </div>
     );
 }

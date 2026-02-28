@@ -3,23 +3,23 @@
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Search, Filter, Star, Download, ShieldCheck, CheckCircle2, ShoppingCart, Loader2, Plus, Minus, X } from "lucide-react";
-import { useState, useMemo } from "react";
-import { generateSoftwareProducts, SoftwareProduct } from "@/data/software";
+import { useState, useMemo, useEffect } from "react";
+import { SoftwareProduct } from "@/types/software";
 import { CheckoutModal } from "@/components/CheckoutModal";
 import { PinVerificationModal } from "@/components/PinVerificationModal";
 import { CryptoPaymentModal } from "@/components/CryptoPaymentModal";
 import { api } from "@/lib/api";
 import { CartDrawer } from "@/components/CartDrawer";
-
-// Generate once
-const allProducts = generateSoftwareProducts(500);
+import { toast } from "sonner";
 
 const categories = ["All", "OS", "Productivity", "Security", "Creative", "Developer", "VPN", "Gaming"];
 
 export default function SoftwareMarketplace() {
+    const [allProducts, setAllProducts] = useState<SoftwareProduct[]>([]);
+    const [loadingProducts, setLoadingProducts] = useState(true);
+
     const [category, setCategory] = useState("All");
     const [search, setSearch] = useState("");
-    const [priceRange, setPriceRange] = useState([0, 100000]);
     const [page, setPage] = useState(1);
 
     // Cart State
@@ -37,17 +37,32 @@ export default function SoftwareMarketplace() {
     const [success, setSuccess] = useState<any>(null);
     const [error, setError] = useState("");
 
-    // We track the payment method for the current checkout flow (Cart or Single)
     const [paymentMethod, setPaymentMethod] = useState<'WALLET' | 'PAYSTACK'>('WALLET');
+
+    useEffect(() => {
+        fetchProducts();
+    }, []);
+
+    const fetchProducts = async () => {
+        try {
+            const res = await api.get('/products/software?limit=500'); // Fetch active only
+            setAllProducts(res.products);
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to load software catalog");
+        } finally {
+            setLoadingProducts(false);
+        }
+    };
+
 
     const filteredProducts = useMemo(() => {
         return allProducts.filter(p => {
             if (category !== "All" && p.category !== category) return false;
             if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
-            if (p.price < priceRange[0] || p.price > priceRange[1]) return false;
             return true;
         });
-    }, [category, search, priceRange]);
+    }, [allProducts, category, search]);
 
     const displayedProducts = filteredProducts.slice(0, page * 12);
 
@@ -84,21 +99,15 @@ export default function SoftwareMarketplace() {
     // --- Checkout Logic (Cart) ---
     const handleCartCheckout = (method: 'WALLET' | 'PAYSTACK') => {
         setPaymentMethod(method);
-        // We set selectedProduct to null to indicate a Cart checkout if needed, 
-        // OR we just use the 'cart' state in the submission logic.
         setSelectedProduct(null);
 
         if (method === 'WALLET') {
             setCartOpen(false);
             setPinModalOpen(true);
         } else {
-            // Paystack
             processPaystackCheckout(cart);
         }
     };
-
-    // --- Checkout Logic (Single Item - if needed, but UI uses Add to Cart now) ---
-    // Keeping this if we want a "Buy Now" button later, handled via add to cart -> open drawer
 
     const processPaystackCheckout = async (itemsToBuy: { product: SoftwareProduct; quantity: number }[]) => {
         setLoading(true);
@@ -106,19 +115,15 @@ export default function SoftwareMarketplace() {
             const token = localStorage.getItem("token");
             if (!token) throw new Error("Please login");
 
+            // We NOW ONLY SEND ID AND QUANTITY. Security handles amounts.
             const itemsPayload = itemsToBuy.map(item => ({
-                itemCode: item.product.id,
-                amount: item.product.price,
-                softwareName: item.product.name,
+                productId: item.product.id,
                 quantity: item.quantity
             }));
 
-            const totalAmount = itemsToBuy.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
-
             const res = await api.post("/products/software/purchase", {
                 items: itemsPayload,
-                amount: totalAmount,
-                paymentMethod: 'PAYSTACK'
+                paymentMethod: 'PAYSTACK' // backend ignores `amount` if passed
             }, token);
 
             if (res.authorization_url) {
@@ -140,22 +145,16 @@ export default function SoftwareMarketplace() {
             const token = localStorage.getItem("token");
             if (!token) throw new Error("Please login to continue");
 
-            // If selectedProduct exists, it's a single buy (if we had that available). 
-            // Otherwise it's cart.
-            const itemsToBuy = cart; // Defaulting to cart for now as per new UI
+            const itemsToBuy = cart;
 
+            // Secure payload
             const itemsPayload = itemsToBuy.map(item => ({
-                itemCode: item.product.id,
-                amount: item.product.price,
-                softwareName: item.product.name,
+                productId: item.product.id,
                 quantity: item.quantity
             }));
 
-            const totalAmount = itemsToBuy.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
-
             const res = await api.post("/products/software/purchase", {
                 items: itemsPayload,
-                amount: totalAmount,
                 paymentMethod: 'WALLET',
                 pin
             }, token);
@@ -170,10 +169,6 @@ export default function SoftwareMarketplace() {
             setLoading(false);
         }
     };
-
-    // Legacy handlers (modified/removed usage but kept for strict type compatibility if needed)
-    const handleCheckoutConfirm = (method: any) => { };
-    const handleCryptoSuccess = () => setCryptoModalOpen(false);
 
 
     return (
@@ -279,52 +274,61 @@ export default function SoftwareMarketplace() {
 
                             {/* Grid */}
                             <div className="flex-1 min-w-0">
-                                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-8">
-                                    {displayedProducts.map(product => (
-                                        <div key={product.id} className="group bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700 rounded-xl sm:rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col">
-                                            <div className="h-24 sm:h-36 bg-white dark:bg-zinc-700/50 flex items-center justify-center relative">
-                                                <h3 className="text-lg sm:text-2xl font-bold text-gray-400 px-2 text-center leading-tight">{product.brand}</h3>
-                                                {product.bestSeller && (
-                                                    <div className="absolute top-2 left-2 bg-yellow-400 text-black text-[9px] font-bold px-2 py-0.5 rounded-full">
-                                                        BEST SELLER
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="p-3 sm:p-5 flex-1 flex flex-col">
-                                                <div className="text-[10px] sm:text-xs text-blue-600 font-bold mb-1">{product.category.toUpperCase()}</div>
-                                                <h3 className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white mb-1 line-clamp-2 leading-tight">{product.name}</h3>
-                                                <div className="flex items-center gap-1 mb-2">
-                                                    <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 fill-yellow-400" />
-                                                    <span className="text-xs font-medium">{product.rating.toFixed(1)}</span>
-                                                    <span className="text-[10px] text-gray-400 hidden sm:inline">({product.sales} sold)</span>
-                                                </div>
-
-                                                <div className="mt-auto pt-2 sm:pt-3 border-t border-gray-200 dark:border-zinc-700 flex items-center justify-between gap-1">
-                                                    <div>
-                                                        <div className="text-[10px] text-gray-400 line-through">₦{product.originalPrice.toLocaleString()}</div>
-                                                        <div className="font-bold text-sm sm:text-base text-gray-900 dark:text-white">₦{product.price.toLocaleString()}</div>
-                                                    </div>
-                                                    <button
-                                                        onClick={() => addToCart(product)}
-                                                        className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-900 dark:bg-white text-white dark:text-black flex items-center justify-center hover:scale-110 transition-transform shadow flex-shrink-0"
-                                                    >
-                                                        <Plus className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {displayedProducts.length < filteredProducts.length && (
-                                    <div className="text-center">
-                                        <button
-                                            onClick={() => setPage(page + 1)}
-                                            className="px-8 py-3 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-full text-sm font-medium hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors"
-                                        >
-                                            Load More Products
-                                        </button>
+                                {loadingProducts ? (
+                                    <div className="flex flex-col items-center justify-center py-20">
+                                        <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
+                                        <p className="text-gray-500 font-bold">Synchronizing Global Catalog...</p>
                                     </div>
+                                ) : (
+                                    <>
+                                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-8">
+                                            {displayedProducts.map(product => (
+                                                <div key={product.id} className="group bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700 rounded-xl sm:rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col">
+                                                    <div className="h-24 sm:h-36 bg-white dark:bg-zinc-700/50 flex items-center justify-center relative">
+                                                        <h3 className="text-lg sm:text-2xl font-bold text-gray-400 px-2 text-center leading-tight">{product.brand}</h3>
+                                                        {(product as any).bestSeller && (
+                                                            <div className="absolute top-2 left-2 bg-yellow-400 text-black text-[9px] font-bold px-2 py-0.5 rounded-full">
+                                                                BEST SELLER
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="p-3 sm:p-5 flex-1 flex flex-col">
+                                                        <div className="text-[10px] sm:text-xs text-blue-600 font-bold mb-1">{product.category.toUpperCase()}</div>
+                                                        <h3 className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white mb-1 line-clamp-2 leading-tight">{product.name}</h3>
+                                                        <div className="flex items-center gap-1 mb-2">
+                                                            <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 fill-yellow-400" />
+                                                            <span className="text-xs font-medium">{product.sales > 50 ? 4.8 : 4.5}</span>
+                                                            <span className="text-[10px] text-gray-400 hidden sm:inline">({product.sales} sold)</span>
+                                                        </div>
+
+                                                        <div className="mt-auto pt-2 sm:pt-3 border-t border-gray-200 dark:border-zinc-700 flex items-center justify-between gap-1">
+                                                            <div>
+                                                                <div className="text-[10px] text-gray-400 line-through">₦{Number(product.originalPrice).toLocaleString()}</div>
+                                                                <div className="font-bold text-sm sm:text-base text-gray-900 dark:text-white">₦{Number(product.price).toLocaleString()}</div>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => addToCart(product)}
+                                                                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-900 dark:bg-white text-white dark:text-black flex items-center justify-center hover:scale-110 transition-transform shadow flex-shrink-0"
+                                                            >
+                                                                <Plus className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {displayedProducts.length < filteredProducts.length && (
+                                            <div className="text-center">
+                                                <button
+                                                    onClick={() => setPage(page + 1)}
+                                                    className="px-8 py-3 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-full text-sm font-medium hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors"
+                                                >
+                                                    Load More Products
+                                                </button>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                             </div>
                         </div>
@@ -332,10 +336,11 @@ export default function SoftwareMarketplace() {
                 </div>
             </section>
 
+            {/* Same Cart and Checkouts as before */}
             <CartDrawer
                 isOpen={cartOpen}
                 onClose={() => setCartOpen(false)}
-                cart={cart}
+                cart={cart as any}
                 onUpdateQuantity={updateQuantity}
                 onRemove={removeFromCart}
                 onCheckout={handleCartCheckout}
@@ -384,7 +389,6 @@ export default function SoftwareMarketplace() {
                     </div>
                 </div>
             )}
-
             <Footer />
         </main>
     );

@@ -20,6 +20,19 @@ export function NewDashboardDesktopView({ user, balance, onAddMoney, onSendMoney
         return <CreditCard className="w-5 h-5" />;
     };
 
+    const getTransactionStyle = (type: string, description: string, isCredit: boolean) => {
+        if (isCredit) return "bg-gradient-to-br from-emerald-400 to-green-500 text-white shadow-lg shadow-green-500/20 border-green-500/30";
+
+        const descLower = description?.toLowerCase() || '';
+        if (descLower.includes('airtime') || descLower.includes('data')) return "bg-gradient-to-br from-blue-400 to-indigo-500 text-white shadow-lg shadow-blue-500/20 border-blue-500/30";
+        if (descLower.includes('electricity')) return "bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-500/20 border-amber-500/30";
+        if (descLower.includes('software')) return "bg-gradient-to-br from-fuchsia-400 to-purple-600 text-white shadow-lg shadow-purple-500/20 border-purple-500/30";
+        if (descLower.includes('bet') || descLower.includes('sport')) return "bg-gradient-to-br from-pink-400 to-rose-500 text-white shadow-lg shadow-rose-500/20 border-rose-500/30";
+        if (descLower.includes('education')) return "bg-gradient-to-br from-cyan-400 to-blue-500 text-white shadow-lg shadow-cyan-500/20 border-cyan-500/30";
+
+        return "bg-gradient-to-br from-gray-400 to-gray-600 text-white shadow-lg shadow-gray-500/20 border-gray-500/30";
+    };
+
     return (
         <div className="hidden md:block p-8 pt-6">
             {/* Top Bar */}
@@ -71,10 +84,10 @@ export function NewDashboardDesktopView({ user, balance, onAddMoney, onSendMoney
 
                         <div className="flex gap-4">
                             <button onClick={onAddMoney} className="bg-white text-indigo-600 px-8 py-4 rounded-2xl font-black text-sm hover:scale-105 transition-all shadow-xl shadow-indigo-900/40 flex items-center gap-2">
-                                <ArrowUpRight className="w-4 h-4" /> Add Funds
+                                <ArrowUpRight className="w-4 h-4" /> Top up
                             </button>
                             <button onClick={onSendMoney} className="bg-white/10 backdrop-blur-md text-white border border-white/20 px-8 py-4 rounded-2xl font-black text-sm hover:bg-white/20 transition-all flex items-center gap-2">
-                                <Gift className="w-4 h-4" /> Transfer
+                                <Gift className="w-4 h-4" /> Gift Users
                             </button>
                         </div>
                     </div>
@@ -126,24 +139,29 @@ export function NewDashboardDesktopView({ user, balance, onAddMoney, onSendMoney
                     <div className="space-y-4">
                         {transactions.slice(0, 5).map((tx: any) => {
                             const isCredit = tx.type === 'FUNDING' || (tx.type === 'P2P_TRANSFER' && tx.reference?.includes('_CR'));
+                            const styleClass = getTransactionStyle(tx.type, tx.description, isCredit);
                             return (
-                                <div key={tx.id} className="group p-4 bg-gray-50 dark:bg-white/[0.02] rounded-3xl border border-transparent hover:border-indigo-500/20 hover:bg-white dark:hover:bg-zinc-800 transition-all flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isCredit ? 'bg-green-500/10 text-green-500' : 'bg-indigo-500/10 text-indigo-500'} group-hover:scale-110 transition-transform`}>
+                                <div key={tx.id} className="group p-4 bg-white dark:bg-zinc-900 rounded-3xl border border-gray-100 dark:border-white/5 hover:border-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/5 transition-all flex items-center justify-between relative overflow-hidden">
+                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 dark:via-white/5 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
+                                    <div className="flex items-center gap-4 relative z-10">
+                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${styleClass} group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300`}>
                                             {getTransactionIcon(tx.type, tx.description)}
                                         </div>
                                         <div>
-                                            <div className="font-black text-gray-900 dark:text-white text-base">{tx.description || tx.type.replace(/_/g, ' ')}</div>
-                                            <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest flex items-center gap-2">
-                                                {new Date(tx.createdAt).toLocaleDateString()} <span className="w-1 h-1 bg-gray-300 rounded-full"></span> {tx.status}
+                                            <div className="font-black text-gray-900 dark:text-white text-base group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors">{tx.description || tx.type.replace(/_/g, ' ')}</div>
+                                            <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest flex items-center gap-2 mt-1">
+                                                {new Date(tx.createdAt).toLocaleDateString()}
+                                                <span className={`px-2 py-0.5 rounded-full text-[8px] ${tx.status === 'SUCCESS' ? 'bg-green-100 text-green-600 dark:bg-green-500/10' : tx.status === 'PENDING' ? 'bg-amber-100 text-amber-600 dark:bg-amber-500/10' : 'bg-red-100 text-red-600 dark:bg-red-500/10'}`}>
+                                                    {tx.status}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="text-right">
+                                    <div className="text-right relative z-10">
                                         <div className={`text-lg font-black ${isCredit ? 'text-green-500' : 'text-gray-900 dark:text-white'}`}>
                                             {isCredit ? '+' : '-'}₦{parseFloat(tx.amount || 0).toLocaleString()}
                                         </div>
-                                        <div className="text-[10px] text-gray-400 font-medium">Ref: {tx.reference?.slice(0, 10)}...</div>
+                                        <div className="text-[10px] text-gray-400 font-medium bg-gray-100 dark:bg-white/5 inline-block px-2 py-1 rounded-md mt-1">Ref: {tx.reference?.slice(0, 8)}</div>
                                     </div>
                                 </div>
                             );

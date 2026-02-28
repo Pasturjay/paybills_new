@@ -165,6 +165,32 @@ export default function Profile() {
                 </div>
             )}
 
+            {/* Identity Card */}
+            <div className="mb-10 relative overflow-hidden bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-blue-500/20">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
+                    <div className="w-24 h-24 rounded-full bg-white/20 backdrop-blur-xl border-4 border-white/30 flex items-center justify-center text-4xl font-black shadow-inner">
+                        {user?.firstName?.[0]}
+                    </div>
+                    <div className="text-center md:text-left flex-1">
+                        <div className="flex flex-col md:flex-row md:items-center gap-2 mb-2">
+                            <h2 className="text-3xl font-black tracking-tight">{user?.firstName} {user?.lastName}</h2>
+                            <div className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${user?.kycLevel >= 1 ? 'bg-green-400/20 text-green-300 border border-green-400/30' : 'bg-amber-400/20 text-amber-300 border border-amber-400/30'}`}>
+                                {user?.kycLevel >= 1 ? 'Verified Operator' : 'Unverified'}
+                            </div>
+                        </div>
+                        <div className="flex items-center justify-center md:justify-start gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/20 w-fit mx-auto md:mx-0">
+                            <AtSign className="w-4 h-4 text-blue-200" />
+                            <span className="font-bold text-lg">{user?.userTag || 'No Tag Set'}</span>
+                        </div>
+                    </div>
+                    <div className="hidden lg:block text-right">
+                        <p className="text-blue-100/60 text-xs font-black uppercase tracking-widest mb-1">System Trust Level</p>
+                        <div className="text-3xl font-black">Lvl {user?.kycLevel || 0}</div>
+                    </div>
+                </div>
+            </div>
+
             <div className="grid gap-8">
                 {/* Personal Information */}
                 <section className="bg-white dark:bg-zinc-900 rounded-3xl p-8 shadow-sm border border-gray-100 dark:border-zinc-800">

@@ -81,8 +81,8 @@ export default function CreateCardModal({ isOpen, onClose, onSuccess }: CreateCa
 
                         {/* Card Preview */}
                         <div className={`aspect-[1.586] rounded-2xl p-6 text-white shadow-xl transition-colors duration-300 relative overflow-hidden ${formData.color === 'blue' ? 'bg-gradient-to-br from-blue-600 to-indigo-800' :
-                                formData.color === 'black' ? 'bg-gradient-to-br from-gray-800 to-black' :
-                                    'bg-gradient-to-br from-yellow-500 to-amber-700'
+                            formData.color === 'black' ? 'bg-gradient-to-br from-gray-800 to-black' :
+                                'bg-gradient-to-br from-yellow-500 to-amber-700'
                             }`}>
                             <div className="absolute top-0 right-0 p-32 bg-white/10 blur-3xl rounded-full translate-x-10 -translate-y-10"></div>
                             <div className="relative z-10 flex flex-col justify-between h-full">
@@ -107,7 +107,7 @@ export default function CreateCardModal({ isOpen, onClose, onSuccess }: CreateCa
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Funding Amount ($)</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Top up Amount ($)</label>
                             <input
                                 type="number"
                                 value={formData.amount}

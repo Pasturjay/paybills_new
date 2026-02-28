@@ -77,7 +77,7 @@ export const handlePaystackWebhook = async (req: Request, res: Response) => {
                                 status: 'SUCCESS',
                                 reference: reference,
                                 metadata: JSON.stringify(data),
-                                description: 'Wallet Funding via Paystack (Webhook)'
+                                description: 'Wallet Top Up via Paystack (Webhook)'
                             }
                         })
                     ]);
@@ -114,9 +114,33 @@ export const handlePaystackWebhook = async (req: Request, res: Response) => {
                     console.error(`Paystack Webhook: Pending software transaction not found for ${email}`);
                 }
             } else {
-                // Default fallback: treat as legacy funding if no type
-                console.warn('Paystack Webhook: Unknown metadata type, defaulting to funding check.');
-                // ... same as funding logic or log it
+                // Default fallback: treat as funding if no type is specified (likely DVA transfer)
+                console.log(`Paystack Webhook: No metadata type for ${reference}, defaulting to funding flow.`);
+                const wallet = await prisma.wallet.findFirst({ where: { userId: user.id, currency: 'NGN' } });
+                if (wallet) {
+                    await prisma.$transaction([
+                        prisma.wallet.update({
+                            where: { id: wallet.id },
+                            data: { balance: { increment: amount } }
+                        }),
+                        prisma.transaction.upsert({
+                            where: { reference: reference },
+                            update: { status: 'SUCCESS', metadata: JSON.stringify(data) },
+                            create: {
+                                userId: user.id,
+                                walletId: wallet.id,
+                                amount: amount,
+                                total: amount,
+                                type: 'FUNDING',
+                                status: 'SUCCESS',
+                                reference: reference,
+                                metadata: JSON.stringify(data),
+                                description: 'Wallet Top Up (DVA/Direct Transfer)'
+                            }
+                        })
+                    ]);
+                    console.log(`Paystack Webhook: Wallet funded via fallback for ${email} (₦${amount})`);
+                }
             }
         }
 

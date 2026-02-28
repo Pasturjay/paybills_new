@@ -8,18 +8,14 @@ import { MobileSidebar } from "@/components/MobileSidebar";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
-    const [mounted, setMounted] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     useEffect(() => {
-        setMounted(true);
         const token = localStorage.getItem("token");
         if (!token) {
             router.push("/auth/login");
         }
     }, [router]);
-
-    if (!mounted) return null;
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-zinc-900 font-sans">
@@ -36,3 +32,4 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
     );
 }
+

@@ -11,7 +11,7 @@ import { BackButton } from './BackButton';
 
 export function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const { isAuthenticated, isLoading, logout } = useAuth();
+    const { isAuthenticated, user, isAdmin, isLoading, logout } = useAuth();
 
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -20,7 +20,7 @@ export function Navbar() {
             title: "Product",
             items: [
                 { name: "Airtime & Data", href: "/products/airtime-data", icon: Smartphone },
-                { name: "Bill Payment", href: "/products/bill-payment", icon: Zap },
+                { name: "Top Up & Bills", href: "/products/bill-payment", icon: Zap },
                 { name: "Virtual Cards", href: "/products/virtual-cards", icon: CreditCard },
             ]
         },
@@ -52,7 +52,7 @@ export function Navbar() {
 
                     <BackButton className="md:hidden" />
 
-                    <Link href={isAuthenticated ? "/dashboard" : "/"} className="flex items-center gap-2">
+                    <Link href="/" className="flex items-center gap-2">
                         <div className="relative w-8 h-8 rounded-lg overflow-hidden">
                             <Image src="/logo.png" alt="PayBills" fill className="object-cover" />
                         </div>
@@ -68,7 +68,12 @@ export function Navbar() {
                         <>
                             <Link href="/dashboard" className="hover:text-blue-600 transition-colors">Overview</Link>
                             <Link href="/dashboard/services" className="hover:text-blue-600 transition-colors">Services</Link>
-                            <Link href="/dashboard/history" className="hover:text-blue-600 transition-colors">History</Link>
+                            <Link href="/dashboard/history" className="hover:text-blue-600 transition-colors">Ledger</Link>
+                            {isAdmin && (
+                                <Link href="/admin/dashboard" className="px-3 py-1 bg-red-50 text-red-600 rounded-md font-bold border border-red-100 dark:bg-red-900/10 dark:border-red-900/20 hover:bg-red-100 transition-colors">
+                                    Admin Panel
+                                </Link>
+                            )}
                         </>
                     ) : (
                         <>

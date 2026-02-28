@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { v4 as uuidv4 } from "uuid";
 import { X, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { api } from "@/lib/api";
 
@@ -20,6 +21,7 @@ export function ServiceModal({ service, initialState, onClose }: ServiceModalPro
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<any>(null);
     const [error, setError] = useState("");
+    const [idempotencyKey, setIdempotencyKey] = useState(uuidv4());
 
     // Form Data
     const [formData, setFormData] = useState({
@@ -142,6 +144,7 @@ export function ServiceModal({ service, initialState, onClose }: ServiceModalPro
             }
 
             payload.pin = formData.pin;
+            payload.idempotencyKey = idempotencyKey;
 
             if (!formData.pin || formData.pin.length !== 4) {
                 setError("Please enter a valid 4-digit PIN");
@@ -151,6 +154,7 @@ export function ServiceModal({ service, initialState, onClose }: ServiceModalPro
 
             const res = await api.post(endpoint, payload, token || undefined);
             setResult(res);
+            setIdempotencyKey(uuidv4());
             setStep(2); // Success Step
         } catch (err: any) {
             setError(err.response?.data?.error || "Transaction failed");
@@ -405,12 +409,12 @@ export function ServiceModal({ service, initialState, onClose }: ServiceModalPro
 
                                 {/* Quick Amount Chips for Editable Fields (Betting, Electricity, Airtime) */}
                                 {!(service.title.includes("Data") || service.title.includes("Cable") || service.title.includes("Software") || service.title.includes("Education")) && (
-                                    <div className="flex flex-wrap gap-2 mt-3">
+                                    <div className="grid grid-cols-4 gap-2 mt-3 text-center">
                                         {[1000, 2000, 5000, 10000].map((amt) => (
                                             <button
                                                 key={amt}
                                                 onClick={() => setFormData({ ...formData, amount: amt.toString() })}
-                                                className="px-4 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-sm font-bold hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                                                className="py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-[10px] sm:text-xs font-bold hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
                                             >
                                                 ₦{amt.toLocaleString()}
                                             </button>
@@ -437,7 +441,7 @@ export function ServiceModal({ service, initialState, onClose }: ServiceModalPro
                                 disabled={loading || !formData.pin || formData.pin.length !== 4}
                                 className={`w-full py-4 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${service.title.includes("Education") ? "bg-[#93c5fd] hover:bg-blue-400 text-blue-900" : "bg-blue-600 hover:bg-blue-700"}`}
                             >
-                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Confirm Payment"}
+                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Confirm Selection"}
                             </button>
                         </div>
                     )}
@@ -447,8 +451,8 @@ export function ServiceModal({ service, initialState, onClose }: ServiceModalPro
                             <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <CheckCircle className="w-8 h-8" />
                             </div>
-                            <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Transaction Successful!</h4>
-                            <p className="text-gray-500 mb-6">Your payment has been processed successfully.</p>
+                            <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Order Successful!</h4>
+                            <p className="text-gray-500 mb-6">Your request has been processed successfully.</p>
                             <button
                                 onClick={onClose}
                                 className="px-6 py-2 bg-gray-900 dark:bg-white dark:text-black text-white rounded-lg font-medium"

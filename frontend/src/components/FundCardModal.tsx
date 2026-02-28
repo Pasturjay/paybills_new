@@ -31,10 +31,10 @@ export default function FundCardModal({ isOpen, onClose, onSuccess, cardId, card
 
         try {
             await api.post('/cards/fund', { cardId, amount: amountUSD, pin });
-            setSuccessMsg('Card funded successfully!');
+            setSuccessMsg('Card topped up successfully!');
             if (onSuccess) onSuccess();
         } catch (err: any) {
-            setError(err.message || 'Funding failed');
+            setError(err.message || 'Top up failed');
         } finally {
             setLoading(false);
         }
@@ -48,9 +48,9 @@ export default function FundCardModal({ isOpen, onClose, onSuccess, cardId, card
                 <div className="flex justify-between items-start mb-6">
                     <div>
                         <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                            <DollarSign className="w-5 h-5 text-indigo-600" /> Fund Card
+                            <DollarSign className="w-5 h-5 text-indigo-600" /> Top up Card
                         </h3>
-                        <p className="text-sm text-gray-500">Adding funds to <strong>{cardName}</strong></p>
+                        <p className="text-sm text-gray-500">Topping up <strong>{cardName}</strong></p>
                     </div>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1"><X className="w-5 h-5" /></button>
                 </div>
@@ -94,7 +94,7 @@ export default function FundCardModal({ isOpen, onClose, onSuccess, cardId, card
                             disabled={!amount || Number(amount) < 1}
                             className="w-full py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {loading ? 'Processing...' : 'Fund Card'}
+                            {loading ? 'Processing...' : 'Top up Card'}
                         </button>
                     </div>
                 )}
@@ -104,7 +104,7 @@ export default function FundCardModal({ isOpen, onClose, onSuccess, cardId, card
                 isOpen={isPinModalOpen}
                 onClose={() => setIsPinModalOpen(false)}
                 onSuccess={handleFund}
-                title="Confirm Funding"
+                title="Confirm Top up"
                 description={`Enter PIN to authorize ₦${totalNGN.toLocaleString()}`}
             />
         </div>

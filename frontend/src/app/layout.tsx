@@ -39,8 +39,8 @@ export const metadata: Metadata = {
     },
     twitter: {
         card: 'summary_large_image',
-        title: 'PayBills - Seamless Utility Payments',
-        description: 'Instant top-ups, bill payments, and virtual dollar cards.',
+        title: 'PayBills - Seamless Utility Top Ups',
+        description: 'Instant top-ups, bills, and virtual dollar cards.',
         creator: '@paybills_ng',
         images: ['https://paybills.ng/og-image.png'],
     },
@@ -82,8 +82,9 @@ export const viewport = {
     userScalable: false,
 };
 
-import { MobileBottomNav } from "@/components/MobileBottomNav";
-import { CommandCenter } from "@/components/CommandCenter";
+import dynamic from "next/dynamic";
+const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav").then(mod => mod.MobileBottomNav), { ssr: false });
+const CommandCenter = dynamic(() => import("@/components/CommandCenter").then(mod => mod.CommandCenter), { ssr: false });
 import { Providers } from "@/components/Providers";
 
 export default function RootLayout({

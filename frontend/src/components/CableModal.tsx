@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { X, Tv, ChevronRight, Loader2, CheckCircle2 } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
 import { api } from '@/lib/api';
 import PinModal from './PinModal';
 
@@ -32,6 +33,7 @@ export default function CableModal({ isOpen, onClose }: CableModalProps) {
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [idempotencyKey, setIdempotencyKey] = useState(uuidv4());
     const [success, setSuccess] = useState('');
     const [isPinOpen, setIsPinOpen] = useState(false);
 
@@ -68,9 +70,11 @@ export default function CableModal({ isOpen, onClose }: CableModalProps) {
                 packageId,
                 smartcardNumber: smartcard,
                 amount: selectedPack?.price,
-                pin
+                pin,
+                idempotencyKey
             });
             setSuccess('Subscription successful!');
+            setIdempotencyKey(uuidv4());
             setTimeout(() => {
                 setSuccess('');
                 onClose();

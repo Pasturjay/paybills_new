@@ -166,13 +166,13 @@ export default function AirtimeData() {
                                             min="50"
                                         />
                                     </div>
-                                    <div className="flex gap-2 mt-3">
+                                    <div className="grid grid-cols-4 gap-2 mt-3 text-center">
                                         {[100, 200, 500, 1000].map(amt => (
                                             <button
                                                 key={amt}
                                                 type="button"
                                                 onClick={() => setAmount(amt.toString())}
-                                                className="px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 font-bold text-xs rounded-lg hover:bg-blue-100"
+                                                className="py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 font-bold text-[10px] sm:text-xs rounded-lg hover:bg-blue-100 transition-colors"
                                             >
                                                 ₦{amt}
                                             </button>

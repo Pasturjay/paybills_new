@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
-import { User, ChevronDown, LogOut, Menu, ArrowLeft } from "lucide-react";
+import { User, ChevronDown, LogOut, Menu, ArrowLeft, AtSign } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -78,9 +78,10 @@ export function DashboardHeader({ onMenuClick }: { onMenuClick: () => void }) {
                         className="flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-zinc-900 px-1.5 py-1.5 rounded-xl transition-colors border border-transparent hover:border-gray-200 dark:hover:border-zinc-800"
                     >
                         <div className="text-right hidden sm:block">
-                            <p className="text-sm font-bold text-gray-900 dark:text-white leading-none">
+                            <div className="text-sm font-bold text-gray-900 dark:text-white leading-none">
                                 {user?.firstName} {user?.lastName}
-                            </p>
+                                {user?.userTag && <div className="text-[10px] text-blue-500 font-bold uppercase tracking-widest mt-0.5">@{user.userTag}</div>}
+                            </div>
                         </div>
                         <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-blue-100 dark:bg-blue-600 flex items-center justify-center text-blue-700 dark:text-white font-bold border-2 border-white dark:border-zinc-800 shadow-sm text-xs md:text-sm">
                             {user ? getInitials(user.firstName, user.lastName) : <User className="w-5 h-5" />}
@@ -96,6 +97,9 @@ export function DashboardHeader({ onMenuClick }: { onMenuClick: () => void }) {
                                 <p className="text-xs text-gray-500 dark:text-gray-400">
                                     {user?.email}
                                 </p>
+                                <div className="mt-1 flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg text-[10px] font-bold w-fit">
+                                    <AtSign className="w-3 h-3" /> {user?.userTag || 'no-tag'}
+                                </div>
                             </div>
                             <Link
                                 href="/dashboard/profile"

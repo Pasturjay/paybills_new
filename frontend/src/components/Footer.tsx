@@ -24,7 +24,7 @@ export function Footer() {
                         <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Product</h4>
                         <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                             <li><Link href="/products/airtime-data" className="hover:text-blue-600">Airtime & Data</Link></li>
-                            <li><Link href="/products/bill-payment" className="hover:text-blue-600">Bill Payment</Link></li>
+                            <li><Link href="/products/bill-payment" className="hover:text-blue-600">Top Up & Bills</Link></li>
                             <li><Link href="/products/virtual-cards" className="hover:text-blue-600">Virtual Cards</Link></li>
                         </ul>
                     </div>

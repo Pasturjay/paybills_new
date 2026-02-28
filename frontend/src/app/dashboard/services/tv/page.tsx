@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { v4 as uuidv4 } from "uuid";
 import { api } from "@/lib/api";
 
 export default function CableTVPage() {
@@ -16,6 +17,7 @@ export default function CableTVPage() {
     });
     const [verification, setVerification] = useState<any>(null);
     const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+    const [idempotencyKey, setIdempotencyKey] = useState(uuidv4());
     const [message, setMessage] = useState("");
 
     const packages: Record<string, { name: string, price: number, code: string }[]> = {
@@ -68,10 +70,12 @@ export default function CableTVPage() {
                 customerId: formData.smartcardNumber,
                 amount: formData.amount,
                 phone: formData.phone,
-                providerCode: formData.providerCode
+                providerCode: formData.providerCode,
+                idempotencyKey
             }, token || "");
 
             setStatus("success");
+            setIdempotencyKey(uuidv4());
             setMessage(`Subscription Successful for ${verification?.customerName}!`);
         } catch (err: any) {
             setStatus("error");

@@ -124,7 +124,11 @@ export class PaystackService {
             // 2. Create Dedicated Account
             const dvaResponse = await axios.post(
                 `${this.baseUrl}/dedicated_account`,
-                { customer: customerCode, preferred_bank: "wema-bank" }, // Wema is common for Paystack
+                {
+                    customer: customerCode,
+                    preferred_bank: "wema-bank",
+                    metadata: { type: 'funding' }
+                },
                 { headers: { Authorization: `Bearer ${this.secretKey}` } }
             );
 

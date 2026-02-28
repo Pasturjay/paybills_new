@@ -96,9 +96,9 @@ const quickActions = [
 ];
 
 const transactions = [
-    { id: 1, type: "Data Purchase", desc: "MTN 10GB Monthly", amount: -3500, date: "Today, 10:23 AM", status: "success", icon: Smartphone },
-    { id: 3, type: "Betting Fund", desc: "SportyBet Top-up", amount: -5000, date: "Yesterday, 2:30 PM", status: "success", icon: Trophy },
-    { id: 4, type: "Software", desc: "Windows 11 Pro", amount: -15000, date: "24 Jan, 9:00 AM", status: "success", icon: Download },
+    { id: 1, type: "Data Purchase", desc: "MTN 10GB Monthly", amount: -3500, date: "Today, 10:23 AM", status: "success", icon: Smartphone, bgClass: "bg-gradient-to-br from-blue-400 to-indigo-500 text-white shadow-lg shadow-blue-500/20" },
+    { id: 3, type: "Betting Fund", desc: "SportyBet Top-up", amount: -5000, date: "Yesterday, 2:30 PM", status: "success", icon: Trophy, bgClass: "bg-gradient-to-br from-pink-400 to-rose-500 text-white shadow-lg shadow-rose-500/20" },
+    { id: 4, type: "Software", desc: "Windows 11 Pro", amount: -15000, date: "24 Jan, 9:00 AM", status: "success", icon: Download, bgClass: "bg-gradient-to-br from-fuchsia-400 to-purple-600 text-white shadow-lg shadow-purple-500/20" },
 ];
 
 export default function Home() {
@@ -159,21 +159,22 @@ export default function Home() {
                         </h2>
                         <Link href="/history" className="text-sm text-blue-600 font-bold hover:underline">See All</Link>
                     </div>
-                    <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-gray-100 dark:border-zinc-800 p-2">
+                    <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-gray-100 dark:border-zinc-800 p-2 space-y-2">
                         {transactions.map((tx) => (
-                            <div key={tx.id} className="p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-2xl transition-colors">
-                                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${tx.amount > 0 ? "bg-green-100 text-green-600" : "bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-gray-400"}`}>
+                            <div key={tx.id} className="group p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-2xl transition-all border border-transparent hover:border-gray-200 dark:hover:border-zinc-700 relative overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 dark:via-white/5 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
+                                <div className={`relative z-10 w-12 h-12 rounded-2xl flex items-center justify-center ${tx.bgClass} group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300`}>
                                     <tx.icon className="w-5 h-5" />
                                 </div>
-                                <div className="flex-1">
-                                    <h4 className="font-bold text-gray-900 dark:text-white text-sm">{tx.type}</h4>
-                                    <div className="text-xs text-gray-500">{tx.desc}</div>
+                                <div className="flex-1 relative z-10">
+                                    <h4 className="font-black text-gray-900 dark:text-white text-sm group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors">{tx.type}</h4>
+                                    <div className="text-xs text-gray-500 font-medium">{tx.desc}</div>
                                 </div>
-                                <div className="text-right">
-                                    <div className="font-bold text-sm text-gray-900 dark:text-white">
+                                <div className="text-right relative z-10">
+                                    <div className="font-black text-sm text-gray-900 dark:text-white">
                                         ₦{Math.abs(tx.amount).toLocaleString()}
                                     </div>
-                                    <div className="text-xs text-gray-400">{tx.date}</div>
+                                    <div className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mt-1 bg-gray-100 dark:bg-zinc-800 inline-block px-2 py-0.5 rounded-md">{tx.date}</div>
                                 </div>
                             </div>
                         ))}

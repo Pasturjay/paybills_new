@@ -83,8 +83,8 @@ export const simulateFund = async (req: Request, res: Response) => {
         const { notificationService } = await import('../services/notification.service');
         await notificationService.createNotification(
             userId,
-            'Wallet Funded',
-            `Your wallet has been funded with ₦${amount}`,
+            'Wallet Topped Up',
+            `Your wallet has been topped up with ₦${amount}`,
             'SUCCESS'
         );
 
@@ -186,12 +186,12 @@ export const verifyFunding = async (req: Request, res: Response) => {
         const { notificationService } = await import('../services/notification.service');
         await notificationService.createNotification(
             userId,
-            'Wallet Funded',
-            `Your wallet has been funded with ₦${amount.toLocaleString()}`,
+            'Wallet Topped Up',
+            `Your wallet has been topped up with ₦${amount.toLocaleString()}`,
             'SUCCESS'
         );
 
-        res.json({ message: 'Wallet funded successfully', amount });
+        res.json({ message: 'Wallet topped up successfully', amount });
 
     } catch (error: any) {
         console.error('Verify Funding Error:', error);
@@ -203,11 +203,11 @@ import { FlutterwaveService } from '../services/flutterwave.service';
 const flutterwaveService = new FlutterwaveService();
 
 export const getVirtualAccount = async (req: Request, res: Response) => {
-    try {
-        // @ts-ignore
-        const userId = req.user.id;
-        const provider = (req.query.provider as string)?.toUpperCase() || 'PAYSTACK'; // Default to Paystack
+    // @ts-ignore
+    const userId = req.user?.id;
+    const provider = (req.query.provider as string)?.toUpperCase() || 'PAYSTACK';
 
+    try {
         // 1. Check if exists in DB for this provider
         const existingAccount = await prisma.virtualAccount.findFirst({
             where: { userId, provider }
@@ -223,7 +223,15 @@ export const getVirtualAccount = async (req: Request, res: Response) => {
 
         // Basic validation for creation
         if (!user.firstName || !user.lastName || !user.phone) {
-            return res.status(400).json({ error: 'Please update your profile name and phone number to generate an account.' });
+            return res.status(400).json({
+                error: 'Profile incomplete',
+                code: 'MISSING_PROFILE_INFO',
+                missingFields: {
+                    firstName: !user.firstName,
+                    lastName: !user.lastName,
+                    phone: !user.phone
+                }
+            });
         }
 
         let newAccountData;
@@ -286,8 +294,15 @@ export const getVirtualAccount = async (req: Request, res: Response) => {
         res.json(newAccount);
 
     } catch (error: any) {
-        console.error('Get Virtual Account Error:', error);
-        res.status(500).json({ error: error.message || 'Failed to retrieve virtual account' });
+        console.error('Get Virtual Account Error:', {
+            userId,
+            provider,
+            message: error.message,
+            response: error.response?.data
+        });
+        res.status(500).json({
+            error: error.response?.data?.message || error.message || 'Failed to retrieve virtual account'
+        });
     }
 };
 
@@ -295,7 +310,7 @@ export const transferFunds = async (req: Request, res: Response) => {
     try {
         // @ts-ignore
         const userId = req.user.id;
-        const { recipientEmail, recipientPhone, amount, pin, description } = req.body;
+        const { recipientEmail, recipientPhone, amount, pin, description, idempotencyKey } = req.body;
 
         if (!amount || Number(amount) <= 0) {
             return res.status(400).json({ error: 'Invalid amount' });
@@ -303,6 +318,21 @@ export const transferFunds = async (req: Request, res: Response) => {
 
         // 1. Verify PIN
         await securityService.validateRequestPin(userId, pin);
+
+        // 1.1 Check for Idempotency
+        if (idempotencyKey) {
+            const existingDR = await prisma.transaction.findFirst({
+                where: { userId, idempotencyKey }
+            });
+            if (existingDR) {
+                return res.json({
+                    status: 'success',
+                    message: 'Transfer already processed',
+                    reference: existingDR.reference,
+                    amount: existingDR.amount
+                });
+            }
+        }
 
         // 2. Find Recipient
         let recipient;
@@ -313,7 +343,11 @@ export const transferFunds = async (req: Request, res: Response) => {
         } else if (req.body.recipientTag) {
             let tag = req.body.recipientTag;
             if (!tag.startsWith('@')) tag = '@' + tag; // Normalize tag
-            recipient = await prisma.user.findUnique({ where: { userTag: tag } });
+            recipient = await prisma.user.findFirst({
+                where: {
+                    userTag: { equals: tag, mode: 'insensitive' }
+                }
+            });
         }
 
         if (!recipient) {
@@ -352,8 +386,9 @@ export const transferFunds = async (req: Request, res: Response) => {
 
             // Create Transaction Records
             const ref = 'TRF_' + Date.now() + Math.floor(Math.random() * 1000);
+            const sender = await tx.user.findUnique({ where: { id: userId } });
 
-            // Sender Transaction
+            // Sender Transaction (Debit)
             await tx.transaction.create({
                 data: {
                     userId,
@@ -363,12 +398,17 @@ export const transferFunds = async (req: Request, res: Response) => {
                     type: 'P2P_TRANSFER',
                     status: 'SUCCESS',
                     reference: ref + '_DR',
-                    metadata: JSON.stringify({ recipientId: recipient.id, recipientName: `${recipient.firstName} ${recipient.lastName}` }),
-                    description: description || 'Transfer to ' + recipient.firstName
-                } as any // Using as any to bypass partial type mismatches if schema not fully synced in IDE
+                    idempotencyKey,
+                    metadata: {
+                        recipientId: recipient.id,
+                        recipientName: `${recipient.firstName} ${recipient.lastName}`,
+                        recipientTag: recipient.userTag
+                    },
+                    description: description || `Gift to ${recipient.firstName} ${recipient.lastName}`
+                } as any
             });
 
-            // Recipient Transaction
+            // Recipient Transaction (Credit)
             await tx.transaction.create({
                 data: {
                     userId: recipient.id,
@@ -378,16 +418,20 @@ export const transferFunds = async (req: Request, res: Response) => {
                     type: 'P2P_TRANSFER',
                     status: 'SUCCESS',
                     reference: ref + '_CR',
-                    metadata: JSON.stringify({ senderId: userId }),
-                    description: description || 'Transfer from ' + (await tx.user.findUnique({ where: { id: userId } }))?.firstName
+                    metadata: {
+                        senderId: userId,
+                        senderName: `${sender?.firstName} ${sender?.lastName}`,
+                        senderTag: sender?.userTag
+                    },
+                    description: description || `Gift from ${sender?.firstName} ${sender?.lastName}`
                 } as any
             });
         });
 
         // 4. Notify
         const { notificationService } = await import('../services/notification.service');
-        await notificationService.createNotification(userId, 'Transfer Successful', `You sent ₦${amount} to ${recipient.firstName}`, 'SUCCESS');
-        await notificationService.createNotification(recipient.id, 'Money Received', `You received ₦${amount}`, 'SUCCESS');
+        await notificationService.createNotification(userId, 'Gift Sent', `You gifted ₦${amount} to ${recipient.firstName}`, 'SUCCESS');
+        await notificationService.createNotification(recipient.id, 'Gift Received', `You received a gift of ₦${amount}`, 'SUCCESS');
 
         res.json({ message: 'Transfer successful' });
 
@@ -405,13 +449,16 @@ export const lookupUser = async (req: Request, res: Response) => {
         }
 
         let searchCriteria: any = {};
+        const normalizedQuery = query.trim();
 
-        if (query.startsWith('@')) {
-            searchCriteria.userTag = query;
-        } else if (query.includes('@')) {
-            searchCriteria.email = query;
+        if (normalizedQuery.startsWith('@')) {
+            searchCriteria.userTag = { equals: normalizedQuery, mode: 'insensitive' };
+        } else if (normalizedQuery.includes('@')) {
+            searchCriteria.email = { equals: normalizedQuery, mode: 'insensitive' };
         } else {
-            searchCriteria.phone = query;
+            // Remove any non-numeric characters for phone lookup
+            const phoneDigits = normalizedQuery.replace(/\D/g, '');
+            searchCriteria.phone = { contains: phoneDigits };
         }
 
         const user = await prisma.user.findFirst({
@@ -421,6 +468,8 @@ export const lookupUser = async (req: Request, res: Response) => {
                 firstName: true,
                 lastName: true,
                 userTag: true,
+                email: true,
+                phone: true
             }
         });
 

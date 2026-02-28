@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { X, Wifi, ChevronRight, Loader2 } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
 import { api } from '@/lib/api';
 import PinModal from './PinModal';
 
@@ -43,6 +44,7 @@ export default function DataModal({ isOpen, onClose }: DataModalProps) {
     const [phone, setPhone] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [idempotencyKey, setIdempotencyKey] = useState(uuidv4());
     const [success, setSuccess] = useState('');
     const [isPinOpen, setIsPinOpen] = useState(false);
 
@@ -57,9 +59,11 @@ export default function DataModal({ isOpen, onClose }: DataModalProps) {
                 planId: plan.id,
                 phoneNumber: phone,
                 amount: plan.price,
-                pin
+                pin,
+                idempotencyKey
             });
             setSuccess('Data purchase successful!');
+            setIdempotencyKey(uuidv4());
             setTimeout(() => {
                 setSuccess('');
                 onClose();

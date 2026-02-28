@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { v4 as uuidv4 } from "uuid";
 import { api } from "@/lib/api";
 import { Wallet, Lightbulb, RotateCcw, AlertTriangle, Zap } from "lucide-react";
 import { SkeletonLoader } from "@/components/ui/Skeleton";
@@ -19,6 +20,7 @@ export default function ElectricityPage() {
     });
     const [verification, setVerification] = useState<any>(null);
     const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+    const [idempotencyKey, setIdempotencyKey] = useState(uuidv4());
     const [pageLoading, setPageLoading] = useState(true);
     const [message, setMessage] = useState("");
     const [context, setContext] = useState<any>(null);
@@ -79,10 +81,12 @@ export default function ElectricityPage() {
                 customerId: formData.meterNumber,
                 amount: formData.amount,
                 phone: formData.phone,
-                providerCode: formData.providerCode
+                providerCode: formData.providerCode,
+                idempotencyKey
             }, token || "");
 
             setStatus("success");
+            setIdempotencyKey(uuidv4());
         } catch (err: any) {
             setStatus("error");
             setMessage(err.message || "Transaction failed");

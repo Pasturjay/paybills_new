@@ -2,10 +2,12 @@ import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { VonageProvider } from '../providers/vonage.provider';
 import { SecurityService } from '../services/security.service';
+import { CacheService } from '../services/cache.service';
 
 const prisma = new PrismaClient();
 const vonageProvider = new VonageProvider();
 const securityService = new SecurityService();
+const cacheService = new CacheService();
 
 // Helper: Calculate Cost (In production, fetch from MarkupRule or DB)
 const NUMBER_MONTHLY_COST = 5000.00; // NGN
@@ -14,6 +16,14 @@ const NUMBER_MONTHLY_COST = 5000.00; // NGN
 export const getAvailableNumbers = async (req: Request, res: Response) => {
     try {
         const country = (req.query.country as string) || 'NG'; // Default Nigeria
+        const cacheKey = `vn_search_${country}`;
+
+        // 1. Check Cache
+        const cached = cacheService.get<any[]>(cacheKey);
+        if (cached) {
+            return res.json(cached);
+        }
+
         const numbers = await vonageProvider.searchNumbers(country);
 
         // Transform for frontend
@@ -23,6 +33,9 @@ export const getAvailableNumbers = async (req: Request, res: Response) => {
             features: n.features,
             type: n.type
         }));
+
+        // 2. Set Cache (5 Minutes)
+        cacheService.set(cacheKey, available, 300);
 
         res.json(available);
     } catch (error) {

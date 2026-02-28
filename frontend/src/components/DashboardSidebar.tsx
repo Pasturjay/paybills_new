@@ -14,11 +14,12 @@ export function DashboardSidebar() {
     };
 
     const links = [
-        { name: "Dashboard", href: "/dashboard", icon: Home },
+        { name: "Home", href: "/", icon: Home },
+        { name: "Overview", href: "/dashboard", icon: LayoutGrid },
         { name: "Services", href: "/dashboard/services", icon: LayoutGrid },
         { name: "Virtual Cards", href: "/dashboard/virtual-cards", icon: CreditCard },
         { name: "Virtual Numbers", href: "/dashboard/virtual-numbers", icon: Phone },
-        { name: "History", href: "/dashboard/history", icon: Clock },
+        { name: "Ledger", href: "/dashboard/history", icon: Clock },
         { name: "Referrals", href: "/dashboard/referrals", icon: User },
         { name: "Profile", href: "/dashboard/profile", icon: User },
         { name: "Support", href: "https://wa.me/2348135216820", icon: Phone },

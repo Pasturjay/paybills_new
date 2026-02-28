@@ -14,12 +14,16 @@ interface PinModalProps {
 export default function PinModal({ isOpen, onClose, onSuccess, title = "Enter Transaction PIN", description = "Please enter your 4-digit PIN to continue" }: PinModalProps) {
     const [pin, setPin] = useState(['', '', '', '']);
     const [error, setError] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+    const wasSubmitted = useRef(false);
 
     useEffect(() => {
         if (isOpen) {
             setPin(['', '', '', '']);
             setError('');
+            setIsSubmitting(false);
+            wasSubmitted.current = false;
             // Focus first input after a short delay to allow modal animation
             setTimeout(() => {
                 inputRefs.current[0]?.focus();
@@ -42,7 +46,9 @@ export default function PinModal({ isOpen, onClose, onSuccess, title = "Enter Tr
         }
 
         // Auto-submit if complete
-        if (newPin.every(digit => digit !== '')) {
+        if (newPin.every(digit => digit !== '') && !wasSubmitted.current) {
+            wasSubmitted.current = true;
+            setIsSubmitting(true);
             onSuccess(newPin.join(''));
         }
     };
@@ -61,7 +67,7 @@ export default function PinModal({ isOpen, onClose, onSuccess, title = "Enter Tr
                 <div className="flex justify-between items-start mb-6">
                     <div className="flex items-center gap-3">
                         <div className="p-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-                            <Lock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                            <Lock className={`w-5 h-5 text-blue-600 dark:text-blue-400 ${isSubmitting ? 'animate-pulse' : ''}`} />
                         </div>
                         <div>
                             <h3 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h3>
@@ -70,24 +76,25 @@ export default function PinModal({ isOpen, onClose, onSuccess, title = "Enter Tr
                     </div>
                     <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1"
+                        disabled={isSubmitting}
+                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1 disabled:opacity-50"
                     >
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
-                <div className="flex justify-center gap-4 mb-6">
+                <div className={`flex justify-center gap-4 mb-6 transition-opacity ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
                     {pin.map((digit, index) => (
                         <input
                             key={index}
                             ref={el => {
-                                // Assign to mutable ref array without returning anything
                                 inputRefs.current[index] = el;
                             }}
                             type="password"
                             inputMode="numeric"
                             maxLength={1}
                             value={digit}
+                            disabled={isSubmitting}
                             onChange={(e) => handleChange(index, e.target.value)}
                             onKeyDown={(e) => handleKeyDown(index, e)}
                             className="w-12 h-14 text-center text-2xl font-bold bg-gray-50 dark:bg-zinc-800 border-2 border-gray-200 dark:border-zinc-700 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all caret-blue-500"
@@ -95,14 +102,21 @@ export default function PinModal({ isOpen, onClose, onSuccess, title = "Enter Tr
                     ))}
                 </div>
 
-                {error && (
+                {isSubmitting && (
+                    <div className="flex items-center justify-center gap-2 mb-4 text-blue-600 dark:text-blue-400">
+                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        <span className="text-xs font-bold uppercase tracking-wider">Verifying Securely...</span>
+                    </div>
+                )}
+
+                {error && !isSubmitting && (
                     <p className="text-center text-red-500 text-sm mb-4 bg-red-50 dark:bg-red-900/10 p-2 rounded-lg">
                         {error}
                     </p>
                 )}
 
                 <div className="text-center text-xs text-gray-400 dark:text-gray-500">
-                    <p>Contact support if you forgot your PIN</p>
+                    <p>{isSubmitting ? 'Hang tight, we are almost there.' : 'Contact support if you forgot your PIN'}</p>
                 </div>
             </div>
         </div>

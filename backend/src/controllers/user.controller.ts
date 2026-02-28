@@ -85,29 +85,54 @@ export const changePassword = async (req: Request, res: Response) => {
     }
 };
 
-export const submitKyc = async (req: Request, res: Response) => {
+import { OtpService } from '../services/otp.service';
+const otpService = new OtpService();
+
+export const sendKycOtp = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.id;
-        const { nin } = req.body;
 
-        if (!nin || nin.length !== 11 || !/^\d+$/.test(nin)) {
-            return res.status(400).json({ error: 'Invalid NIN format. Must be 11 digits.' });
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user || !user.email) {
+            return res.status(400).json({ error: 'Email address required for verification' });
         }
 
-        // Mock Verification Logic (Auto-approve for now)
-        await prisma.user.update({
+        const reference = await otpService.requestOtp(user.email);
+
+        res.json({ message: 'Verification code sent to your email', reference });
+    } catch (error: any) {
+        console.error('Send KYC OTP Error:', error);
+        res.status(500).json({ error: error.message || 'Failed to send verification code' });
+    }
+};
+
+export const verifyKycOtp = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.id;
+        const { reference, code } = req.body;
+
+        if (!reference || !code) {
+            return res.status(400).json({ error: 'Verification reference and code are required' });
+        }
+
+        const isValid = await otpService.validateOtp(reference, code);
+
+        if (!isValid) {
+            return res.status(400).json({ error: 'Invalid or expired verification code' });
+        }
+
+        const user = await prisma.user.update({
             where: { id: userId },
             data: {
-                nin,
                 kycLevel: 1,
                 isVerified: true
             }
         });
 
-        res.json({ message: 'Identity verified successfully. You can now fund your wallet.' });
-    } catch (error) {
-        console.error('KYC Error:', error);
-        res.status(500).json({ error: 'Failed to process Verification' });
+        res.json({ message: 'Identity verified successfully. You can now fund your wallet.', kycLevel: user.kycLevel });
+    } catch (error: any) {
+        console.error('Verify KYC OTP Error:', error);
+        res.status(500).json({ error: error.message || 'Failed to verify code' });
     }
 };
 

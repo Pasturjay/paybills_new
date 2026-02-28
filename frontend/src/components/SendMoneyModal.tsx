@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { X, Send, User, ChevronRight, AlertCircle, CheckCircle } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
 import { api } from '@/lib/api';
 import PinModal from './PinModal';
 
@@ -20,6 +21,7 @@ export default function SendMoneyModal({ isOpen, onClose, onSuccess }: SendMoney
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [idempotencyKey, setIdempotencyKey] = useState(uuidv4());
     const [isPinModalOpen, setIsPinModalOpen] = useState(false);
 
     const handleSend = async (pin: string) => {
@@ -35,7 +37,8 @@ export default function SendMoneyModal({ isOpen, onClose, onSuccess }: SendMoney
             const payload: any = {
                 amount: Number(formData.amount),
                 pin,
-                description: formData.description
+                description: formData.description,
+                idempotencyKey
             };
 
             if (formData.recipient.includes('@')) {
@@ -47,6 +50,7 @@ export default function SendMoneyModal({ isOpen, onClose, onSuccess }: SendMoney
             await api.post('/wallet/transfer', payload, token);
             setStep('details');
             setFormData({ recipient: '', amount: '', description: '' });
+            setIdempotencyKey(uuidv4());
             onSuccess();
             onClose();
         } catch (err: any) {
@@ -65,7 +69,7 @@ export default function SendMoneyModal({ isOpen, onClose, onSuccess }: SendMoney
                         <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                             <Send className="w-5 h-5 text-blue-600" /> Send Money
                         </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Transfer funds instantly to any user</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Gift funds instantly to any user</p>
                     </div>
                     <button
                         onClick={onClose}
@@ -146,7 +150,7 @@ export default function SendMoneyModal({ isOpen, onClose, onSuccess }: SendMoney
                 isOpen={isPinModalOpen}
                 onClose={() => setIsPinModalOpen(false)}
                 onSuccess={handleSend}
-                title="Confirm Transfer"
+                title="Confirm Gift"
                 description={`Enter PIN to send ₦${Number(formData.amount).toLocaleString()}`}
             />
         </div>

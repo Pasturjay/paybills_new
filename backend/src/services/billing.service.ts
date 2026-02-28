@@ -1,4 +1,4 @@
-import { PrismaClient, TransactionType, TransactionStatus, Wallet } from '@prisma/client';
+import { PrismaClient, TransactionType, TransactionStatus, Wallet, Prisma } from '@prisma/client';
 import { ClubKonnectProvider } from '../providers/clubkonnect.provider';
 import { BillProvider } from '../providers/interfaces/bill-provider.interface';
 import { v4 as uuidv4 } from 'uuid';
@@ -27,16 +27,18 @@ export class BillingService {
 
         // 2. Start Database Transaction
         return await prisma.$transaction(async (tx) => {
-            // A. Fetch & Lock Wallet
-            // Note: Prisma doesn't support SELECT FOR UPDATE directly in easy API yet without raw query, 
-            // but we can rely on atomic update decrement which throws if constraint fails (e.g. check constraint)
-            // For now, we fetch validation.
-            const wallet = await tx.wallet.findFirst({
-                where: { userId, currency: 'NGN' }
-            });
+            // A. Fetch & Lock Wallet using SELECT FOR UPDATE
+            // This prevents concurrent transactions from reading the same balance
+            const walletResults = await tx.$queryRaw<Wallet[]>(
+                Prisma.sql`SELECT * FROM "Wallet" WHERE "userId" = ${userId} AND "currency" = 'NGN' FOR UPDATE`
+            );
+            const wallet = walletResults[0];
 
             if (!wallet) throw new Error('Wallet not found');
-            if (wallet.balance.toNumber() < amount) throw new Error('Insufficient balance');
+
+            // Handle Decimal type from raw query
+            const balance = typeof wallet.balance === 'number' ? wallet.balance : Number(wallet.balance);
+            if (balance < amount) throw new Error('Insufficient balance');
 
             // B. Debit Wallet (Atomic Decrement)
             const updatedWallet = await tx.wallet.update({
@@ -44,7 +46,7 @@ export class BillingService {
                 data: { balance: { decrement: amount } }
             });
 
-            // Check constraint again just in case of race condition if db doesn't forbid below zero by default
+            // Double check (redundant with SELECT FOR UPDATE but good for safety)
             if (updatedWallet.balance.toNumber() < 0) {
                 throw new Error('Insufficient balance (Race Condition)');
             }
@@ -64,15 +66,11 @@ export class BillingService {
             });
 
             // D. Call Provider (External API)
-            // CRITICAL: If this times out or network fails, we MUST NOT rollback perfectly yet, 
-            // we should mark as PENDING and let reconciliation handle it, OR we rollback if we are sure it failed.
-            // For ClubKonnect, "Network Error" -> PENDING/RETRY. "Invalid Number" -> FAILED & REFUND.
-
             let providerResponse;
             try {
                 providerResponse = await purchaseLogic(this.provider, reference);
             } catch (networkError) {
-                // If network error, we keep it PENDING and schedule retry (log attempt)
+                // If network error, we keep it PENDING
                 await tx.transactionAttempt.create({
                     data: {
                         transactionId: transaction.id,
@@ -86,7 +84,6 @@ export class BillingService {
 
             // E. Handle Provider Response
             if (providerResponse.status === 'SUCCESS' || providerResponse.status === 'ORDER_RECEIVED') {
-                // Confirm Success (or keep PENDING if ORDER_RECEIVED)
                 const finalStatus = providerResponse.status === 'SUCCESS' ? TransactionStatus.SUCCESS : TransactionStatus.PENDING;
 
                 await tx.transaction.update({
@@ -100,11 +97,9 @@ export class BillingService {
 
                 return { status: finalStatus, message: 'Purchase successful', data: providerResponse };
             } else if (providerResponse.status === 'PENDING') {
-                // Keep Pending
                 return { status: 'PENDING', message: 'Transaction pending provider confirmation', reference };
             } else {
-                // F. Failure -> Auto-Refund (Rollback)
-                // We typically throw error to trigger Prisma transaction rollback
+                // F. Failure -> Auto-Refund (Rollback occurs because we throw)
                 throw new Error(providerResponse.message || 'Provider failed transaction');
             }
         });

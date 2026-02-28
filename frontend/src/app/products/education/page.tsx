@@ -155,19 +155,19 @@ function EducationContent() {
                             <form onSubmit={handleCheckout} className="space-y-6">
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase mb-3 text-left">Select Exam Body</label>
-                                    <div className="grid grid-cols-3 gap-3">
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                                         {exams.map((exam) => (
                                             <button
                                                 key={exam.id}
                                                 type="button"
                                                 onClick={() => { setSelectedExamId(exam.id); setQuantity(1); }}
-                                                className={`py-3 px-2 rounded-xl flex flex-col items-center justify-center gap-1 text-center transition-all border-2 min-h-[80px] ${selectedExamId === exam.id
+                                                className={`py-3 px-2 rounded-xl flex flex-col items-center justify-center gap-1 text-center transition-all border-2 min-h-[70px] sm:min-h-[80px] ${selectedExamId === exam.id
                                                     ? `${exam.color} ring-2 ring-offset-2 ring-green-500 dark:ring-offset-zinc-900`
                                                     : "bg-gray-50 dark:bg-zinc-800 text-gray-500 border-transparent grayscale hover:grayscale-0"
                                                     }`}
                                             >
-                                                <span className="font-bold text-sm">{exam.name}</span>
-                                                <span className="text-[10px] opacity-80 leading-tight">{exam.description}</span>
+                                                <span className="font-extrabold text-[13px] sm:text-sm">{exam.name}</span>
+                                                <span className="text-[9px] sm:text-[10px] opacity-80 leading-tight font-bold">{exam.description}</span>
                                             </button>
                                         ))}
                                     </div>
@@ -175,12 +175,12 @@ function EducationContent() {
 
                                 {selectedExam && (
                                     <div className="animate-in slide-in-from-top-4 fade-in duration-300 space-y-6">
-                                        <div className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-900/30">
+                                        <div className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-900/30">
                                             <div>
-                                                <div className="text-xs text-blue-600 dark:text-blue-400 font-bold uppercase mb-1">Price Per PIN</div>
-                                                <div className="text-xl font-bold text-gray-900 dark:text-white">₦{selectedExam.price.toLocaleString()}</div>
+                                                <div className="text-[10px] text-blue-600 dark:text-blue-400 font-black uppercase mb-1 tracking-widest">Price Per PIN</div>
+                                                <div className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">₦{selectedExam.price.toLocaleString()}</div>
                                             </div>
-                                            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-800 text-blue-600 flex items-center justify-center">
+                                            <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-800 text-blue-600 flex items-center justify-center">
                                                 <BookOpen className="w-5 h-5" />
                                             </div>
                                         </div>
