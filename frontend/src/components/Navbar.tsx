@@ -23,26 +23,28 @@ export function Navbar() {
             {/* Gloss & blur bar */}
             <div className="mx-4 mt-3">
                 <nav
-                    className="relative flex items-center justify-between px-5 py-3.5 rounded-2xl"
+                    className="relative flex items-center justify-between px-5 py-3.5 rounded-2xl overflow-hidden shine"
                     style={{
-                        background: "rgba(15, 23, 42, 0.85)",
-                        backdropFilter: "blur(24px) saturate(180%)",
-                        boxShadow: "0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.08) inset, 0 1px 0 rgba(255,255,255,0.12) inset",
-                        border: "1px solid rgba(255,255,255,0.06)"
+                        background: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 40%, #0f172a 100%)",
+                        backdropFilter: "blur(24px) saturate(200%)",
+                        boxShadow: "0 16px 48px rgba(99,102,241,0.4), 0 0 0 1px rgba(255,255,255,0.15) inset"
                     }}
                 >
+                    {/* Decorative glows matching Hero */}
+                    <div className="absolute top-0 right-0 w-[300px] h-[150px] bg-indigo-600/30 rounded-full blur-[60px] pointer-events-none translate-x-1/4 -translate-y-1/4" />
+                    <div className="absolute bottom-0 left-0 w-[200px] h-[100px] bg-violet-600/25 rounded-full blur-[50px] pointer-events-none -translate-x-1/4 translate-y-1/4" />
+
                     {/* Top gloss */}
-                    <div className="absolute inset-x-0 top-0 h-px rounded-t-2xl bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+                    <div className="absolute inset-x-0 top-0 h-px rounded-t-2xl bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
 
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2 group">
-                        <div className="relative w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300"
-                            style={{ boxShadow: "0 4px 16px rgba(99,102,241,0.5), inset 0 1px 0 rgba(255,255,255,0.2)" }}
+                        <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 glow-blue btn-premium"
                         >
-                            <div className="absolute inset-0 rounded-xl bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
+                            <div className="absolute inset-0 rounded-xl bg-gradient-to-b from-white/30 to-transparent pointer-events-none" />
                             <PaybillsLogo className="w-5 h-5 text-white relative z-10" variant="white" />
                         </div>
-                        <span className="text-white font-black text-lg tracking-tight group-hover:text-indigo-300 transition-colors">
+                        <span className="text-white font-black text-xl tracking-tight group-hover:text-indigo-300 transition-colors">
                             Pay<span className="text-gradient-blue">bills</span>
                         </span>
                     </Link>
@@ -55,9 +57,9 @@ export function Navbar() {
                                 <Link
                                     key={link.label}
                                     href={link.href}
-                                    className={`px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200 ${active
-                                        ? "bg-white/10 text-white"
-                                        : "text-gray-400 hover:text-white hover:bg-white/5"
+                                    className={`px-4 py-2 rounded-xl text-[16px] font-black transition-all duration-200 ${active
+                                        ? "bg-white/20 text-white"
+                                        : "text-gray-100 hover:text-white hover:bg-white/10"
                                         }`}
                                 >
                                     {link.label}
@@ -71,20 +73,18 @@ export function Navbar() {
                         {user ? (
                             <Link
                                 href="/dashboard"
-                                className="shine px-5 py-2.5 bg-indigo-500 hover:bg-indigo-400 text-white rounded-xl font-bold text-sm transition-all duration-300 hover:scale-105"
-                                style={{ boxShadow: "0 4px 16px rgba(99,102,241,0.45), inset 0 1px 0 rgba(255,255,255,0.15)" }}
+                                className="shine btn-premium px-6 py-2.5 bg-indigo-500 hover:bg-indigo-400 text-white rounded-xl font-black text-[16px] transition-all duration-300 hover:scale-[1.03] glow-blue"
                             >
                                 Dashboard →
                             </Link>
                         ) : (
                             <>
-                                <Link href="/auth/login" className="px-4 py-2.5 text-gray-300 hover:text-white rounded-xl font-bold text-sm transition-colors hover:bg-white/5">
+                                <Link href="/auth/login" className="px-5 py-2.5 text-white hover:text-white rounded-xl font-black text-[16px] transition-colors hover:bg-white/10">
                                     Sign In
                                 </Link>
                                 <Link
                                     href="/auth/register"
-                                    className="shine px-5 py-2.5 bg-indigo-500 hover:bg-indigo-400 text-white rounded-xl font-bold text-sm transition-all duration-300 hover:scale-105"
-                                    style={{ boxShadow: "0 4px 16px rgba(99,102,241,0.45), inset 0 1px 0 rgba(255,255,255,0.15)" }}
+                                    className="shine btn-premium px-6 py-2.5 bg-indigo-500 hover:bg-indigo-400 text-white rounded-xl font-black text-[16px] transition-all duration-300 hover:scale-[1.03] glow-blue"
                                 >
                                     Get Started
                                 </Link>
@@ -136,13 +136,12 @@ export function Navbar() {
                             ) : (
                                 <>
                                     <Link href="/auth/login" onClick={() => setMobileOpen(false)}
-                                        className="flex items-center justify-center gap-2 py-3.5 bg-white/5 text-white rounded-xl font-bold text-sm border border-white/10"
+                                        className="flex items-center justify-center gap-2 py-3.5 bg-white/5 text-white rounded-xl font-black text-[16px] border border-white/20 hover:bg-white/10 transition-colors"
                                     >
-                                        <LogIn className="w-4 h-4" /> Sign In
+                                        <LogIn className="w-5 h-5" /> Sign In
                                     </Link>
                                     <Link href="/auth/register" onClick={() => setMobileOpen(false)}
-                                        className="flex items-center justify-center py-3.5 bg-indigo-500 text-white rounded-xl font-black text-sm"
-                                        style={{ boxShadow: "0 4px 16px rgba(99,102,241,0.5)" }}
+                                        className="btn-premium shine flex items-center justify-center py-3.5 bg-indigo-500 text-white rounded-xl font-black text-[16px] glow-blue"
                                     >
                                         Get Started Free
                                     </Link>
