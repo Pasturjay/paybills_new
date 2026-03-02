@@ -78,9 +78,18 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 // Global Error Handler
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-    console.error(err.stack);
-    res.status(500).json({ error: 'Internal Server Error' });
+app.use((err: Error & { status?: number; code?: string }, req: Request, res: Response, next: NextFunction) => {
+    const status = err.status || 500;
+    if (status >= 500) {
+        console.error(`[ERROR] ${req.method} ${req.path} — ${err.message}`);
+        console.error(err.stack);
+    }
+    res.status(status).json({
+        error: status >= 500 ? 'Internal Server Error' : err.message,
+        code: err.code || (status >= 500 ? 'INTERNAL_SERVER_ERROR' : 'ERROR'),
+        path: req.path,
+        timestamp: new Date().toISOString(),
+    });
 });
 
 export default app;

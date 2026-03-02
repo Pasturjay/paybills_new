@@ -24,10 +24,6 @@ export const metadata: Metadata = {
         },
     },
     manifest: "/manifest.json",
-    icons: {
-        icon: "/favicon.png",
-        apple: "/favicon.png",
-    },
     openGraph: {
         title: 'PayBills - Seamless Utility Payments & Virtual Cards',
         description: 'Pay bills, buy data, and create virtual dollar cards instantly.',
@@ -70,7 +66,7 @@ export const metadata: Metadata = {
         'microsoft-partner': 'https://marketplace.microsoft.com/en-us/partners/086ea8f8-72d6-44a6-8e33-32630eab33c5/overview',
     },
     verification: {
-        google: 'google-site-verification-id', // User should replace this
+        google: 'google-site-verification-id', // User should replace this with actual verification ID
     },
 };
 
@@ -78,11 +74,12 @@ export const viewport = {
     themeColor: "#0f172a",
     width: "device-width",
     initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
+    // NOTE: maximumScale and userScalable intentionally omitted to allow
+    // pinch-to-zoom for accessibility compliance.
 };
 
 import dynamic from "next/dynamic";
+import { Toaster } from "react-hot-toast";
 const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav").then(mod => mod.MobileBottomNav), { ssr: false });
 const CommandCenter = dynamic(() => import("@/components/CommandCenter").then(mod => mod.CommandCenter), { ssr: false });
 import { Providers } from "@/components/Providers";
@@ -97,7 +94,6 @@ export default function RootLayout({
         "@type": "Organization",
         "name": "PayBills",
         "url": "https://paybills.ng",
-        "logo": "https://paybills.ng/logo.png",
         "sameAs": [
             "https://twitter.com/paybills_ng",
             "https://facebook.com/paybillsng",
@@ -112,6 +108,26 @@ export default function RootLayout({
                 <script
                     type="application/ld+json"
                     dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+                />
+                {/* Global toast notifications — positioned top-right */}
+                <Toaster
+                    position="top-right"
+                    toastOptions={{
+                        duration: 4000,
+                        style: {
+                            borderRadius: '12px',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                            padding: '12px 16px',
+                        },
+                        success: {
+                            iconTheme: { primary: '#22c55e', secondary: '#fff' },
+                        },
+                        error: {
+                            iconTheme: { primary: '#ef4444', secondary: '#fff' },
+                        },
+                    }}
                 />
                 <Providers>
                     <main>

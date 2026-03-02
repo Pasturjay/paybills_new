@@ -32,15 +32,6 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.lookupUser = exports.transferFunds = exports.getVirtualAccount = exports.verifyFunding = exports.initiateFunding = exports.simulateFund = exports.getUserTransactions = exports.getBalance = void 0;
 const client_1 = require("@prisma/client");
@@ -50,11 +41,11 @@ const security_service_1 = require("../services/security.service");
 const paystackService = new paystack_service_1.PaystackService();
 const securityService = new security_service_1.SecurityService();
 // Get Wallet Balance
-const getBalance = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getBalance = async (req, res) => {
     try {
         // @ts-ignore - UserId attached by auth middleware
-        const userId = req.user.userId;
-        const wallet = yield prisma.wallet.findFirst({
+        const userId = req.user.id;
+        const wallet = await prisma.wallet.findFirst({
             where: { userId, currency: 'NGN' },
         });
         if (!wallet) {
@@ -66,13 +57,13 @@ const getBalance = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         console.error('Get Balance Error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
-});
+};
 exports.getBalance = getBalance;
 // Get User Transactions
-const getUserTransactions = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getUserTransactions = async (req, res) => {
     try {
-        const userId = req.user.userId;
-        const transactions = yield prisma.transaction.findMany({
+        const userId = req.user.id;
+        const transactions = await prisma.transaction.findMany({
             where: { userId },
             orderBy: { createdAt: 'desc' },
             take: 50 // Limit to last 50 for now
@@ -83,31 +74,31 @@ const getUserTransactions = (req, res) => __awaiter(void 0, void 0, void 0, func
         console.error('Get Transactions Error:', error);
         res.status(500).json({ error: 'Failed to fetch transactions' });
     }
-});
+};
 exports.getUserTransactions = getUserTransactions;
 // Simulate Funding (In prod, this would be a webhook callback)
-const simulateFund = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const simulateFund = async (req, res) => {
     var _a;
     try {
         // @ts-ignore
-        const userId = req.user.userId;
+        const userId = req.user.id;
         const { amount } = req.body;
         // Check KYC Level
-        const user = yield prisma.user.findUnique({ where: { id: userId } });
+        const user = await prisma.user.findUnique({ where: { id: userId } });
         if (!user || user.kycLevel < 1) {
             return res.status(403).json({ error: 'Identity verification required. Please verify your NIN to fund your wallet.' });
         }
-        const updatedWallet = yield prisma.wallet.updateMany({
+        const updatedWallet = await prisma.wallet.updateMany({
             where: { userId, currency: 'NGN' },
             data: {
                 balance: { increment: Number(amount) }
             }
         });
         // In a real app, create a Transaction and LedgerEntry here too
-        yield prisma.transaction.create({
+        await prisma.transaction.create({
             data: {
                 userId,
-                walletId: ((_a = (yield prisma.wallet.findFirst({ where: { userId } }))) === null || _a === void 0 ? void 0 : _a.id) || '',
+                walletId: ((_a = (await prisma.wallet.findFirst({ where: { userId } }))) === null || _a === void 0 ? void 0 : _a.id) || '',
                 amount: Number(amount),
                 total: Number(amount),
                 type: 'FUNDING',
@@ -116,24 +107,24 @@ const simulateFund = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             }
         });
         // Send Notification
-        const { notificationService } = yield Promise.resolve().then(() => __importStar(require('../services/notification.service')));
-        yield notificationService.createNotification(userId, 'Wallet Funded', `Your wallet has been funded with ₦${amount}`, 'SUCCESS');
+        const { notificationService } = await Promise.resolve().then(() => __importStar(require('../services/notification.service')));
+        await notificationService.createNotification(userId, 'Wallet Topped Up', `Your wallet has been topped up with ₦${amount}`, 'SUCCESS');
         res.json({ message: 'Wallet funded successfully', amount });
     }
     catch (error) {
         res.status(500).json({ error: 'Funding Error' });
     }
-});
+};
 exports.simulateFund = simulateFund;
-const initiateFunding = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const initiateFunding = async (req, res) => {
     try {
         // @ts-ignore
-        const userId = req.user.userId;
+        const userId = req.user.id;
         const { amount } = req.body;
         if (!amount || Number(amount) <= 0) {
             return res.status(400).json({ error: 'Invalid amount' });
         }
-        const user = yield prisma.user.findUnique({ where: { id: userId } });
+        const user = await prisma.user.findUnique({ where: { id: userId } });
         if (!user)
             return res.status(404).json({ error: 'User not found' });
         // callback URL - frontend verification page
@@ -142,7 +133,7 @@ const initiateFunding = (req, res) => __awaiter(void 0, void 0, void 0, function
         const callbackUrl = `${process.env.APP_URL || 'http://localhost:3000'}/dashboard/fund/verify`;
         if (!user.email)
             return res.status(400).json({ error: 'Email address required to fund wallet. Please update your profile.' });
-        const initResponse = yield paystackService.initializeTransaction(user.email, Number(amount), callbackUrl, {
+        const initResponse = await paystackService.initializeTransaction(user.email, Number(amount), callbackUrl, {
             type: 'funding',
             userId: userId
         });
@@ -156,23 +147,23 @@ const initiateFunding = (req, res) => __awaiter(void 0, void 0, void 0, function
         console.error('Initiate Funding Error:', error);
         res.status(500).json({ error: error.message || 'Failed to initiate funding' });
     }
-});
+};
 exports.initiateFunding = initiateFunding;
-const verifyFunding = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const verifyFunding = async (req, res) => {
     try {
         // @ts-ignore
-        const userId = req.user.userId;
+        const userId = req.user.id;
         const { reference } = req.query;
         if (!reference || typeof reference !== 'string') {
             return res.status(400).json({ error: 'Transaction reference is required' });
         }
         // 1. Verify with Paystack
-        const verification = yield paystackService.verifyTransaction(reference);
+        const verification = await paystackService.verifyTransaction(reference);
         if (verification.status !== 'success') {
             return res.status(400).json({ error: 'Transaction was not successful' });
         }
         // 2. Check if transaction already processed
-        const existingTx = yield prisma.transaction.findFirst({
+        const existingTx = await prisma.transaction.findFirst({
             where: { reference: reference }
         });
         if (existingTx) {
@@ -180,10 +171,10 @@ const verifyFunding = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         }
         // 3. Fund Wallet
         const amount = verification.amount / 100; // Convert kobo to naira
-        const wallet = yield prisma.wallet.findFirst({ where: { userId, currency: 'NGN' } });
+        const wallet = await prisma.wallet.findFirst({ where: { userId, currency: 'NGN' } });
         if (!wallet)
             return res.status(404).json({ error: 'Wallet not found' });
-        yield prisma.$transaction([
+        await prisma.$transaction([
             prisma.wallet.update({
                 where: { id: wallet.id },
                 data: { balance: { increment: amount } }
@@ -202,38 +193,46 @@ const verifyFunding = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             })
         ]);
         // 4. Notify
-        const { notificationService } = yield Promise.resolve().then(() => __importStar(require('../services/notification.service')));
-        yield notificationService.createNotification(userId, 'Wallet Funded', `Your wallet has been funded with ₦${amount.toLocaleString()}`, 'SUCCESS');
-        res.json({ message: 'Wallet funded successfully', amount });
+        const { notificationService } = await Promise.resolve().then(() => __importStar(require('../services/notification.service')));
+        await notificationService.createNotification(userId, 'Wallet Topped Up', `Your wallet has been topped up with ₦${amount.toLocaleString()}`, 'SUCCESS');
+        res.json({ message: 'Wallet topped up successfully', amount });
     }
     catch (error) {
         console.error('Verify Funding Error:', error);
         res.status(500).json({ error: error.message || 'Verification failed' });
     }
-});
+};
 exports.verifyFunding = verifyFunding;
 const flutterwave_service_1 = require("../services/flutterwave.service");
 const flutterwaveService = new flutterwave_service_1.FlutterwaveService();
-const getVirtualAccount = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
+const getVirtualAccount = async (req, res) => {
+    var _a, _b, _c, _d, _e;
+    // @ts-ignore
+    const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+    const provider = ((_b = req.query.provider) === null || _b === void 0 ? void 0 : _b.toUpperCase()) || 'PAYSTACK';
     try {
-        // @ts-ignore
-        const userId = req.user.userId;
-        const provider = ((_a = req.query.provider) === null || _a === void 0 ? void 0 : _a.toUpperCase()) || 'PAYSTACK'; // Default to Paystack
         // 1. Check if exists in DB for this provider
-        const existingAccount = yield prisma.virtualAccount.findFirst({
+        const existingAccount = await prisma.virtualAccount.findFirst({
             where: { userId, provider }
         });
         if (existingAccount) {
             return res.json(existingAccount);
         }
         // 2. Fetch User details for creation
-        const user = yield prisma.user.findUnique({ where: { id: userId } });
+        const user = await prisma.user.findUnique({ where: { id: userId } });
         if (!user)
             return res.status(404).json({ error: 'User not found' });
         // Basic validation for creation
         if (!user.firstName || !user.lastName || !user.phone) {
-            return res.status(400).json({ error: 'Please update your profile name and phone number to generate an account.' });
+            return res.status(400).json({
+                error: 'Profile incomplete',
+                code: 'MISSING_PROFILE_INFO',
+                missingFields: {
+                    firstName: !user.firstName,
+                    lastName: !user.lastName,
+                    phone: !user.phone
+                }
+            });
         }
         let newAccountData;
         if (provider === 'FLUTTERWAVE') {
@@ -244,7 +243,7 @@ const getVirtualAccount = (req, res) => __awaiter(void 0, void 0, void 0, functi
             const txRef = `VA-${userId}-${Date.now()}`;
             if (!user.email)
                 return res.status(400).json({ error: 'Email address required to create virtual account. Please update your profile.' });
-            const flwAccount = yield flutterwaveService.createVirtualAccount(user.email, user.bvn, txRef, user.firstName, user.lastName, user.phone);
+            const flwAccount = await flutterwaveService.createVirtualAccount(user.email, user.bvn, txRef, user.firstName, user.lastName, user.phone);
             newAccountData = {
                 userId,
                 bankName: flwAccount.bank_name,
@@ -259,7 +258,7 @@ const getVirtualAccount = (req, res) => __awaiter(void 0, void 0, void 0, functi
             // PAYSTACK Logic
             if (!user.email)
                 return res.status(400).json({ error: 'Email address required to create virtual account. Please update your profile.' });
-            const paystackAccount = yield paystackService.createDedicatedAccount(user.email, user.firstName, user.lastName, user.phone);
+            const paystackAccount = await paystackService.createDedicatedAccount(user.email, user.firstName, user.lastName, user.phone);
             // Adjusting based on standard Paystack DVA response which might be nested
             // Typically: { bank: { name, ... }, account_number, account_name, ... }
             newAccountData = {
@@ -273,40 +272,65 @@ const getVirtualAccount = (req, res) => __awaiter(void 0, void 0, void 0, functi
             };
         }
         // 4. Save to DB
-        const newAccount = yield prisma.virtualAccount.create({
+        const newAccount = await prisma.virtualAccount.create({
             data: newAccountData
         });
         res.json(newAccount);
     }
     catch (error) {
-        console.error('Get Virtual Account Error:', error);
-        res.status(500).json({ error: error.message || 'Failed to retrieve virtual account' });
+        console.error('Get Virtual Account Error:', {
+            userId,
+            provider,
+            message: error.message,
+            response: (_c = error.response) === null || _c === void 0 ? void 0 : _c.data
+        });
+        res.status(500).json({
+            error: ((_e = (_d = error.response) === null || _d === void 0 ? void 0 : _d.data) === null || _e === void 0 ? void 0 : _e.message) || error.message || 'Failed to retrieve virtual account'
+        });
     }
-});
+};
 exports.getVirtualAccount = getVirtualAccount;
-const transferFunds = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const transferFunds = async (req, res) => {
     try {
         // @ts-ignore
-        const userId = req.user.userId;
-        const { recipientEmail, recipientPhone, amount, pin, description } = req.body;
+        const userId = req.user.id;
+        const { recipientEmail, recipientPhone, amount, pin, description, idempotencyKey } = req.body;
         if (!amount || Number(amount) <= 0) {
             return res.status(400).json({ error: 'Invalid amount' });
         }
         // 1. Verify PIN
-        yield securityService.validateRequestPin(userId, pin);
+        await securityService.validateRequestPin(userId, pin);
+        // 1.1 Check for Idempotency
+        if (idempotencyKey) {
+            const existingDR = await prisma.transaction.findFirst({
+                where: { userId, idempotencyKey }
+            });
+            if (existingDR) {
+                return res.json({
+                    status: 'success',
+                    message: 'Transfer already processed',
+                    reference: existingDR.reference,
+                    amount: existingDR.amount
+                });
+            }
+        }
         // 2. Find Recipient
         let recipient;
         if (recipientEmail) {
-            recipient = yield prisma.user.findUnique({ where: { email: recipientEmail } });
+            recipient = await prisma.user.findUnique({ where: { email: recipientEmail } });
         }
         else if (recipientPhone) {
-            recipient = yield prisma.user.findUnique({ where: { phone: recipientPhone } });
+            recipient = await prisma.user.findUnique({ where: { phone: recipientPhone } });
         }
         else if (req.body.recipientTag) {
             let tag = req.body.recipientTag;
             if (!tag.startsWith('@'))
                 tag = '@' + tag; // Normalize tag
-            recipient = yield prisma.user.findUnique({ where: { userTag: tag } });
+            recipient = await prisma.user.findFirst({
+                where: {
+                    userTag: { equals: tag, mode: 'insensitive' }
+                }
+            });
         }
         if (!recipient) {
             return res.status(404).json({ error: 'Recipient not found' });
@@ -315,33 +339,33 @@ const transferFunds = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             return res.status(400).json({ error: 'Cannot transfer to yourself' });
         }
         // 3. Perform Atomic Transfer
-        yield prisma.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
-            var _a;
+        await prisma.$transaction(async (tx) => {
             // Check Sender Balance (Locking row if needed, but atomic increment/decrement is usually safe enough for this scale)
             // Ideally we check balance first
-            const senderWallet = yield tx.wallet.findFirst({ where: { userId, currency: 'NGN' } });
+            const senderWallet = await tx.wallet.findFirst({ where: { userId, currency: 'NGN' } });
             if (!senderWallet || senderWallet.balance.toNumber() < Number(amount)) {
                 throw new Error('Insufficient funds');
             }
             // Deduct from Sender
-            yield tx.wallet.update({
+            await tx.wallet.update({
                 where: { id: senderWallet.id },
                 data: { balance: { decrement: Number(amount) } }
             });
             // Add to Recipient
-            const recipientWallet = yield tx.wallet.findFirst({ where: { userId: recipient.id, currency: 'NGN' } });
+            const recipientWallet = await tx.wallet.findFirst({ where: { userId: recipient.id, currency: 'NGN' } });
             if (!recipientWallet) {
                 // Should exist, but handle edge case
                 throw new Error('Recipient wallet not found'); // Or create one
             }
-            yield tx.wallet.update({
+            await tx.wallet.update({
                 where: { id: recipientWallet.id },
                 data: { balance: { increment: Number(amount) } }
             });
             // Create Transaction Records
             const ref = 'TRF_' + Date.now() + Math.floor(Math.random() * 1000);
-            // Sender Transaction
-            yield tx.transaction.create({
+            const sender = await tx.user.findUnique({ where: { id: userId } });
+            // Sender Transaction (Debit)
+            await tx.transaction.create({
                 data: {
                     userId,
                     walletId: senderWallet.id,
@@ -350,12 +374,17 @@ const transferFunds = (req, res) => __awaiter(void 0, void 0, void 0, function* 
                     type: 'P2P_TRANSFER',
                     status: 'SUCCESS',
                     reference: ref + '_DR',
-                    metadata: JSON.stringify({ recipientId: recipient.id, recipientName: `${recipient.firstName} ${recipient.lastName}` }),
-                    description: description || 'Transfer to ' + recipient.firstName
-                } // Using as any to bypass partial type mismatches if schema not fully synced in IDE
+                    idempotencyKey,
+                    metadata: {
+                        recipientId: recipient.id,
+                        recipientName: `${recipient.firstName} ${recipient.lastName}`,
+                        recipientTag: recipient.userTag
+                    },
+                    description: description || `Gift to ${recipient.firstName} ${recipient.lastName}`
+                }
             });
-            // Recipient Transaction
-            yield tx.transaction.create({
+            // Recipient Transaction (Credit)
+            await tx.transaction.create({
                 data: {
                     userId: recipient.id,
                     walletId: recipientWallet.id,
@@ -364,46 +393,55 @@ const transferFunds = (req, res) => __awaiter(void 0, void 0, void 0, function* 
                     type: 'P2P_TRANSFER',
                     status: 'SUCCESS',
                     reference: ref + '_CR',
-                    metadata: JSON.stringify({ senderId: userId }),
-                    description: description || 'Transfer from ' + ((_a = (yield tx.user.findUnique({ where: { id: userId } }))) === null || _a === void 0 ? void 0 : _a.firstName)
+                    metadata: {
+                        senderId: userId,
+                        senderName: `${sender === null || sender === void 0 ? void 0 : sender.firstName} ${sender === null || sender === void 0 ? void 0 : sender.lastName}`,
+                        senderTag: sender === null || sender === void 0 ? void 0 : sender.userTag
+                    },
+                    description: description || `Gift from ${sender === null || sender === void 0 ? void 0 : sender.firstName} ${sender === null || sender === void 0 ? void 0 : sender.lastName}`
                 }
             });
-        }));
+        });
         // 4. Notify
-        const { notificationService } = yield Promise.resolve().then(() => __importStar(require('../services/notification.service')));
-        yield notificationService.createNotification(userId, 'Transfer Successful', `You sent ₦${amount} to ${recipient.firstName}`, 'SUCCESS');
-        yield notificationService.createNotification(recipient.id, 'Money Received', `You received ₦${amount}`, 'SUCCESS');
+        const { notificationService } = await Promise.resolve().then(() => __importStar(require('../services/notification.service')));
+        await notificationService.createNotification(userId, 'Gift Sent', `You gifted ₦${amount} to ${recipient.firstName}`, 'SUCCESS');
+        await notificationService.createNotification(recipient.id, 'Gift Received', `You received a gift of ₦${amount}`, 'SUCCESS');
         res.json({ message: 'Transfer successful' });
     }
     catch (error) {
         console.error('Transfer Error:', error);
         res.status(400).json({ error: error.message || 'Transfer failed' });
     }
-});
+};
 exports.transferFunds = transferFunds;
-const lookupUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const lookupUser = async (req, res) => {
     try {
         const { query } = req.body;
         if (!query) {
             return res.status(400).json({ error: 'Query is required' });
         }
         let searchCriteria = {};
-        if (query.startsWith('@')) {
-            searchCriteria.userTag = query;
+        const normalizedQuery = query.trim();
+        if (normalizedQuery.startsWith('@')) {
+            searchCriteria.userTag = { equals: normalizedQuery, mode: 'insensitive' };
         }
-        else if (query.includes('@')) {
-            searchCriteria.email = query;
+        else if (normalizedQuery.includes('@')) {
+            searchCriteria.email = { equals: normalizedQuery, mode: 'insensitive' };
         }
         else {
-            searchCriteria.phone = query;
+            // Remove any non-numeric characters for phone lookup
+            const phoneDigits = normalizedQuery.replace(/\D/g, '');
+            searchCriteria.phone = { contains: phoneDigits };
         }
-        const user = yield prisma.user.findFirst({
+        const user = await prisma.user.findFirst({
             where: searchCriteria,
             select: {
                 id: true,
                 firstName: true,
                 lastName: true,
                 userTag: true,
+                email: true,
+                phone: true
             }
         });
         if (!user) {
@@ -418,5 +456,5 @@ const lookupUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         console.error('Lookup Error:', error);
         res.status(500).json({ error: 'Lookup failed' });
     }
-});
+};
 exports.lookupUser = lookupUser;

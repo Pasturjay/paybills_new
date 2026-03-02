@@ -1,21 +1,12 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAdminStats = exports.getAllTransactions = exports.getAllUsers = void 0;
+exports.updateUserStatus = exports.getProviderStatus = exports.updateServiceStatus = exports.getServiceStatus = exports.getAdminStats = exports.getAllTransactions = exports.getAllUsers = void 0;
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
 // Get All Users (with optional search)
-const getAllUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getAllUsers = async (req, res) => {
     try {
-        const users = yield prisma.user.findMany({
+        const users = await prisma.user.findMany({
             select: {
                 id: true,
                 email: true,
@@ -41,12 +32,12 @@ const getAllUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     catch (error) {
         res.status(500).json({ error: 'Internal Server Error' });
     }
-});
+};
 exports.getAllUsers = getAllUsers;
 // Get All Transactions
-const getAllTransactions = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getAllTransactions = async (req, res) => {
     try {
-        const transactions = yield prisma.transaction.findMany({
+        const transactions = await prisma.transaction.findMany({
             include: {
                 user: {
                     select: {
@@ -65,12 +56,12 @@ const getAllTransactions = (req, res) => __awaiter(void 0, void 0, void 0, funct
     catch (error) {
         res.status(500).json({ error: 'Internal Server Error' });
     }
-});
+};
 exports.getAllTransactions = getAllTransactions;
 // Get Analytics Stats
-const getAdminStats = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getAdminStats = async (req, res) => {
     try {
-        const [totalUsers, totalTransactions, totalVolume] = yield Promise.all([
+        const [totalUsers, totalTransactions, totalVolume] = await Promise.all([
             prisma.user.count(),
             prisma.transaction.count(),
             prisma.transaction.aggregate({
@@ -91,5 +82,71 @@ const getAdminStats = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     catch (error) {
         res.status(500).json({ error: 'Internal Server Error' });
     }
-});
+};
 exports.getAdminStats = getAdminStats;
+// Get All Services and their status
+const getServiceStatus = async (req, res) => {
+    try {
+        const services = await prisma.service.findMany({
+            include: {
+                provider: {
+                    select: { name: true, code: true }
+                }
+            }
+        });
+        res.json(services);
+    }
+    catch (error) {
+        res.status(500).json({ error: 'Failed to fetch services' });
+    }
+};
+exports.getServiceStatus = getServiceStatus;
+// Toggle Service Active Status
+const updateServiceStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { isActive } = req.body;
+        const updatedService = await prisma.service.update({
+            where: { id },
+            data: { isActive }
+        });
+        res.json(updatedService);
+    }
+    catch (error) {
+        res.status(500).json({ error: 'Failed to update service' });
+    }
+};
+exports.updateServiceStatus = updateServiceStatus;
+// Get Providers and their balances
+const getProviderStatus = async (req, res) => {
+    try {
+        const providers = await prisma.provider.findMany();
+        res.json(providers);
+    }
+    catch (error) {
+        res.status(500).json({ error: 'Failed to fetch providers' });
+    }
+};
+exports.getProviderStatus = getProviderStatus;
+// Toggle User Active Status (Block/Unblock)
+const updateUserStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { isActive } = req.body;
+        const updatedUser = await prisma.user.update({
+            where: { id },
+            data: { isActive },
+            select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                isActive: true
+            }
+        });
+        res.json(updatedUser);
+    }
+    catch (error) {
+        res.status(500).json({ error: 'Failed to update user status' });
+    }
+};
+exports.updateUserStatus = updateUserStatus;

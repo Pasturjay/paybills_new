@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { X, CreditCard, Loader2, Copy, CheckCircle2 } from "lucide-react";
 import { api } from "@/lib/api";
+import toast from "react-hot-toast";
 
 export function FundWalletModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
     const [amount, setAmount] = useState("");
@@ -25,17 +26,18 @@ export function FundWalletModal({ isOpen, onClose }: { isOpen: boolean; onClose:
     const fetchVirtualAccount = async () => {
         setDvaLoading(true);
         setMissingInfo(null);
+        setFetchError("");
         try {
             const token = localStorage.getItem("token");
             if (!token) return;
-            // Fetch DVA
             const res = await api.get("/wallet/virtual-account", token);
             setAccount(res);
         } catch (error: any) {
             console.error("Failed to fetch account", error);
-            setFetchError(error.message || "Failed to load account details");
             if (error.code === 'MISSING_PROFILE_INFO') {
                 setMissingInfo(error.missingFields);
+            } else {
+                setFetchError(error.message || "Failed to load account details");
             }
         } finally {
             setDvaLoading(false);
@@ -48,30 +50,33 @@ export function FundWalletModal({ isOpen, onClose }: { isOpen: boolean; onClose:
         try {
             const token = localStorage.getItem("token");
             if (!token) return;
-
             await api.put("/user/profile", profileData, token);
-            // After update, try fetching VA again
             await fetchVirtualAccount();
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to update profile", error);
-            alert("Failed to update profile. Please try again.");
+            toast.error(error.message || "Failed to update profile. Please try again.");
             setDvaLoading(false);
         }
     };
 
     const copyToClipboard = () => {
         if (account?.accountNumber) {
-            navigator.clipboard.writeText(account.accountNumber);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
+            navigator.clipboard.writeText(account.accountNumber).then(() => {
+                setCopied(true);
+                toast.success("Account number copied!");
+                setTimeout(() => setCopied(false), 2000);
+            }).catch(() => {
+                toast.error("Could not copy to clipboard.");
+            });
         }
     };
 
     if (!isOpen) return null;
 
     const handleFund = async () => {
-        if (!amount || isNaN(Number(amount)) || Number(amount) < 100) {
-            alert("Please enter a valid amount (minimum ₦100)");
+        const parsedAmount = Number(amount);
+        if (!amount || isNaN(parsedAmount) || parsedAmount < 100) {
+            toast.error("Please enter a valid amount (minimum ₦100)");
             return;
         }
 
@@ -80,17 +85,17 @@ export function FundWalletModal({ isOpen, onClose }: { isOpen: boolean; onClose:
             const token = localStorage.getItem("token");
             if (!token) throw new Error("Not authenticated");
 
-            const res = await api.post("/wallet/fund/initialize", { amount }, token);
+            const res = await api.post("/wallet/fund/initialize", { amount: parsedAmount }, token);
 
             if (res.authorization_url) {
                 window.location.href = res.authorization_url;
             } else {
-                alert("Failed to initialize payment");
+                toast.error("Failed to initialize payment. Please try again.");
                 setLoading(false);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            alert("Something went wrong");
+            toast.error(error.message || "Something went wrong. Please try again.");
             setLoading(false);
         }
     };
@@ -123,12 +128,15 @@ export function FundWalletModal({ isOpen, onClose }: { isOpen: boolean; onClose:
                                     <div className="text-2xl font-bold tracking-widest font-mono text-blue-400">{account.accountNumber}</div>
                                     <div className="text-sm font-medium text-white/80 mt-1">{account.bankName}</div>
                                 </div>
-                                <button onClick={copyToClipboard} className="p-2 bg-blue-500/10 hover:bg-blue-500/20 rounded-xl transition-colors text-blue-400">
+                                <button
+                                    onClick={copyToClipboard}
+                                    className="p-2 bg-blue-500/10 hover:bg-blue-500/20 rounded-xl transition-colors text-blue-400"
+                                    title="Copy account number"
+                                >
                                     {copied ? <CheckCircle2 className="w-5 h-5 text-green-400" /> : <Copy className="w-5 h-5" />}
                                 </button>
                             </div>
                             <div className="text-xs text-gray-500 font-medium">{account.accountName}</div>
-
                             {/* Decorative */}
                             <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
                         </div>
@@ -158,7 +166,7 @@ export function FundWalletModal({ isOpen, onClose }: { isOpen: boolean; onClose:
                                 onChange={e => setProfileData({ ...profileData, phone: e.target.value })}
                                 className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none"
                             />
-                            <button className="w-full py-2 bg-blue-600 hover:bg-blue-700 rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-500/20">
+                            <button className="w-full py-2 bg-blue-600 hover:bg-blue-700 rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-500/20 text-white">
                                 Generate Account
                             </button>
                         </form>
@@ -189,13 +197,27 @@ export function FundWalletModal({ isOpen, onClose }: { isOpen: boolean; onClose:
                             onChange={(e) => setAmount(e.target.value)}
                             className="w-full pl-10 pr-4 py-4 bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600"
                             placeholder="Amount (e.g. 5000)"
+                            min={100}
                         />
+                    </div>
+
+                    {/* Quick amount chips */}
+                    <div className="grid grid-cols-4 gap-2 mb-4">
+                        {[1000, 2000, 5000, 10000].map((amt) => (
+                            <button
+                                key={amt}
+                                onClick={() => setAmount(amt.toString())}
+                                className="py-2 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-bold hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                            >
+                                ₦{amt.toLocaleString()}
+                            </button>
+                        ))}
                     </div>
 
                     <button
                         onClick={handleFund}
                         disabled={loading}
-                        className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-lg shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-lg shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
                     >
                         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <CreditCard className="w-5 h-5" />}
                         {loading ? "Processing..." : "Top up w/ Card"}

@@ -1,13 +1,16 @@
 "use client";
 
-import { Clock, Search, Filter, ArrowUpRight, ArrowDownLeft, Calendar } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Clock, Search, ArrowUpRight, ArrowDownLeft, Calendar, Filter } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
 import { api } from "@/lib/api";
 import { format } from "date-fns";
+import { SkeletonLoader } from "@/components/ui/Skeleton";
 
 export default function History() {
     const [transactions, setTransactions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [search, setSearch] = useState("");
+    const [statusFilter, setStatusFilter] = useState<"ALL" | "SUCCESS" | "PENDING" | "FAILED">("ALL");
 
     useEffect(() => {
         const fetchHistory = async () => {
@@ -28,6 +31,19 @@ export default function History() {
         fetchHistory();
     }, []);
 
+    const filtered = useMemo(() => {
+        return transactions.filter((tx) => {
+            const q = search.toLowerCase();
+            const matchesSearch =
+                !q ||
+                tx.description?.toLowerCase().includes(q) ||
+                tx.reference?.toLowerCase().includes(q) ||
+                tx.type?.toLowerCase().includes(q);
+            const matchesStatus = statusFilter === "ALL" || tx.status === statusFilter;
+            return matchesSearch && matchesStatus;
+        });
+    }, [transactions, search, statusFilter]);
+
     const getStatusColor = (status: string) => {
         switch (status) {
             case "SUCCESS": return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
@@ -38,7 +54,7 @@ export default function History() {
     };
 
     return (
-        <div className="p-8">
+        <div className="p-4 md:p-8">
             <div className="flex justify-between items-end mb-8">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
@@ -49,68 +65,114 @@ export default function History() {
             </div>
 
             <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden">
-                <div className="p-6 border-b border-gray-100 dark:border-zinc-800 flex gap-4">
+                {/* Search & Filter Bar */}
+                <div className="p-4 md:p-6 border-b border-gray-100 dark:border-zinc-800 flex flex-col sm:flex-row gap-3">
                     <div className="relative flex-1">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input type="text" placeholder="Search transactions..." className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-zinc-800 rounded-xl text-sm border-none focus:ring-0" />
+                        <input
+                            type="text"
+                            placeholder="Search by description, reference, or type..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-zinc-800 rounded-xl text-sm border border-transparent focus:border-indigo-300 dark:focus:border-indigo-700 focus:ring-0 outline-none transition-colors"
+                        />
                     </div>
-                    <button className="px-4 py-3 bg-gray-50 dark:bg-zinc-800 text-gray-600 dark:text-gray-300 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors">
-                        <Filter className="w-4 h-4" /> Filter
-                    </button>
-                    <button className="px-4 py-3 bg-gray-50 dark:bg-zinc-800 text-gray-600 dark:text-gray-300 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors">
-                        <Calendar className="w-4 h-4" /> Date Range
-                    </button>
+                    <div className="flex gap-2">
+                        {(["ALL", "SUCCESS", "PENDING", "FAILED"] as const).map((s) => (
+                            <button
+                                key={s}
+                                onClick={() => setStatusFilter(s)}
+                                className={`px-3 py-2 rounded-xl text-xs font-bold transition-colors ${statusFilter === s
+                                        ? "bg-indigo-600 text-white"
+                                        : "bg-gray-50 dark:bg-zinc-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-700"
+                                    }`}
+                            >
+                                {s}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 <div className="overflow-x-auto">
                     {loading ? (
-                        <div className="p-12 text-center text-gray-500">Loading transactions...</div>
-                    ) : transactions.length === 0 ? (
-                        <div className="p-12 text-center text-gray-500">No transactions found.</div>
+                        <div className="p-6 space-y-3">
+                            {[1, 2, 3, 4, 5].map((i) => <SkeletonLoader key={i} type="list" />)}
+                        </div>
+                    ) : filtered.length === 0 ? (
+                        <div className="p-16 text-center">
+                            <Clock className="w-12 h-12 text-gray-200 dark:text-white/10 mx-auto mb-3" />
+                            <p className="text-gray-500 font-medium">
+                                {search || statusFilter !== "ALL"
+                                    ? "No transactions match your search."
+                                    : "No transactions found."}
+                            </p>
+                            {(search || statusFilter !== "ALL") && (
+                                <button
+                                    onClick={() => { setSearch(""); setStatusFilter("ALL"); }}
+                                    className="mt-3 text-sm text-indigo-600 hover:underline font-medium"
+                                >
+                                    Clear filters
+                                </button>
+                            )}
+                        </div>
                     ) : (
                         <table className="w-full">
                             <thead className="bg-gray-50 dark:bg-zinc-800/50">
                                 <tr className="text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    <th className="px-6 py-4">Type</th>
-                                    <th className="px-6 py-4">Reference</th>
-                                    <th className="px-6 py-4">Date</th>
-                                    <th className="px-6 py-4">Status</th>
-                                    <th className="px-6 py-4 text-right">Amount</th>
+                                    <th className="px-4 md:px-6 py-4">Description</th>
+                                    <th className="px-4 md:px-6 py-4 hidden sm:table-cell">Reference</th>
+                                    <th className="px-4 md:px-6 py-4 hidden md:table-cell">Date</th>
+                                    <th className="px-4 md:px-6 py-4">Status</th>
+                                    <th className="px-4 md:px-6 py-4 text-right">Amount</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
-                                {transactions.map((tx: any) => (
-                                    <tr key={tx.id} className="hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer group">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${tx.type === "FUNDING" ? "bg-green-100 text-green-600 dark:bg-green-900/20" : "bg-blue-100 text-blue-600 dark:bg-blue-900/20"
-                                                    }`}>
-                                                    {tx.type === "FUNDING" ? <ArrowDownLeft className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
+                                {filtered.map((tx: any) => {
+                                    const isCredit = tx.type === "FUNDING" || (tx.type === "P2P_TRANSFER" && tx.reference?.includes("_CR"));
+                                    return (
+                                        <tr key={tx.id} className="hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer group">
+                                            <td className="px-4 md:px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${isCredit ? "bg-green-100 text-green-600 dark:bg-green-900/20" : "bg-blue-100 text-blue-600 dark:bg-blue-900/20"}`}>
+                                                        {isCredit ? <ArrowDownLeft className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-bold text-sm text-gray-900 dark:text-white max-w-[180px] truncate">
+                                                            {tx.description || tx.type?.replace(/_/g, " ")}
+                                                        </div>
+                                                        <div className="text-xs text-gray-500 md:hidden">{format(new Date(tx.createdAt), "MMM d, yyyy")}</div>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <div className="font-bold text-sm text-gray-900 dark:text-white">{tx.type}</div>
-                                                    <div className="text-xs text-gray-500">{tx.serviceId || "Wallet"}</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-gray-500 font-mono text-xs">{tx.reference}</td>
-                                        <td className="px-6 py-4 text-sm text-gray-500">
-                                            {format(new Date(tx.createdAt), "MMM d, yyyy • h:mm a")}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(tx.status)}`}>
-                                                {tx.status}
-                                            </span>
-                                        </td>
-                                        <td className={`px-6 py-4 text-right font-bold ${tx.type === "FUNDING" ? "text-green-600" : "text-gray-900 dark:text-white"}`}>
-                                            {tx.type === "FUNDING" ? "+" : "-"}₦{Number(tx.amount).toLocaleString()}
-                                        </td>
-                                    </tr>
-                                ))}
+                                            </td>
+                                            <td className="px-4 md:px-6 py-4 text-sm text-gray-500 font-mono text-xs hidden sm:table-cell">
+                                                {tx.reference?.slice(0, 12)}…
+                                            </td>
+                                            <td className="px-4 md:px-6 py-4 text-sm text-gray-500 hidden md:table-cell">
+                                                {format(new Date(tx.createdAt), "MMM d, yyyy • h:mm a")}
+                                            </td>
+                                            <td className="px-4 md:px-6 py-4">
+                                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(tx.status)}`}>
+                                                    {tx.status}
+                                                </span>
+                                            </td>
+                                            <td className={`px-4 md:px-6 py-4 text-right font-bold ${isCredit ? "text-green-600" : "text-gray-900 dark:text-white"}`}>
+                                                {isCredit ? "+" : "-"}₦{Number(tx.amount).toLocaleString()}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     )}
                 </div>
+
+                {/* Footer summary */}
+                {!loading && filtered.length > 0 && (
+                    <div className="px-6 py-3 border-t border-gray-100 dark:border-zinc-800 text-xs text-gray-500 flex justify-between">
+                        <span>Showing {filtered.length} of {transactions.length} transactions</span>
+                        {search && <span>Filtered by: "{search}"</span>}
+                    </div>
+                )}
             </div>
         </div>
     );

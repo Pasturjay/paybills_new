@@ -58,9 +58,13 @@ router.put('/user/profile', auth_middleware_1.authenticateToken, user_controller
 router.put('/user/tag', auth_middleware_1.authenticateToken, user_controller_1.updateUserTag);
 router.put('/profile/password', auth_middleware_1.authenticateToken, user_controller_1.changePassword);
 router.post('/user/pin', auth_middleware_1.authenticateToken, user_controller_1.setPin);
-router.post('/kyc', auth_middleware_1.authenticateToken, user_controller_1.submitKyc);
+// Legacy KYC (handled via kycRoutes now)
+const user_controller_2 = require("../controllers/user.controller");
+router.delete('/user/account', auth_middleware_1.authenticateToken, user_controller_2.deleteAccount);
 // Referral Route
 router.get('/referrals', auth_middleware_1.authenticateToken, user_controller_1.getReferralStats);
+const purchase_controller_1 = require("../controllers/purchase.controller");
+router.get('/purchase/context', auth_middleware_1.authenticateToken, purchase_controller_1.getPurchaseContext);
 router.use('/kyc', kyc_routes_1.default);
 // Wallet Routes
 const wallet_controller_1 = require("../controllers/wallet.controller");
@@ -96,4 +100,8 @@ const auth_middleware_2 = require("../middleware/auth.middleware");
 router.get('/admin/users', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)(['ADMIN', 'SUPERADMIN']), admin_controller_1.getAllUsers);
 router.get('/admin/transactions', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)(['ADMIN', 'SUPERADMIN']), admin_controller_1.getAllTransactions);
 router.get('/admin/stats', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)(['ADMIN', 'SUPERADMIN']), admin_controller_1.getAdminStats);
+router.get('/admin/services', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)(['ADMIN', 'SUPERADMIN']), admin_controller_1.getServiceStatus);
+router.put('/admin/services/:id', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)(['ADMIN', 'SUPERADMIN']), admin_controller_1.updateServiceStatus);
+router.get('/admin/providers', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)(['ADMIN', 'SUPERADMIN']), admin_controller_1.getProviderStatus);
+router.put('/admin/users/:id/status', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)(['ADMIN', 'SUPERADMIN']), admin_controller_1.updateUserStatus);
 exports.default = router;

@@ -63,6 +63,16 @@ router.get('/virtual-numbers/:id/messages', authenticateToken, virtualNumberCont
 router.post('/virtual-numbers/cancel', authenticateToken, virtualNumberController.cancelNumberSubscription);
 router.post('/webhooks/vonage/sms', virtualNumberController.handleSmsWebhook);
 
+// Blog Routes (Public + Admin)
+import * as blogController from '../controllers/blog.controller';
+import { authorizeRole } from '../middleware/auth.middleware';
+
+router.get('/blog', blogController.getAllPosts);
+router.get('/blog/:slug', blogController.getPostBySlug);
+router.post('/admin/blog', authenticateToken, authorizeRole(['ADMIN', 'SUPERADMIN']), blogController.createPost);
+router.put('/admin/blog/:id', authenticateToken, authorizeRole(['ADMIN', 'SUPERADMIN']), blogController.updatePost);
+router.delete('/admin/blog/:id', authenticateToken, authorizeRole(['ADMIN', 'SUPERADMIN']), blogController.deletePost);
+
 // Virtual Cards
 import * as virtualCardController from '../controllers/virtual-card.controller';
 router.post('/cards/create', authenticateToken, virtualCardController.createCard);

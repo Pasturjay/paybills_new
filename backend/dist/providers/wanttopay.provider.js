@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -22,98 +13,90 @@ class WantToPayProvider {
         };
     }
     // 1. Create Card
-    createCard(userId, amount, billingName) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                // Mock Implementation as specific API docs aren't provided
-                // Assuming strict PCI compliance: we get an ID and masked PAN details
-                const response = yield axios_1.default.post(`${this.config.baseUrl}/cards/create`, {
-                    user_ref: userId,
-                    initial_amount: amount,
-                    billing_name: billingName,
-                    currency: 'USD'
-                }, {
-                    headers: { 'Authorization': `Bearer ${this.config.apiKey}` }
-                });
+    async createCard(userId, amount, billingName) {
+        try {
+            // Mock Implementation as specific API docs aren't provided
+            // Assuming strict PCI compliance: we get an ID and masked PAN details
+            const response = await axios_1.default.post(`${this.config.baseUrl}/cards/create`, {
+                user_ref: userId,
+                initial_amount: amount,
+                billing_name: billingName,
+                currency: 'USD'
+            }, {
+                headers: { 'Authorization': `Bearer ${this.config.apiKey}` }
+            });
+            return {
+                cardId: response.data.id,
+                pan: response.data.pan_masked, // **** **** **** 1234
+                cvv: response.data.cvv,
+                expiry: response.data.expiry,
+                fullPan: response.data.pan_encrypted // Optionally stored if encryption key available
+            };
+        }
+        catch (error) {
+            console.error('WantToPay Create Error:', error);
+            // Fallback for demo/dev without real API
+            if (process.env.NODE_ENV !== 'production') {
                 return {
-                    cardId: response.data.id,
-                    pan: response.data.pan_masked, // **** **** **** 1234
-                    cvv: response.data.cvv,
-                    expiry: response.data.expiry,
-                    fullPan: response.data.pan_encrypted // Optionally stored if encryption key available
+                    cardId: `wtp_${Date.now()}`,
+                    pan: `4242 4242 4242 ${Math.floor(1000 + Math.random() * 9000)}`,
+                    cvv: '123',
+                    expiry: '12/28',
+                    fullPan: 'encrypted_mock'
                 };
             }
-            catch (error) {
-                console.error('WantToPay Create Error:', error);
-                // Fallback for demo/dev without real API
-                if (process.env.NODE_ENV !== 'production') {
-                    return {
-                        cardId: `wtp_${Date.now()}`,
-                        pan: `4242 4242 4242 ${Math.floor(1000 + Math.random() * 9000)}`,
-                        cvv: '123',
-                        expiry: '12/28',
-                        fullPan: 'encrypted_mock'
-                    };
-                }
-                throw new Error('Failed to create virtual card');
-            }
-        });
+            throw new Error('Failed to create virtual card');
+        }
     }
     // 2. Get Card Details
-    getCardDetails(cardId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const response = yield axios_1.default.get(`${this.config.baseUrl}/cards/${cardId}`, {
-                    headers: { 'Authorization': `Bearer ${this.config.apiKey}` }
-                });
-                return response.data;
+    async getCardDetails(cardId) {
+        try {
+            const response = await axios_1.default.get(`${this.config.baseUrl}/cards/${cardId}`, {
+                headers: { 'Authorization': `Bearer ${this.config.apiKey}` }
+            });
+            return response.data;
+        }
+        catch (error) {
+            console.error('WantToPay Details Error:', error);
+            if (process.env.NODE_ENV !== 'production') {
+                return {
+                    status: 'ACTIVE',
+                    balance: 100.00
+                };
             }
-            catch (error) {
-                console.error('WantToPay Details Error:', error);
-                if (process.env.NODE_ENV !== 'production') {
-                    return {
-                        status: 'ACTIVE',
-                        balance: 100.00
-                    };
-                }
-                throw new Error('Failed to fetch card details');
-            }
-        });
+            throw new Error('Failed to fetch card details');
+        }
     }
     // 3. Freeze/Unfreeze
-    toggleCardStatus(cardId, status) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const endpoint = status === 'FREEZE' ? 'freeze' : 'unfreeze';
-                yield axios_1.default.post(`${this.config.baseUrl}/cards/${cardId}/${endpoint}`, {}, {
-                    headers: { 'Authorization': `Bearer ${this.config.apiKey}` }
-                });
+    async toggleCardStatus(cardId, status) {
+        try {
+            const endpoint = status === 'FREEZE' ? 'freeze' : 'unfreeze';
+            await axios_1.default.post(`${this.config.baseUrl}/cards/${cardId}/${endpoint}`, {}, {
+                headers: { 'Authorization': `Bearer ${this.config.apiKey}` }
+            });
+            return true;
+        }
+        catch (error) {
+            console.error(`WantToPay ${status} Error:`, error);
+            if (process.env.NODE_ENV !== 'production')
                 return true;
-            }
-            catch (error) {
-                console.error(`WantToPay ${status} Error:`, error);
-                if (process.env.NODE_ENV !== 'production')
-                    return true;
-                return false;
-            }
-        });
+            return false;
+        }
     }
     // 4. Fund Card
-    fundCard(cardId, amount) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                yield axios_1.default.post(`${this.config.baseUrl}/cards/${cardId}/fund`, { amount }, {
-                    headers: { 'Authorization': `Bearer ${this.config.apiKey}` }
-                });
+    async fundCard(cardId, amount) {
+        try {
+            await axios_1.default.post(`${this.config.baseUrl}/cards/${cardId}/fund`, { amount }, {
+                headers: { 'Authorization': `Bearer ${this.config.apiKey}` }
+            });
+            return true;
+        }
+        catch (error) {
+            console.error('WantToPay Fund Error:', error);
+            if (process.env.NODE_ENV !== 'production')
                 return true;
-            }
-            catch (error) {
-                console.error('WantToPay Fund Error:', error);
-                if (process.env.NODE_ENV !== 'production')
-                    return true;
-                throw new Error('Failed to fund card');
-            }
-        });
+            throw new Error('Failed to fund card');
+        }
     }
 }
 exports.WantToPayProvider = WantToPayProvider;

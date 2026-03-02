@@ -11,5 +11,5 @@ const subscription_service_1 = require("./services/subscription.service");
 const subService = new subscription_service_1.SubscriptionService();
 subService.startCron();
 app_1.default.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });

@@ -1,39 +1,30 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateUserTag = exports.getReferralStats = exports.submitKyc = exports.changePassword = exports.updateProfile = exports.getProfile = exports.setPin = void 0;
+exports.deleteAccount = exports.updateUserTag = exports.getReferralStats = exports.verifyKycOtp = exports.sendKycOtp = exports.changePassword = exports.updateProfile = exports.getProfile = exports.setPin = void 0;
 const client_1 = require("@prisma/client");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const prisma = new client_1.PrismaClient();
 const security_service_1 = require("../services/security.service");
 const securityService = new security_service_1.SecurityService();
-const setPin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const setPin = async (req, res) => {
     try {
-        const userId = req.user.userId;
+        const userId = req.user.id;
         const { pin } = req.body;
-        yield securityService.setPin(userId, pin);
+        await securityService.setPin(userId, pin);
         res.json({ message: 'Transaction PIN set successfully' });
     }
     catch (error) {
         res.status(400).json({ error: error.message || 'Failed to set PIN' });
     }
-});
+};
 exports.setPin = setPin;
-const getProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getProfile = async (req, res) => {
     try {
-        const userId = req.user.userId;
-        const user = yield prisma.user.findUnique({
+        const userId = req.user.id;
+        const user = await prisma.user.findUnique({
             where: { id: userId },
             select: {
                 id: true,
@@ -50,13 +41,13 @@ const getProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     catch (error) {
         res.status(500).json({ error: 'Failed to fetch profile' });
     }
-});
+};
 exports.getProfile = getProfile;
-const updateProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const updateProfile = async (req, res) => {
     try {
-        const userId = req.user.userId;
+        const userId = req.user.id;
         const { firstName, lastName, phone } = req.body;
-        const user = yield prisma.user.update({
+        const user = await prisma.user.update({
             where: { id: userId },
             data: { firstName, lastName, phone },
             select: {
@@ -72,18 +63,18 @@ const updateProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     catch (error) {
         res.status(500).json({ error: 'Failed to update profile' });
     }
-});
+};
 exports.updateProfile = updateProfile;
-const changePassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const changePassword = async (req, res) => {
     try {
-        const userId = req.user.userId;
+        const userId = req.user.id;
         const { currentPassword, newPassword } = req.body;
-        const user = yield prisma.user.findUnique({ where: { id: userId } });
-        if (!user || !user.password || !(yield bcryptjs_1.default.compare(currentPassword, user.password))) {
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user || !user.password || !(await bcryptjs_1.default.compare(currentPassword, user.password))) {
             return res.status(400).json({ error: 'Incorrect current password or account uses Google sign-in' });
         }
-        const hashedPassword = yield bcryptjs_1.default.hash(newPassword, 10);
-        yield prisma.user.update({
+        const hashedPassword = await bcryptjs_1.default.hash(newPassword, 10);
+        await prisma.user.update({
             where: { id: userId },
             data: { password: hashedPassword }
         });
@@ -92,36 +83,56 @@ const changePassword = (req, res) => __awaiter(void 0, void 0, void 0, function*
     catch (error) {
         res.status(500).json({ error: 'Failed to change password' });
     }
-});
+};
 exports.changePassword = changePassword;
-const submitKyc = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const otp_service_1 = require("../services/otp.service");
+const otpService = new otp_service_1.OtpService();
+const sendKycOtp = async (req, res) => {
     try {
-        const userId = req.user.userId;
-        const { nin } = req.body;
-        if (!nin || nin.length !== 11 || !/^\d+$/.test(nin)) {
-            return res.status(400).json({ error: 'Invalid NIN format. Must be 11 digits.' });
+        const userId = req.user.id;
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user || !user.email) {
+            return res.status(400).json({ error: 'Email address required for verification' });
         }
-        // Mock Verification Logic (Auto-approve for now)
-        yield prisma.user.update({
+        const reference = await otpService.requestOtp(user.email);
+        res.json({ message: 'Verification code sent to your email', reference });
+    }
+    catch (error) {
+        console.error('Send KYC OTP Error:', error);
+        res.status(500).json({ error: error.message || 'Failed to send verification code' });
+    }
+};
+exports.sendKycOtp = sendKycOtp;
+const verifyKycOtp = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { reference, code } = req.body;
+        if (!reference || !code) {
+            return res.status(400).json({ error: 'Verification reference and code are required' });
+        }
+        const isValid = await otpService.validateOtp(reference, code);
+        if (!isValid) {
+            return res.status(400).json({ error: 'Invalid or expired verification code' });
+        }
+        const user = await prisma.user.update({
             where: { id: userId },
             data: {
-                nin,
                 kycLevel: 1,
                 isVerified: true
             }
         });
-        res.json({ message: 'Identity verified successfully. You can now fund your wallet.' });
+        res.json({ message: 'Identity verified successfully. You can now fund your wallet.', kycLevel: user.kycLevel });
     }
     catch (error) {
-        console.error('KYC Error:', error);
-        res.status(500).json({ error: 'Failed to process Verification' });
+        console.error('Verify KYC OTP Error:', error);
+        res.status(500).json({ error: error.message || 'Failed to verify code' });
     }
-});
-exports.submitKyc = submitKyc;
-const getReferralStats = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+};
+exports.verifyKycOtp = verifyKycOtp;
+const getReferralStats = async (req, res) => {
     try {
-        const userId = req.user.userId;
-        const user = yield prisma.user.findUnique({
+        const userId = req.user.id;
+        const user = await prisma.user.findUnique({
             where: { id: userId },
             include: {
                 _count: {
@@ -144,11 +155,11 @@ const getReferralStats = (req, res) => __awaiter(void 0, void 0, void 0, functio
     catch (error) {
         res.status(500).json({ error: 'Failed to fetch referral stats' });
     }
-});
+};
 exports.getReferralStats = getReferralStats;
-const updateUserTag = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const updateUserTag = async (req, res) => {
     try {
-        const userId = req.user.userId;
+        const userId = req.user.id;
         let { tag } = req.body;
         if (!tag || tag.length < 3) {
             return res.status(400).json({ error: 'Tag must be at least 3 characters long' });
@@ -161,11 +172,11 @@ const updateUserTag = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             return res.status(400).json({ error: 'Tag can only contain letters, numbers, and underscores' });
         }
         // Check availability
-        const existing = yield prisma.user.findUnique({ where: { userTag: tag } });
+        const existing = await prisma.user.findUnique({ where: { userTag: tag } });
         if (existing && existing.id !== userId) {
             return res.status(400).json({ error: 'This tag is already taken' });
         }
-        const user = yield prisma.user.update({
+        const user = await prisma.user.update({
             where: { id: userId },
             data: { userTag: tag },
             select: { id: true, userTag: true }
@@ -175,5 +186,37 @@ const updateUserTag = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     catch (error) {
         res.status(500).json({ error: 'Failed to update user tag' });
     }
-});
+};
 exports.updateUserTag = updateUserTag;
+const deleteAccount = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        // Check for active balance/pending transactions (optional but recommended for fintech)
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { id: true }
+        });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        // We mark as deleted/inactive rather than hard delete to comply with CBN retention policies (5 years)
+        // while satisfying Apple's requirement for user-initiated account deletion.
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                isActive: false,
+                email: `deleted_${userId}_${Date.now()}_@paybills.ng`, // Scrub email to allow re-registration if desired
+                phone: null,
+                firstName: 'Deleted',
+                lastName: 'User',
+                userTag: `deleted_${userId}`
+            }
+        });
+        res.json({ message: 'Account scheduled for deletion. You have been logged out.' });
+    }
+    catch (error) {
+        console.error('Delete Account Error:', error);
+        res.status(500).json({ error: 'Failed to process account deletion' });
+    }
+};
+exports.deleteAccount = deleteAccount;

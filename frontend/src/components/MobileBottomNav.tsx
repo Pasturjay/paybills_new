@@ -21,22 +21,44 @@ export function MobileBottomNav() {
     ];
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 bg-[#0f172a] border-t border-gray-800 py-2 px-6 pb-6 md:hidden z-50">
-            <div className="flex justify-between items-center">
+        <nav
+            className="fixed bottom-0 left-0 right-0 bg-[#0f172a]/95 backdrop-blur-xl border-t border-white/10 pb-safe md:hidden z-50"
+            style={{ paddingBottom: "env(safe-area-inset-bottom, 8px)" }}
+        >
+            <div className="flex justify-around items-end pt-2 pb-2 px-2">
                 {navItems.map((item) => {
                     const active = isActive(item.href);
                     return (
                         <Link
                             key={item.name}
                             href={item.href}
-                            className={`flex flex-col items-center gap-1 transition-colors ${active ? "text-white" : "text-gray-500 hover:text-gray-300"}`}
+                            className="flex flex-col items-center gap-1 min-w-[48px] min-h-[48px] justify-center transition-all duration-200"
                         >
-                            <item.icon className={`w-6 h-6 ${active ? "fill-current" : ""}`} strokeWidth={active ? 2.5 : 2} />
-                            <span className="text-[10px] font-medium">{item.name}</span>
+                            <div
+                                className={`relative flex items-center justify-center w-10 h-10 rounded-2xl transition-all duration-300 ${active
+                                        ? "bg-indigo-500/20"
+                                        : "hover:bg-white/5"
+                                    }`}
+                            >
+                                {active && (
+                                    <span className="absolute inset-0 rounded-2xl bg-indigo-500/10 animate-pulse" />
+                                )}
+                                <item.icon
+                                    className={`w-5 h-5 relative z-10 transition-all duration-300 ${active ? "text-indigo-400" : "text-gray-500"
+                                        }`}
+                                    strokeWidth={active ? 2.5 : 2}
+                                />
+                            </div>
+                            <span
+                                className={`text-[10px] font-semibold transition-colors duration-200 ${active ? "text-indigo-400" : "text-gray-600"
+                                    }`}
+                            >
+                                {item.name}
+                            </span>
                         </Link>
                     );
                 })}
             </div>
-        </div>
+        </nav>
     );
 }

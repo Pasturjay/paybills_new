@@ -339,6 +339,24 @@ model SoftwareProduct {
   updatedAt      DateTime @updatedAt
 }
 
+model BlogPost {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  excerpt     String
+  content     String
+  coverImage  String?
+  category    String   @default("General")
+  tags        String[]
+  status      String   @default("DRAFT")
+  authorName  String   @default("Paybills Team")
+  views       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+  @@index([slug])
+}
 
 enum Role {
   USER

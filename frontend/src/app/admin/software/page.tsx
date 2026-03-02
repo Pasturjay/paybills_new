@@ -63,6 +63,7 @@ export default function AdminSoftware() {
         try {
             await api.put(`/products/software/${editingProduct.id}`, {
                 name: editingProduct.name,
+                description: editingProduct.description,
                 price: parseFloat(editingProduct.price.toString()),
                 originalPrice: parseFloat(editingProduct.originalPrice.toString()),
                 isActive: editingProduct.isActive,
@@ -249,6 +250,16 @@ export default function AdminSoftware() {
                                     value={editingProduct.name}
                                     onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
                                     className="w-full p-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-700 rounded-xl outline-none focus:border-blue-500 font-bold transition-colors"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Description</label>
+                                <textarea
+                                    value={editingProduct.description || ""}
+                                    onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
+                                    className="w-full p-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-700 rounded-xl outline-none focus:border-blue-500 font-medium transition-colors resize-y min-h-[100px]"
                                     required
                                 />
                             </div>

@@ -18,7 +18,8 @@ import {
     ConfirmationResult,
 } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
-import { Lock, Mail, Phone, Eye, EyeOff, ArrowLeft, Loader2, AlertCircle, CheckCircle2, Home } from "lucide-react";
+import { Mail, Phone, Eye, EyeOff, ArrowLeft, Loader2, AlertCircle, CheckCircle2, Home } from "lucide-react";
+import { PaybillsLogo } from "@/components/PaybillsLogo";
 
 type AuthMode = "signin" | "signup";
 type InputMode = "email" | "phone";
@@ -293,7 +294,7 @@ export default function AuthPage() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+                            className="btn-premium w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 px-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 glow-blue mt-6"
                         >
                             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Send Reset Link"}
                         </button>
@@ -320,8 +321,8 @@ export default function AuthPage() {
 
                     {/* Logo */}
                     <div className="text-center mb-8">
-                        <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-indigo-200">
-                            <Lock className="w-8 h-8 text-white" />
+                        <div className="w-16 h-16 bg-white border border-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-indigo-500/10">
+                            <PaybillsLogo className="w-10 h-10" />
                         </div>
                         <h1 className="text-2xl font-bold text-gray-900">Welcome to Paybills</h1>
                         <p className="text-gray-500 text-sm mt-1">
@@ -362,9 +363,10 @@ export default function AuthPage() {
                     {/* Social Buttons */}
                     <div className="grid grid-cols-2 gap-3 mb-6">
                         <button
+                            type="button"
                             onClick={handleGoogle}
                             disabled={loading}
-                            className="flex items-center justify-center gap-2.5 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-50 transition-colors text-sm font-medium text-gray-700"
+                            className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-100 hover:bg-gray-50 text-gray-800 font-black py-3 px-4 rounded-xl transition-all duration-200"
                         >
                             <svg width="18" height="18" viewBox="0 0 24 24">
                                 <path fill="#4285F4" d="M23.745 12.27c0-.79-.07-1.54-.19-2.27h-11.3v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z" />
@@ -391,8 +393,8 @@ export default function AuthPage() {
                         <div className="absolute inset-0 flex items-center">
                             <div className="w-full border-t border-gray-100"></div>
                         </div>
-                        <div className="relative flex justify-center">
-                            <span className="px-3 bg-white text-xs text-gray-400">or continue with</span>
+                        <div className="relative flex justify-center text-sm font-medium">
+                            <span className="px-3 bg-white text-gray-400 font-bold">Or continue with</span>
                         </div>
                     </div>
 

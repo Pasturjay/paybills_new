@@ -24,6 +24,12 @@ router.post('/electricity/purchase', auth_middleware_1.authenticateToken, produc
 // Betting
 router.post('/betting/purchase', auth_middleware_1.authenticateToken, product_controller_1.purchaseBetting);
 // Software
+router.get('/software', software_controller_1.getSoftwareProducts); // Public listing
 router.post('/software/purchase', auth_middleware_1.authenticateToken, software_controller_1.purchaseSoftware);
 router.get('/software/verify', auth_middleware_1.authenticateToken, software_controller_1.verifySoftwarePurchase);
+// Software Admin
+router.post('/software', auth_middleware_1.authenticateToken, software_controller_1.createSoftwareProduct);
+router.put('/software/:id', auth_middleware_1.authenticateToken, software_controller_1.updateSoftwareProduct);
+router.delete('/software/:id', auth_middleware_1.authenticateToken, software_controller_1.deleteSoftwareProduct);
+router.post('/software/bulk-upload', auth_middleware_1.authenticateToken, software_controller_1.bulkUploadSoftware);
 exports.default = router;

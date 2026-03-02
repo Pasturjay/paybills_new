@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -23,82 +14,76 @@ class VonageProvider {
         };
     }
     // 1. Search Available Numbers
-    searchNumbers(countryCode) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const response = yield axios_1.default.get(`${this.config.baseUrl}/number/search`, {
-                    params: {
-                        api_key: this.config.apiKey,
-                        api_secret: this.config.apiSecret,
-                        country: countryCode,
-                        features: 'SMS' // We want SMS enabled numbers
-                    }
-                });
-                if (response.data.numbers) {
-                    return response.data.numbers.map((n) => ({
-                        msisdn: n.msisdn,
-                        cost: n.cost,
-                        type: n.type,
-                        features: n.features
-                    }));
+    async searchNumbers(countryCode) {
+        try {
+            const response = await axios_1.default.get(`${this.config.baseUrl}/number/search`, {
+                params: {
+                    api_key: this.config.apiKey,
+                    api_secret: this.config.apiSecret,
+                    country: countryCode,
+                    features: 'SMS' // We want SMS enabled numbers
                 }
-                return [];
+            });
+            if (response.data.numbers) {
+                return response.data.numbers.map((n) => ({
+                    msisdn: n.msisdn,
+                    cost: n.cost,
+                    type: n.type,
+                    features: n.features
+                }));
             }
-            catch (error) {
-                console.error('Vonage Search Error:', error);
-                throw new Error('Failed to search numbers');
-            }
-        });
+            return [];
+        }
+        catch (error) {
+            console.error('Vonage Search Error:', error);
+            throw new Error('Failed to search numbers');
+        }
     }
     // 2. Rent Number
-    rentNumber(countryCode, msisdn) {
-        return __awaiter(this, void 0, void 0, function* () {
-            var _a, _b, _c;
-            try {
-                const response = yield axios_1.default.post(`${this.config.baseUrl}/number/buy`, new URLSearchParams({
-                    api_key: this.config.apiKey,
-                    api_secret: this.config.apiSecret,
-                    country: countryCode,
-                    msisdn: msisdn
-                }), {
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-                });
-                // Vonage returns 200 OK even on error sometimes strings like "error-code"
-                if (response.data['error-code'] && response.data['error-code'] !== '200') {
-                    throw new Error(`Vonage Error: ${response.data['error-code-label']}`);
-                }
-                return {
-                    status: 'SUCCESS',
-                    msisdn: msisdn
-                };
+    async rentNumber(countryCode, msisdn) {
+        var _a, _b, _c;
+        try {
+            const response = await axios_1.default.post(`${this.config.baseUrl}/number/buy`, new URLSearchParams({
+                api_key: this.config.apiKey,
+                api_secret: this.config.apiSecret,
+                country: countryCode,
+                msisdn: msisdn
+            }), {
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+            });
+            // Vonage returns 200 OK even on error sometimes strings like "error-code"
+            if (response.data['error-code'] && response.data['error-code'] !== '200') {
+                throw new Error(`Vonage Error: ${response.data['error-code-label']}`);
             }
-            catch (error) {
-                console.error('Vonage Rent Error:', ((_a = error.response) === null || _a === void 0 ? void 0 : _a.data) || error.message);
-                throw new Error('Failed to rent number: ' + (((_c = (_b = error.response) === null || _b === void 0 ? void 0 : _b.data) === null || _c === void 0 ? void 0 : _c['error-code-label']) || error.message));
-            }
-        });
+            return {
+                status: 'SUCCESS',
+                msisdn: msisdn
+            };
+        }
+        catch (error) {
+            console.error('Vonage Rent Error:', ((_a = error.response) === null || _a === void 0 ? void 0 : _a.data) || error.message);
+            throw new Error('Failed to rent number: ' + (((_c = (_b = error.response) === null || _b === void 0 ? void 0 : _b.data) === null || _c === void 0 ? void 0 : _c['error-code-label']) || error.message));
+        }
     }
     // 3. Cancel Number
-    cancelNumber(countryCode, msisdn) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const response = yield axios_1.default.post(`${this.config.baseUrl}/number/cancel`, new URLSearchParams({
-                    api_key: this.config.apiKey,
-                    api_secret: this.config.apiSecret,
-                    country: countryCode,
-                    msisdn: msisdn
-                }));
-                if (response.data['error-code'] && response.data['error-code'] !== '200') {
-                    throw new Error(`Vonage Error: ${response.data['error-code-label']}`);
-                }
-                return true;
+    async cancelNumber(countryCode, msisdn) {
+        try {
+            const response = await axios_1.default.post(`${this.config.baseUrl}/number/cancel`, new URLSearchParams({
+                api_key: this.config.apiKey,
+                api_secret: this.config.apiSecret,
+                country: countryCode,
+                msisdn: msisdn
+            }));
+            if (response.data['error-code'] && response.data['error-code'] !== '200') {
+                throw new Error(`Vonage Error: ${response.data['error-code-label']}`);
             }
-            catch (error) {
-                console.error('Vonage Cancel Error:', error);
-                // Don't throw for cancellation if possible, logs sufficient for audit
-                return false;
-            }
-        });
+            return true;
+        }
+        catch (error) {
+            console.error('Vonage Cancel Error:', error);
+            // Don't throw for cancellation if possible, logs sufficient for audit
+            return false;
+        }
     }
     // 4. Verify Webhook Signature (Inbound SMS)
     // Vonage signs using HMAC-SHA256 usually if confident configured, or MD5

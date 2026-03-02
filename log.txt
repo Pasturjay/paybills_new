@@ -1,0 +1,29 @@
+﻿commit b3805838d123630044c202cef6b37baa4c728c54
+Author: Paybills Admin <admin@usepaybills.com>
+Date:   Sun Mar 1 02:56:43 2026 +1400
+
+    Recent Update with app assets
+
+commit e2888310598e5fb13b4a2a00b7339239c7e58bc8
+Author: Paybills Admin <admin@usepaybills.com>
+Date:   Sun Mar 1 02:35:10 2026 +1400
+
+    feat: Introduce complete paybills application including frontend, backend, and mobile store bundle assets.
+
+commit c389c38ce4770a21d1ffb2169cb4eea82ab47e8b
+Author: Paybills Admin <admin@usepaybills.com>
+Date:   Sat Feb 28 11:51:16 2026 +1400
+
+    feat: Implement core backend API with wallet, user, and product management, alongside a new Next.js frontend application with dashboard and service pages.
+
+commit 55dd6330081f12240b3ef69750a340595e04f559
+Author: Paybills Admin <admin@usepaybills.com>
+Date:   Fri Feb 27 21:23:49 2026 +1400
+
+    Fix: standardized auth tokens and resolved backend sync race condition
+
+commit 18c6f11fd1fbb3a66921a2b453e25f44069ac14d
+Author: Paybills Admin <admin@usepaybills.com>
+Date:   Fri Feb 27 21:10:43 2026 +1400
+
+    Fix: Global currency symbol encoding repair ΓÇö restored Γéª symbol across all pages
