@@ -1,8 +1,0 @@
-{
-  "/icon/[[...__metadata_id__]]/route": "app/icon/[[...__metadata_id__]]/route.js",
-  "/page": "app/page.js",
-  "/products/airtime-data/page": "app/products/airtime-data/page.js",
-  "/auth/login/page": "app/auth/login/page.js",
-  "/blog/page": "app/blog/page.js",
-  "/products/page": "app/products/page.js"
-}
