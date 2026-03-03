@@ -36,7 +36,7 @@ export function DashboardHeader({ onMenuClick }: { onMenuClick: () => void }) {
     const isDashboard = pathname === "/dashboard";
 
     return (
-        <header className="bg-white dark:bg-zinc-950/80 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800 h-16 px-4 md:px-6 flex items-center justify-between sticky top-0 z-40 transition-colors">
+        <header className="bg-white/5 backdrop-blur-xl border-b border-white/10 h-16 px-4 md:px-6 flex items-center justify-between sticky top-0 z-40 transition-colors shadow-sm">
 
             {/* Left: Mobile Menu / Back Button / Title */}
             <div className="flex items-center gap-3 md:gap-4">

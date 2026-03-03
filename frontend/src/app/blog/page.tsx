@@ -50,8 +50,8 @@ export default function BlogListing() {
                         {[1, 2, 3, 4, 5, 6].map(i => (
                             <div key={i} className="space-y-4">
                                 <SkeletonLoader type="card" />
-                                <SkeletonLoader type="input" />
-                                <SkeletonLoader type="input" />
+                                <SkeletonLoader type="list" />
+                                <SkeletonLoader type="list" />
                             </div>
                         ))}
                     </div>

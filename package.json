@@ -6,8 +6,9 @@
   "scripts": {
     "predev": "npx kill-port 3000 3001 3002 3003 3004 3005 5000",
     "dev": "concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
-    "build": "echo 'Build handled in subdirectories'",
-    "start": "echo 'Use dev for local development'"
+    "build": "npm run build --prefix frontend",
+    "postinstall": "npm install --prefix frontend && npm install --prefix backend",
+    "start": "npm start --prefix frontend"
   },
   "keywords": [],
   "author": "",

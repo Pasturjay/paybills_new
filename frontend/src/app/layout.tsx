@@ -10,6 +10,7 @@ export const metadata: Metadata = {
         template: '%s | PayBills',
         default: 'PayBills - Seamless Utility Payments & Virtual Cards',
     },
+    metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://paybills.ng'),
     description: "PayBills is your all-in-one platform for airtime, data, electricity, cable TV, and virtual dollar cards. Secure, fast, and reliable.",
     keywords: ["paybills", "airtime nigeria", "data subscription", "electricity bills", "virtual dollar card", "cable tv renewal", "software licenses", "gift cards nigeria"],
     robots: {

@@ -23,19 +23,12 @@ export function Navbar() {
             {/* Gloss & blur bar */}
             <div className="mx-4 mt-3">
                 <nav
-                    className="relative flex items-center justify-between px-5 py-3.5 rounded-2xl overflow-hidden shine"
+                    className="relative flex items-center justify-between px-5 py-3.5 rounded-2xl overflow-hidden backdrop-blur-xl border border-white/10"
                     style={{
-                        background: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 40%, #0f172a 100%)",
-                        backdropFilter: "blur(24px) saturate(200%)",
-                        boxShadow: "0 16px 48px rgba(99,102,241,0.4), 0 0 0 1px rgba(255,255,255,0.15) inset"
+                        background: "rgba(255, 255, 255, 0.03)",
+                        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.05)"
                     }}
                 >
-                    {/* Decorative glows matching Hero */}
-                    <div className="absolute top-0 right-0 w-[300px] h-[150px] bg-indigo-600/30 rounded-full blur-[60px] pointer-events-none translate-x-1/4 -translate-y-1/4" />
-                    <div className="absolute bottom-0 left-0 w-[200px] h-[100px] bg-violet-600/25 rounded-full blur-[50px] pointer-events-none -translate-x-1/4 translate-y-1/4" />
-
-                    {/* Top gloss */}
-                    <div className="absolute inset-x-0 top-0 h-px rounded-t-2xl bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
 
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2 group">
@@ -44,7 +37,7 @@ export function Navbar() {
                             <div className="absolute inset-0 rounded-xl bg-gradient-to-b from-white/30 to-transparent pointer-events-none" />
                             <PaybillsLogo className="w-5 h-5 text-white relative z-10" variant="white" />
                         </div>
-                        <span className="text-white font-black text-xl tracking-tight group-hover:text-indigo-300 transition-colors">
+                        <span className="text-zinc-900 dark:text-white font-black text-xl tracking-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors">
                             Pay<span className="text-gradient-blue">bills</span>
                         </span>
                     </Link>
@@ -58,8 +51,8 @@ export function Navbar() {
                                     key={link.label}
                                     href={link.href}
                                     className={`px-4 py-2 rounded-xl text-[16px] font-black transition-all duration-200 ${active
-                                        ? "bg-white/20 text-white"
-                                        : "text-gray-100 hover:text-white hover:bg-white/10"
+                                        ? "bg-indigo-500/10 text-indigo-600 dark:bg-white/20 dark:text-white"
+                                        : "text-zinc-600 dark:text-gray-100 hover:text-indigo-600 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/10"
                                         }`}
                                 >
                                     {link.label}
@@ -79,7 +72,7 @@ export function Navbar() {
                             </Link>
                         ) : (
                             <>
-                                <Link href="/auth/login" className="px-5 py-2.5 text-white hover:text-white rounded-xl font-black text-[16px] transition-colors hover:bg-white/10">
+                                <Link href="/auth/login" className="px-5 py-2.5 text-zinc-700 dark:text-white hover:text-indigo-600 dark:hover:text-white rounded-xl font-black text-[16px] transition-colors hover:bg-zinc-100 dark:hover:bg-white/10">
                                     Sign In
                                 </Link>
                                 <Link
@@ -107,10 +100,10 @@ export function Navbar() {
                     <div
                         className="mt-2 p-4 rounded-2xl overflow-hidden animate-in slide-in-from-top-2 duration-200"
                         style={{
-                            background: "rgba(15, 23, 42, 0.97)",
-                            backdropFilter: "blur(24px)",
-                            border: "1px solid rgba(255,255,255,0.07)",
-                            boxShadow: "0 16px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08)"
+                            background: "rgba(255, 255, 255, 0.05)",
+                            backdropFilter: "blur(32px)",
+                            border: "1px solid rgba(255,255,255,0.1)",
+                            boxShadow: "0 16px 48px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)"
                         }}
                     >
                         <div className="space-y-1 mb-4">
