@@ -35,6 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.lookupUser = exports.transferFunds = exports.getVirtualAccount = exports.verifyFunding = exports.initiateFunding = exports.simulateFund = exports.getUserTransactions = exports.getBalance = void 0;
 const client_1 = require("@prisma/client");
+const socket_service_1 = require("../services/socket.service");
 const prisma = new client_1.PrismaClient();
 const paystack_service_1 = require("../services/paystack.service");
 const security_service_1 = require("../services/security.service");
@@ -194,9 +195,18 @@ const verifyFunding = async (req, res) => {
                 }
             });
         });
-        // 4. Notify
-        const { notificationService } = await Promise.resolve().then(() => __importStar(require('../services/notification.service')));
-        await notificationService.createNotification(userId, 'Wallet Topped Up', `Your wallet has been topped up with ₦${amount.toLocaleString()}`, 'SUCCESS');
+        // Emit Real-time update
+        const wallet = await prisma.wallet.findFirst({ where: { userId, currency: 'NGN' } });
+        if (wallet) {
+            socket_service_1.socketService.emitToUser(userId, 'BALANCE_UPDATE', { balance: wallet.balance });
+        }
+        socket_service_1.socketService.emitToUser(userId, 'TRANSACTION_NEW', {
+            id: 'REF_' + Date.now(),
+            type: 'FUNDING',
+            amount,
+            status: 'SUCCESS',
+            message: 'Wallet topped up successfully'
+        });
         res.json({ message: 'Wallet topped up successfully', amount });
     }
     catch (error) {
@@ -405,10 +415,26 @@ const transferFunds = async (req, res) => {
                 }
             });
         });
-        // 4. Notify
-        const { notificationService } = await Promise.resolve().then(() => __importStar(require('../services/notification.service')));
-        await notificationService.createNotification(userId, 'Gift Sent', `You gifted ₦${amount} to ${recipient.firstName}`, 'SUCCESS');
-        await notificationService.createNotification(recipient.id, 'Gift Received', `You received a gift of ₦${amount}`, 'SUCCESS');
+        // Emit Real-time updates
+        const senderWallet = await prisma.wallet.findFirst({ where: { userId, currency: 'NGN' } });
+        const receiverWallet = await prisma.wallet.findFirst({ where: { id: recipient.id, currency: 'NGN' } });
+        if (senderWallet)
+            socket_service_1.socketService.emitToUser(userId, 'BALANCE_UPDATE', { balance: senderWallet.balance });
+        socket_service_1.socketService.emitToUser(recipient.id, 'BALANCE_UPDATE', { balance: receiverWallet === null || receiverWallet === void 0 ? void 0 : receiverWallet.balance });
+        socket_service_1.socketService.emitToUser(userId, 'TRANSACTION_NEW', {
+            id: 'TXN_' + Date.now(),
+            type: 'TRANSFER',
+            amount,
+            status: 'SUCCESS',
+            message: `Transfer to ${recipient.firstName} successful`
+        });
+        socket_service_1.socketService.emitToUser(recipient.id, 'TRANSACTION_NEW', {
+            id: 'TXN_' + Date.now(),
+            type: 'CREDIT',
+            amount,
+            status: 'SUCCESS',
+            message: `You received a gift of ₦${amount}`
+        });
         res.json({ message: 'Transfer successful' });
     }
     catch (error) {

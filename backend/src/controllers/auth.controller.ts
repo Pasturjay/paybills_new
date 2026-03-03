@@ -156,16 +156,34 @@ export const syncFirebaseUser = async (req: Request, res: Response) => {
             console.log('Existing user updated.');
         }
 
-        console.log('Generating platform token...');
-        const platformToken = jwt.sign(
-            { id: user.id, uid: user.firebaseUid, role: user.role },
-            JWT_SECRET,
-            { expiresIn: process.env.JWT_EXPIRES_IN || '1d' } as jwt.SignOptions
+        console.log('Generating session tokens...');
+        const { AuthService } = await import('../services/auth.service');
+        const { accessToken, refreshToken } = await AuthService.createSession(
+            user.id,
+            req.headers['user-agent'],
+            req.ip || req.headers['x-forwarded-for'] as string
         );
+
+        // Security: Set HTTP-Only Cookies
+        const isProduction = process.env.NODE_ENV === 'production';
+
+        res.cookie('accessToken', accessToken, {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: 'strict',
+            maxAge: 15 * 60 * 1000 // 15 minutes
+        });
+
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
 
         return res.json({
             message: 'User synced successfully',
-            token: platformToken,
+            token: accessToken,
             user: {
                 id: user.id,
                 email: user.email,
@@ -212,3 +230,68 @@ export const register = async (req: Request, res: Response) =>
     res.status(410).json({ error: 'Deprecated. Use Firebase sign-in and POST /api/auth/sync.' });
 export const login = async (req: Request, res: Response) =>
     res.status(410).json({ error: 'Deprecated. Use Firebase sign-in and POST /api/auth/sync.' });
+
+export const refreshSession = async (req: Request, res: Response) => {
+    try {
+        // Read refresh token from HTTP-only cookie
+        // Use cookie-parser in app.ts if not already used, or parse manually
+        const cookies = req.headers.cookie;
+        if (!cookies) return res.status(401).json({ error: 'No cookies found' });
+
+        const refreshTokenMatch = cookies.match(/refreshToken=([^;]+)/);
+        const refreshToken = refreshTokenMatch ? refreshTokenMatch[1] : null;
+
+        if (!refreshToken) return res.status(401).json({ error: 'Refresh token not provided' });
+
+        const { AuthService } = await import('../services/auth.service');
+        const { accessToken, refreshToken: newRefreshToken } = await AuthService.refreshSession(
+            refreshToken,
+            req.ip || req.headers['x-forwarded-for'] as string
+        );
+
+        const isProduction = process.env.NODE_ENV === 'production';
+
+        res.cookie('accessToken', accessToken, {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: 'strict',
+            maxAge: 15 * 60 * 1000
+        });
+
+        res.cookie('refreshToken', newRefreshToken, {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
+
+        res.json({ message: 'Session refreshed successfully', accessToken });
+    } catch (error: any) {
+        console.error('Refresh Session Error:', error);
+        res.status(403).json({ error: error.message || 'Invalid or expired refresh token' });
+    }
+};
+
+export const logout = async (req: Request, res: Response) => {
+    try {
+        const cookies = req.headers.cookie;
+        const refreshTokenMatch = cookies?.match(/refreshToken=([^;]+)/);
+        const refreshToken = refreshTokenMatch ? refreshTokenMatch[1] : null;
+
+        if (refreshToken) {
+            const { AuthService } = await import('../services/auth.service');
+            await AuthService.revokeSession(refreshToken);
+        }
+
+        const isProduction = process.env.NODE_ENV === 'production';
+        const cookieOptions = { httpOnly: true, secure: isProduction, sameSite: 'strict' as const };
+
+        res.clearCookie('accessToken', cookieOptions);
+        res.clearCookie('refreshToken', cookieOptions);
+
+        res.json({ message: 'Logged out successfully' });
+    } catch (error: any) {
+        console.error('Logout Error:', error);
+        res.status(500).json({ error: 'Failed to process logout' });
+    }
+};

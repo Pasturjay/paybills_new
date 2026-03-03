@@ -21,12 +21,23 @@ export function useAuth() {
         setIsLoading(false);
     }, []);
 
-    const logout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setIsAuthenticated(false);
-        setUser(null);
-        window.location.href = '/auth/login';
+    const logout = async () => {
+        try {
+            // Call backend to revoke refresh token in DB
+            await fetch('/api/auth/logout', {
+                method: 'POST',
+                credentials: 'include', // send cookies so backend can revoke refresh token
+            });
+        } catch (e) {
+            // Non-fatal: even if this fails, we clear local state
+            console.error('Logout API call failed', e);
+        } finally {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            setIsAuthenticated(false);
+            setUser(null);
+            window.location.href = '/auth/login';
+        }
     };
 
     const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPERADMIN';

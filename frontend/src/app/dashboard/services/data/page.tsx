@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { api } from "@/lib/api";
@@ -21,6 +21,7 @@ export default function DataBundlePage() {
     const [pageLoading, setPageLoading] = useState(true);
     const [message, setMessage] = useState("");
     const [context, setContext] = useState<any>(null);
+    const isSubmitting = useRef(false);
 
     const networks = ["MTN", "AIRTEL", "GLO", "9MOBILE"];
 
@@ -76,9 +77,13 @@ export default function DataBundlePage() {
     const handlePurchase = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        if (isSubmitting.current) return;
+        isSubmitting.current = true;
+
         if (context && Number(formData.amount) > context.dailyLimit) {
             setStatus("error");
             setMessage(`Transaction exceeds your daily limit of ₦${context.dailyLimit.toLocaleString()}.`);
+            isSubmitting.current = false;
             return;
         }
 
@@ -89,6 +94,7 @@ export default function DataBundlePage() {
             const token = localStorage.getItem("token");
             if (!token) {
                 router.push("/auth/login");
+                isSubmitting.current = false;
                 return;
             }
 
@@ -104,6 +110,8 @@ export default function DataBundlePage() {
         } catch (err: any) {
             setStatus("error");
             setMessage(err.message || "Transaction failed");
+        } finally {
+            isSubmitting.current = false;
         }
     };
 

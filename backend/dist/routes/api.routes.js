@@ -42,9 +42,11 @@ const auth_middleware_1 = require("../middleware/auth.middleware");
 const router = (0, express_1.Router)();
 // Auth Routes - Firebase
 router.post('/auth/sync', auth_controller_1.syncFirebaseUser); // Primary: Firebase token sync (login + register)
-router.post('/auth/request-otp', auth_controller_1.requestOtp); // Deprecated (kept for stability)
-router.post('/auth/register', auth_controller_1.register); // Deprecated (kept for stability)
-router.post('/auth/login', auth_controller_1.login); // Deprecated (kept for stability)
+router.post('/auth/refresh', auth_controller_1.refreshSession); // Token Rotation
+router.post('/auth/logout', auth_controller_1.logout); // Secure Logout
+router.post('/auth/request-otp', auth_controller_1.requestOtp); // Deprecated
+router.post('/auth/register', auth_controller_1.register); // Deprecated
+router.post('/auth/login', auth_controller_1.login); // Deprecated
 router.post('/webhooks/paystack', require('../controllers/paystack.webhook').handlePaystackWebhook);
 // Notification Routes
 const notification_controller_1 = require("../controllers/notification.controller");
@@ -81,6 +83,8 @@ const product_routes_1 = __importDefault(require("./product.routes"));
 router.use('/products', product_routes_1.default);
 // Virtual Numbers
 const virtualNumberController = __importStar(require("../controllers/virtual-number.controller"));
+const partner_routes_1 = __importDefault(require("./partner.routes"));
+router.use('/partner', partner_routes_1.default);
 router.get('/virtual-numbers/available', auth_middleware_1.authenticateToken, virtualNumberController.getAvailableNumbers);
 router.post('/virtual-numbers/rent', auth_middleware_1.authenticateToken, virtualNumberController.rentNumber);
 router.get('/virtual-numbers/my', auth_middleware_1.authenticateToken, virtualNumberController.getMyNumbers);
@@ -92,9 +96,9 @@ const blogController = __importStar(require("../controllers/blog.controller"));
 const auth_middleware_2 = require("../middleware/auth.middleware");
 router.get('/blog', blogController.getAllPosts);
 router.get('/blog/:slug', blogController.getPostBySlug);
-router.post('/admin/blog', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)(['ADMIN', 'SUPERADMIN']), blogController.createPost);
-router.put('/admin/blog/:id', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)(['ADMIN', 'SUPERADMIN']), blogController.updatePost);
-router.delete('/admin/blog/:id', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)(['ADMIN', 'SUPERADMIN']), blogController.deletePost);
+router.post('/admin/blog', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)('ADMIN', 'SUPERADMIN'), blogController.createPost);
+router.put('/admin/blog/:id', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)('ADMIN', 'SUPERADMIN'), blogController.updatePost);
+router.delete('/admin/blog/:id', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)('ADMIN', 'SUPERADMIN'), blogController.deletePost);
 // Virtual Cards
 const virtualCardController = __importStar(require("../controllers/virtual-card.controller"));
 router.post('/cards/create', auth_middleware_1.authenticateToken, virtualCardController.createCard);
@@ -104,11 +108,11 @@ router.post('/cards/freeze', auth_middleware_1.authenticateToken, virtualCardCon
 router.post('/cards/fund', auth_middleware_1.authenticateToken, virtualCardController.fundCard);
 // Admin Routes
 const admin_controller_1 = require("../controllers/admin.controller");
-router.get('/admin/users', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)(['ADMIN', 'SUPERADMIN']), admin_controller_1.getAllUsers);
-router.get('/admin/transactions', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)(['ADMIN', 'SUPERADMIN']), admin_controller_1.getAllTransactions);
-router.get('/admin/stats', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)(['ADMIN', 'SUPERADMIN']), admin_controller_1.getAdminStats);
-router.get('/admin/services', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)(['ADMIN', 'SUPERADMIN']), admin_controller_1.getServiceStatus);
-router.put('/admin/services/:id', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)(['ADMIN', 'SUPERADMIN']), admin_controller_1.updateServiceStatus);
-router.get('/admin/providers', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)(['ADMIN', 'SUPERADMIN']), admin_controller_1.getProviderStatus);
-router.put('/admin/users/:id/status', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)(['ADMIN', 'SUPERADMIN']), admin_controller_1.updateUserStatus);
+router.get('/admin/users', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)('ADMIN', 'SUPERADMIN'), admin_controller_1.getAllUsers);
+router.get('/admin/transactions', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)('ADMIN', 'SUPERADMIN'), admin_controller_1.getAllTransactions);
+router.get('/admin/stats', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)('ADMIN', 'SUPERADMIN'), admin_controller_1.getAdminStats);
+router.get('/admin/services', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)('ADMIN', 'SUPERADMIN'), admin_controller_1.getServiceStatus);
+router.put('/admin/services/:id', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)('ADMIN', 'SUPERADMIN'), admin_controller_1.updateServiceStatus);
+router.get('/admin/providers', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)('ADMIN', 'SUPERADMIN'), admin_controller_1.getProviderStatus);
+router.put('/admin/users/:id/status', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)('ADMIN', 'SUPERADMIN'), admin_controller_1.updateUserStatus);
 exports.default = router;

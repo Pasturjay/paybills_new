@@ -20,29 +20,21 @@ export const purchaseAirtime = async (req: Request, res: Response) => {
             return res.status(401).json({ error: pinError.message });
         }
 
-        // 0.1 Check for Idempotency
-        if (idempotencyKey) {
-            const existingTx = await prisma.transaction.findFirst({
-                where: { userId, idempotencyKey }
-            });
-            if (existingTx) {
-                console.log(`[Idempotency] Duplicate request blocked for ${idempotencyKey}`);
-                return res.json({
-                    status: 'success',
-                    message: 'Airtime purchase already processed',
-                    reference: existingTx.reference,
-                    amount: existingTx.amount,
-                    phone: (existingTx.metadata as any)?.phone,
-                    network: (existingTx.metadata as any)?.network
-                });
-            }
-        }
-
         const reference = uuidv4();
 
-        // 1. Transactional Block with Pessimistic Locking
+        // 1. Transactional Block — idempotency check is INSIDE the lock
         const result = await prisma.$transaction(async (tx) => {
-            // A. Fetch & Lock Wallet
+            // A. Check idempotency INSIDE the transaction (serialized by wallet lock)
+            if (idempotencyKey) {
+                const existingTx = await tx.transaction.findFirst({
+                    where: { userId, idempotencyKey }
+                });
+                if (existingTx) {
+                    return { duplicate: true, transaction: existingTx, reference: existingTx.reference };
+                }
+            }
+
+            // B. Fetch & Lock Wallet
             const walletResults = await tx.$queryRaw<Wallet[]>(
                 Prisma.sql`SELECT * FROM "Wallet" WHERE "userId" = ${userId} AND "currency" = 'NGN' FOR UPDATE`
             );
@@ -52,7 +44,7 @@ export const purchaseAirtime = async (req: Request, res: Response) => {
             const balance = typeof wallet.balance === 'number' ? wallet.balance : Number(wallet.balance);
             if (balance < Number(amount)) throw new Error("Insufficient balance");
 
-            // B. Create Pending Transaction
+            // C. Create Pending Transaction
             const transaction = await tx.transaction.create({
                 data: {
                     userId,
@@ -67,7 +59,7 @@ export const purchaseAirtime = async (req: Request, res: Response) => {
                 }
             });
 
-            // C. Debit Wallet
+            // D. Debit Wallet
             const updatedWallet = await tx.wallet.update({
                 where: { id: wallet.id },
                 data: { balance: { decrement: Number(amount) } }
@@ -77,8 +69,21 @@ export const purchaseAirtime = async (req: Request, res: Response) => {
                 throw new Error("Insufficient balance (Race Condition)");
             }
 
-            return { transaction, reference };
+            return { duplicate: false, transaction, reference };
         });
+
+        // 1.1. If it was a duplicate, return early with success
+        if (result.duplicate) {
+            console.log(`[Idempotency] Duplicate request blocked for ${idempotencyKey}`);
+            return res.json({
+                status: 'success',
+                message: 'Airtime purchase already processed',
+                reference: result.reference,
+                amount,
+                phone,
+                network
+            });
+        }
 
         // 2. Call Provider API (Simulated)
         const success = true;
@@ -98,11 +103,18 @@ export const purchaseAirtime = async (req: Request, res: Response) => {
                 network
             });
         } else {
-            // Reversal logic would be here if provider failed sync
             return res.status(502).json({ error: "Provider failed" });
         }
 
     } catch (error: any) {
+        // Catch Prisma unique constraint violation (P2002) as a final safety net
+        if (error.code === 'P2002' && error.meta?.target?.includes('idempotencyKey')) {
+            console.log(`[Idempotency/P2002] Duplicate blocked by DB constraint`);
+            return res.json({
+                status: 'success',
+                message: 'Airtime purchase already processed (duplicate blocked)',
+            });
+        }
         console.error('Airtime Error:', error);
         res.status(400).json({ error: error.message || 'Internal Server Error' });
     }
@@ -122,27 +134,20 @@ export const purchaseData = async (req: Request, res: Response) => {
             return res.status(401).json({ error: pinError.message });
         }
 
-        // 0.1 Check for Idempotency
-        if (idempotencyKey) {
-            const existingTx = await prisma.transaction.findFirst({
-                where: { userId, idempotencyKey }
-            });
-            if (existingTx) {
-                return res.json({
-                    status: 'success',
-                    message: 'Data bundle already processed',
-                    reference: existingTx.reference,
-                    amount: existingTx.amount,
-                    phone: (existingTx.metadata as any)?.phone,
-                    network: (existingTx.metadata as any)?.network
-                });
-            }
-        }
-
         const reference = uuidv4();
 
         const result = await prisma.$transaction(async (tx) => {
-            // A. Fetch & Lock Wallet
+            // A. Check idempotency INSIDE the transaction
+            if (idempotencyKey) {
+                const existingTx = await tx.transaction.findFirst({
+                    where: { userId, idempotencyKey }
+                });
+                if (existingTx) {
+                    return { duplicate: true, transaction: existingTx, reference: existingTx.reference };
+                }
+            }
+
+            // B. Fetch & Lock Wallet
             const walletResults = await tx.$queryRaw<Wallet[]>(
                 Prisma.sql`SELECT * FROM "Wallet" WHERE "userId" = ${userId} AND "currency" = 'NGN' FOR UPDATE`
             );
@@ -152,7 +157,7 @@ export const purchaseData = async (req: Request, res: Response) => {
             const balance = typeof wallet.balance === 'number' ? wallet.balance : Number(wallet.balance);
             if (balance < Number(amount)) throw new Error("Insufficient balance");
 
-            // B. Create Pending Transaction
+            // C. Create Pending Transaction
             const transaction = await tx.transaction.create({
                 data: {
                     userId,
@@ -167,14 +172,25 @@ export const purchaseData = async (req: Request, res: Response) => {
                 }
             });
 
-            // C. Debit Wallet
+            // D. Debit Wallet
             await tx.wallet.update({
                 where: { id: wallet.id },
                 data: { balance: { decrement: Number(amount) } }
             });
 
-            return { transaction, reference };
+            return { duplicate: false, transaction, reference };
         });
+
+        if (result.duplicate) {
+            return res.json({
+                status: 'success',
+                message: 'Data bundle already processed',
+                reference: result.reference,
+                amount,
+                phone,
+                network
+            });
+        }
 
         const success = true;
 
@@ -197,6 +213,9 @@ export const purchaseData = async (req: Request, res: Response) => {
         }
 
     } catch (error: any) {
+        if (error.code === 'P2002' && error.meta?.target?.includes('idempotencyKey')) {
+            return res.json({ status: 'success', message: 'Data purchase already processed (duplicate blocked)' });
+        }
         console.error('Data Bundle Error:', error);
         res.status(400).json({ error: error.message || 'Internal Server Error' });
     }
@@ -237,26 +256,20 @@ export const purchaseBill = async (req: Request, res: Response) => {
             return res.status(401).json({ error: pinError.message });
         }
 
-        // 0.1 Check for Idempotency
-        if (idempotencyKey) {
-            const existingTx = await prisma.transaction.findFirst({
-                where: { userId, idempotencyKey }
-            });
-            if (existingTx) {
-                return res.json({
-                    status: 'success',
-                    message: 'Bill payment already processed',
-                    reference: existingTx.reference,
-                    amount: existingTx.amount,
-                    token: (existingTx.metadata as any)?.token
-                });
-            }
-        }
-
         const reference = uuidv4();
 
         const result = await prisma.$transaction(async (tx) => {
-            // A. Fetch & Lock Wallet
+            // A. Check idempotency INSIDE the transaction
+            if (idempotencyKey) {
+                const existingTx = await tx.transaction.findFirst({
+                    where: { userId, idempotencyKey }
+                });
+                if (existingTx) {
+                    return { duplicate: true, transaction: existingTx, reference: existingTx.reference };
+                }
+            }
+
+            // B. Fetch & Lock Wallet
             const walletResults = await tx.$queryRaw<Wallet[]>(
                 Prisma.sql`SELECT * FROM "Wallet" WHERE "userId" = ${userId} AND "currency" = 'NGN' FOR UPDATE`
             );
@@ -266,7 +279,7 @@ export const purchaseBill = async (req: Request, res: Response) => {
             const balance = typeof wallet.balance === 'number' ? wallet.balance : Number(wallet.balance);
             if (balance < Number(amount)) throw new Error("Insufficient balance");
 
-            // B. Create Transaction
+            // C. Create Transaction
             const transaction = await tx.transaction.create({
                 data: {
                     userId,
@@ -281,14 +294,23 @@ export const purchaseBill = async (req: Request, res: Response) => {
                 }
             });
 
-            // C. Debit Wallet
+            // D. Debit Wallet
             await tx.wallet.update({
                 where: { id: wallet.id },
                 data: { balance: { decrement: Number(amount) } }
             });
 
-            return { transaction, reference };
+            return { duplicate: false, transaction, reference };
         });
+
+        if (result.duplicate) {
+            return res.json({
+                status: 'success',
+                message: 'Bill payment already processed',
+                reference: result.reference,
+                amount,
+            });
+        }
 
         const success = true;
 
@@ -310,8 +332,12 @@ export const purchaseBill = async (req: Request, res: Response) => {
         }
 
     } catch (error: any) {
+        if (error.code === 'P2002' && error.meta?.target?.includes('idempotencyKey')) {
+            return res.json({ status: 'success', message: 'Bill payment already processed (duplicate blocked)' });
+        }
         console.error('Bill Payment Error:', error);
         res.status(400).json({ error: error.message || 'Internal Server Error' });
     }
 }
+
 

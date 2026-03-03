@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { PrismaClient, Prisma, Wallet } from '@prisma/client';
+import { socketService } from '../services/socket.service';
 
 const prisma = new PrismaClient();
 
@@ -187,14 +188,18 @@ export const verifyFunding = async (req: Request, res: Response) => {
             });
         });
 
-        // 4. Notify
-        const { notificationService } = await import('../services/notification.service');
-        await notificationService.createNotification(
-            userId,
-            'Wallet Topped Up',
-            `Your wallet has been topped up with ₦${amount.toLocaleString()}`,
-            'SUCCESS'
-        );
+        // Emit Real-time update
+        const wallet = await prisma.wallet.findFirst({ where: { userId, currency: 'NGN' } });
+        if (wallet) {
+            socketService.emitToUser(userId, 'BALANCE_UPDATE', { balance: wallet.balance });
+        }
+        socketService.emitToUser(userId, 'TRANSACTION_NEW', {
+            id: 'REF_' + Date.now(),
+            type: 'FUNDING',
+            amount,
+            status: 'SUCCESS',
+            message: 'Wallet topped up successfully'
+        });
 
         res.json({ message: 'Wallet topped up successfully', amount });
 
@@ -441,10 +446,27 @@ export const transferFunds = async (req: Request, res: Response) => {
             });
         });
 
-        // 4. Notify
-        const { notificationService } = await import('../services/notification.service');
-        await notificationService.createNotification(userId, 'Gift Sent', `You gifted ₦${amount} to ${recipient.firstName}`, 'SUCCESS');
-        await notificationService.createNotification(recipient.id, 'Gift Received', `You received a gift of ₦${amount}`, 'SUCCESS');
+        // Emit Real-time updates
+        const senderWallet = await prisma.wallet.findFirst({ where: { userId, currency: 'NGN' } });
+        const receiverWallet = await prisma.wallet.findFirst({ where: { id: recipient.id, currency: 'NGN' } });
+
+        if (senderWallet) socketService.emitToUser(userId, 'BALANCE_UPDATE', { balance: senderWallet.balance });
+        socketService.emitToUser(recipient.id, 'BALANCE_UPDATE', { balance: receiverWallet?.balance });
+
+        socketService.emitToUser(userId, 'TRANSACTION_NEW', {
+            id: 'TXN_' + Date.now(),
+            type: 'TRANSFER',
+            amount,
+            status: 'SUCCESS',
+            message: `Transfer to ${recipient.firstName} successful`
+        });
+        socketService.emitToUser(recipient.id, 'TRANSACTION_NEW', {
+            id: 'TXN_' + Date.now(),
+            type: 'CREDIT',
+            amount,
+            status: 'SUCCESS',
+            message: `You received a gift of ₦${amount}`
+        });
 
         res.json({ message: 'Transfer successful' });
 

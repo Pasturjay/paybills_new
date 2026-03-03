@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { api } from "@/lib/api";
@@ -21,6 +21,7 @@ export default function AirtimePage() {
     const [pageLoading, setPageLoading] = useState(true);
     const [message, setMessage] = useState("");
     const [context, setContext] = useState<any>(null);
+    const isSubmitting = useRef(false); // Synchronous lock to prevent duplicate submissions
 
     const networks = ["MTN", "AIRTEL", "GLO", "9MOBILE"];
 
@@ -46,17 +47,21 @@ export default function AirtimePage() {
     const handlePurchase = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (status === "loading") return;
+        // Synchronous ref lock — this blocks ALL concurrent calls instantly
+        if (isSubmitting.current) return;
+        isSubmitting.current = true;
 
         if (!formData.pin || formData.pin.length !== 4) {
             setStatus("error");
             setMessage("Please enter your 4-digit transaction PIN");
+            isSubmitting.current = false;
             return;
         }
 
         if (context && Number(formData.amount) > context.dailyLimit) {
             setStatus("error");
             setMessage(`Transaction exceeds your daily limit of ₦${context.dailyLimit.toLocaleString()}. Please upgrade your KYC.`);
+            isSubmitting.current = false;
             return;
         }
 
@@ -84,8 +89,11 @@ export default function AirtimePage() {
         } catch (err: any) {
             setStatus("error");
             setMessage(err.message || "Transaction failed");
+        } finally {
+            isSubmitting.current = false;
         }
     };
+
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 pb-24">

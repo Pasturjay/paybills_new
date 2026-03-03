@@ -15,11 +15,25 @@ if (!JWT_SECRET) {
     }
 }
 const authenticateToken = async (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    if (!token)
-        return res.status(401).json({ error: 'Unauthorized: No token provided' });
     try {
+        let token = null;
+        // 1. Check cookies first (HttpOnly)
+        // If cookie-parser is used, req.cookies.accessToken would be available.
+        // Doing manual regex fallback in case it's not.
+        const cookies = req.headers.cookie;
+        if (cookies) {
+            const tokenMatch = cookies.match(/accessToken=([^;]+)/);
+            if (tokenMatch) {
+                token = tokenMatch[1];
+            }
+        }
+        // 2. Check Authorization Header as fallback
+        if (!token) {
+            const authHeader = req.headers['authorization'];
+            token = authHeader && authHeader.split(' ')[1];
+        }
+        if (!token)
+            return res.status(401).json({ error: 'Unauthorized: No token provided' });
         const decoded = jsonwebtoken_1.default.verify(token, JWT_SECRET);
         const user = await prisma_1.default.user.findUnique({
             where: { id: decoded.id }
@@ -37,10 +51,15 @@ const authenticateToken = async (req, res, next) => {
     }
 };
 exports.authenticateToken = authenticateToken;
-const authorizeRole = (roles) => {
+const authorizeRole = (...roles) => {
     return (req, res, next) => {
+        var _a;
         // @ts-ignore
-        if (!roles.includes(req.user.role)) {
+        const userRole = (_a = req.user) === null || _a === void 0 ? void 0 : _a.role;
+        if (!userRole) {
+            return res.status(401).json({ error: 'Unauthorized: Role missing from payload' });
+        }
+        if (!roles.includes(userRole)) {
             return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
         }
         next();

@@ -35,4 +35,12 @@ export const configureSecurity = (app: Application) => {
     });
     app.use('/api/auth/login', authLimiter);
     app.use('/api/auth/sync', authLimiter);
+
+    // 5. Rate limit for Partner Auth
+    const partnerAuthLimiter = rateLimit({
+        windowMs: 15 * 60 * 1000, // 15 minutes
+        max: 10, // 10 attempts per 15 minutes
+        message: { error: 'Too many partner auth attempts. Please try again later.' }
+    });
+    app.use('/api/partner/auth', partnerAuthLimiter);
 };

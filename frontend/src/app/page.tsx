@@ -108,19 +108,19 @@ function PromoCarousel() {
 }
 
 const quickActions = [
-    { name: "Airtime", icon: Smartphone, href: "/products/airtime-data", gradient: "from-blue-500 to-indigo-600", shadow: "shadow-blue-500/40" },
-    { name: "Bills", icon: Zap, href: "/products/bill-payment", gradient: "from-amber-400 to-orange-500", shadow: "shadow-amber-500/40" },
-    { name: "Software", icon: Download, href: "/products/software", gradient: "from-indigo-500 to-violet-600", shadow: "shadow-indigo-500/40" },
-    { name: "Games", icon: Gamepad2, href: "/products/games", gradient: "from-pink-500 to-rose-600", shadow: "shadow-pink-500/40" },
-    { name: "Education", icon: BookOpen, href: "/products/education", gradient: "from-emerald-500 to-teal-600", shadow: "shadow-emerald-500/40" },
-    { name: "Betting", icon: Trophy, href: "/products/betting", gradient: "from-orange-500 to-red-600", shadow: "shadow-orange-500/40" },
-    { name: "Gift Cards", icon: Gift, href: "/products/giftcards", gradient: "from-red-500 to-pink-600", shadow: "shadow-red-500/40" },
+    { name: "Airtime", icon: Smartphone, href: "/products/airtime-data", bg: "bg-blue-100 dark:bg-blue-900/30", color: "text-blue-600 dark:text-blue-400" },
+    { name: "Bills", icon: Zap, href: "/products/bill-payment", bg: "bg-amber-100 dark:bg-amber-900/30", color: "text-amber-600 dark:text-amber-400" },
+    { name: "Software", icon: Download, href: "/products/software", bg: "bg-indigo-100 dark:bg-indigo-900/30", color: "text-indigo-600 dark:text-indigo-400" },
+    { name: "Games", icon: Gamepad2, href: "/products/games", bg: "bg-pink-100 dark:bg-pink-900/30", color: "text-pink-600 dark:text-pink-400" },
+    { name: "Education", icon: BookOpen, href: "/products/education", bg: "bg-emerald-100 dark:bg-emerald-900/30", color: "text-emerald-600 dark:text-emerald-400" },
+    { name: "Betting", icon: Trophy, href: "/products/betting", bg: "bg-orange-100 dark:bg-orange-900/30", color: "text-orange-600 dark:text-orange-400" },
+    { name: "Gift Cards", icon: Gift, href: "/products/giftcards", bg: "bg-rose-100 dark:bg-rose-900/30", color: "text-rose-600 dark:text-rose-400" },
 ];
 
 const transactions = [
-    { id: 1, type: "Data Purchase", desc: "MTN 10GB Monthly", amount: -3500, date: "Today, 10:23 AM", icon: Smartphone, gradient: "from-blue-500 to-indigo-600", shadow: "shadow-blue-500/30" },
-    { id: 3, type: "Betting Fund", desc: "SportyBet Top-up", amount: -5000, date: "Yesterday, 2:30 PM", icon: Trophy, gradient: "from-pink-500 to-rose-600", shadow: "shadow-rose-500/30" },
-    { id: 4, type: "Software License", desc: "Windows 11 Pro", amount: -15000, date: "24 Jan, 9:00 AM", icon: Download, gradient: "from-fuchsia-500 to-purple-600", shadow: "shadow-purple-500/30" },
+    { id: 1, type: "Data Purchase", desc: "MTN 10GB Monthly", amount: -3500, date: "Today, 10:23 AM", icon: Smartphone, bg: "bg-blue-100 dark:bg-blue-900/30", color: "text-blue-600 dark:text-blue-400" },
+    { id: 3, type: "Betting Fund", desc: "SportyBet Top-up", amount: -5000, date: "Yesterday, 2:30 PM", icon: Trophy, bg: "bg-pink-100 dark:bg-pink-900/30", color: "text-pink-600 dark:text-pink-400" },
+    { id: 4, type: "Software License", desc: "Windows 11 Pro", amount: -15000, date: "24 Jan, 9:00 AM", icon: Download, bg: "bg-indigo-100 dark:bg-indigo-900/30", color: "text-indigo-600 dark:text-indigo-400" },
 ];
 
 const trustBadges = [
@@ -195,13 +195,11 @@ export default function Home() {
                     </h2>
                     <div className="grid grid-cols-4 sm:grid-cols-7 gap-3">
                         {quickActions.map((action) => (
-                            <Link key={action.name} href={action.href} className="shine flex flex-col items-center gap-2.5 group">
-                                <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-gradient-to-br ${action.gradient} relative flex items-center justify-center text-white shadow-lg ${action.shadow} group-hover:scale-110 group-hover:-translate-y-1 group-hover:shadow-xl transition-all duration-300`}>
-                                    {/* Inner gloss */}
-                                    <div className="absolute inset-0 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-white/30 to-transparent pointer-events-none" />
-                                    <action.icon className="w-6 h-6 sm:w-7 sm:h-7 relative z-10" />
+                            <Link key={action.name} href={action.href} className="flex flex-col items-center gap-2.5 group">
+                                <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl ${action.bg} flex items-center justify-center group-hover:scale-105 transition-transform duration-200`}>
+                                    <action.icon className={`w-6 h-6 sm:w-7 sm:h-7 ${action.color}`} />
                                 </div>
-                                <span className="text-[11px] sm:text-[12px] font-black text-gray-800 dark:text-gray-200 text-center group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight uppercase tracking-wider drop-shadow-sm">
+                                <span className="text-[11px] sm:text-[12px] font-black text-gray-700 dark:text-gray-300 text-center group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight uppercase tracking-wider">
                                     {action.name}
                                 </span>
                             </Link>
@@ -224,9 +222,8 @@ export default function Home() {
                         style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}>
                         {transactions.map((tx) => (
                             <div key={tx.id} className="shine group p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-white/5 rounded-2xl transition-all duration-300 cursor-pointer">
-                                <div className={`relative w-12 h-12 rounded-2xl bg-gradient-to-br ${tx.gradient} flex items-center justify-center text-white shadow-lg ${tx.shadow} group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 flex-shrink-0`}>
-                                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/25 to-transparent pointer-events-none" />
-                                    <tx.icon className="w-5 h-5 relative z-10" />
+                                <div className={`w-12 h-12 rounded-2xl ${tx.bg} flex items-center justify-center flex-shrink-0 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
+                                    <tx.icon className={`w-5 h-5 ${tx.color}`} />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <h4 className="font-black text-gray-900 dark:text-white text-sm group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">{tx.type}</h4>

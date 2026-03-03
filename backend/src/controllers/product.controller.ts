@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { PrismaClient, Prisma, Wallet } from '@prisma/client';
 import { ClubKonnectProvider } from '../providers/clubkonnect.provider';
 import { SecurityService } from '../services/security.service';
+import { socketService } from '../services/socket.service';
 
 const prisma = new PrismaClient();
 const clubKonnectProvider = new ClubKonnectProvider();
@@ -88,6 +89,16 @@ export const purchaseEducation = async (req: Request, res: Response) => {
             return response;
         });
 
+        const newBalance = (await prisma.wallet.findFirst({ where: { userId, currency: 'NGN' } }))?.balance;
+        socketService.emitToUser(userId, 'BALANCE_UPDATE', { balance: newBalance });
+        socketService.emitToUser(userId, 'TRANSACTION_NEW', {
+            id: 'EDU_' + Date.now(),
+            type: 'BILL_PAYMENT',
+            amount: cost,
+            status: 'SUCCESS',
+            message: `Purchase of ${quantity} ${type} PIN(s) successful`
+        });
+
         res.json({ message: 'Purchase successful', type, quantity });
 
     } catch (error: any) {
@@ -166,7 +177,7 @@ export const purchaseAirtime = async (req: Request, res: Response) => {
 
         const cost = Number(amount);
 
-        await prisma.$transaction(async (tx) => {
+        const result = await prisma.$transaction(async (tx) => {
             const walletResults = await tx.$queryRaw<Wallet[]>(
                 Prisma.sql`SELECT * FROM "Wallet" WHERE "userId" = ${userId} AND "currency" = 'NGN' FOR UPDATE`
             );
@@ -180,10 +191,6 @@ export const purchaseAirtime = async (req: Request, res: Response) => {
             });
 
             const ref = 'AIR_' + Date.now();
-            const response = await clubKonnectProvider.purchaseAirtime(networkId, phoneNumber, cost, ref);
-
-            if (response.status === 'FAILED') throw new Error(response.message || 'Provider failed');
-
             await tx.transaction.create({
                 data: {
                     userId,
@@ -191,15 +198,54 @@ export const purchaseAirtime = async (req: Request, res: Response) => {
                     amount: cost,
                     total: cost,
                     type: 'AIRTIME',
-                    status: response.status === 'SUCCESS' ? 'SUCCESS' : 'PENDING',
+                    status: 'PENDING',
                     reference: ref,
                     idempotencyKey,
-                    metadata: { networkId, phoneNumber, providerRef: response.providerReference },
+                    metadata: { networkId, phoneNumber },
                     description: `Airtime Purchase (${phoneNumber})`
                 } as any
             });
 
-            return response;
+            return { walletId: wallet.id, ref };
+        });
+
+
+        // External API Call (Outside of DB Transaction lock)
+        const response = await clubKonnectProvider.purchaseAirtime(networkId, phoneNumber, cost, result.ref);
+
+        if (response.status === 'FAILED') {
+            // Refund the user
+            await prisma.$transaction([
+                prisma.wallet.update({
+                    where: { id: result.walletId },
+                    data: { balance: { increment: cost } }
+                }),
+                prisma.transaction.update({
+                    where: { reference: result.ref },
+                    data: { status: 'FAILED' }
+                })
+            ]);
+            throw new Error(response.message || 'Provider failed, funds refunded.');
+        }
+
+        // Mark as SUCCESS
+        await prisma.transaction.update({
+            where: { reference: result.ref },
+            data: {
+                status: 'SUCCESS',
+                metadata: { networkId, phoneNumber, providerRef: response.providerReference } as any
+            }
+        });
+
+
+        const newBalance = (await prisma.wallet.findFirst({ where: { userId, currency: 'NGN' } }))?.balance;
+        socketService.emitToUser(userId, 'BALANCE_UPDATE', { balance: newBalance });
+        socketService.emitToUser(userId, 'TRANSACTION_NEW', {
+            id: 'AIR_' + Date.now(),
+            type: 'AIRTIME',
+            amount: cost,
+            status: 'SUCCESS',
+            message: `Airtime purchase of ₦${cost} successful`
         });
 
         res.json({ message: 'Airtime purchase successful' });
@@ -223,7 +269,7 @@ export const purchaseData = async (req: Request, res: Response) => {
 
         const cost = Number(amount);
 
-        await prisma.$transaction(async (tx) => {
+        const result = await prisma.$transaction(async (tx) => {
             const walletResults = await tx.$queryRaw<Wallet[]>(
                 Prisma.sql`SELECT * FROM "Wallet" WHERE "userId" = ${userId} AND "currency" = 'NGN' FOR UPDATE`
             );
@@ -237,9 +283,6 @@ export const purchaseData = async (req: Request, res: Response) => {
             });
 
             const ref = 'DATA_' + Date.now();
-            const response = await clubKonnectProvider.purchaseData(networkId, planId, phoneNumber, ref);
-
-            if (response.status === 'FAILED') throw new Error(response.message || 'Provider failed');
 
             await tx.transaction.create({
                 data: {
@@ -248,15 +291,51 @@ export const purchaseData = async (req: Request, res: Response) => {
                     amount: cost,
                     total: cost,
                     type: 'DATA',
-                    status: response.status === 'SUCCESS' ? 'SUCCESS' : 'PENDING',
+                    status: 'PENDING',
                     reference: ref,
                     idempotencyKey,
-                    metadata: { networkId, planId, phoneNumber, providerRef: response.providerReference },
+                    metadata: { networkId, planId, phoneNumber },
                     description: `Data Purchase (${phoneNumber})`
                 } as any
             });
 
-            return response;
+            return { walletId: wallet.id, ref };
+        });
+
+        // External API Call (Outside of DB Transaction lock)
+        const response = await clubKonnectProvider.purchaseData(networkId, planId, phoneNumber, result.ref);
+
+        if (response.status === 'FAILED') {
+            await prisma.$transaction([
+                prisma.wallet.update({
+                    where: { id: result.walletId },
+                    data: { balance: { increment: cost } }
+                }),
+                prisma.transaction.update({
+                    where: { reference: result.ref },
+                    data: { status: 'FAILED' }
+                })
+            ]);
+            throw new Error(response.message || 'Provider failed, funds refunded.');
+        }
+
+        await prisma.transaction.update({
+            where: { reference: result.ref },
+            data: {
+                status: 'SUCCESS',
+                metadata: { networkId, phoneNumber, planId, providerRef: response.providerReference } as any
+            }
+        });
+
+
+        const newBalance = (await prisma.wallet.findFirst({ where: { userId, currency: 'NGN' } }))?.balance;
+        socketService.emitToUser(userId, 'BALANCE_UPDATE', { balance: newBalance });
+        socketService.emitToUser(userId, 'TRANSACTION_NEW', {
+            id: 'DATA_' + Date.now(),
+            type: 'DATA',
+            amount: cost,
+            status: 'SUCCESS',
+            message: `Data purchase of ₦${cost} successful`
         });
 
         res.json({ message: 'Data purchase successful' });
@@ -290,7 +369,7 @@ export const purchaseCable = async (req: Request, res: Response) => {
 
         const cost = Number(amount);
 
-        await prisma.$transaction(async (tx) => {
+        const result = await prisma.$transaction(async (tx) => {
             const walletResults = await tx.$queryRaw<Wallet[]>(
                 Prisma.sql`SELECT * FROM "Wallet" WHERE "userId" = ${userId} AND "currency" = 'NGN' FOR UPDATE`
             );
@@ -304,9 +383,6 @@ export const purchaseCable = async (req: Request, res: Response) => {
             });
 
             const ref = 'CABLE_' + Date.now();
-            const response = await clubKonnectProvider.purchaseCable(providerId, packageId, smartcardNumber, ref);
-
-            if (response.status === 'FAILED') throw new Error(response.message || 'Provider failed');
 
             await tx.transaction.create({
                 data: {
@@ -315,15 +391,41 @@ export const purchaseCable = async (req: Request, res: Response) => {
                     amount: cost,
                     total: cost,
                     type: 'CABLE',
-                    status: response.status === 'SUCCESS' ? 'SUCCESS' : 'PENDING',
+                    status: 'PENDING',
                     reference: ref,
                     idempotencyKey,
-                    metadata: { providerId, packageId, smartcardNumber, providerRef: response.providerReference },
+                    metadata: { providerId, packageId, smartcardNumber },
                     description: `Cable TV Purchase (${smartcardNumber})`
                 } as any
             });
-            return response;
+            return { walletId: wallet.id, ref };
         });
+
+        // External API Call (Outside of DB Transaction lock)
+        const response = await clubKonnectProvider.purchaseCable(providerId, packageId, smartcardNumber, result.ref);
+
+        if (response.status === 'FAILED') {
+            await prisma.$transaction([
+                prisma.wallet.update({
+                    where: { id: result.walletId },
+                    data: { balance: { increment: cost } }
+                }),
+                prisma.transaction.update({
+                    where: { reference: result.ref },
+                    data: { status: 'FAILED' }
+                })
+            ]);
+            throw new Error(response.message || 'Provider failed, funds refunded.');
+        }
+
+        await prisma.transaction.update({
+            where: { reference: result.ref },
+            data: {
+                status: 'SUCCESS',
+                metadata: { providerId, packageId, smartcardNumber, providerRef: response.providerReference } as any
+            }
+        });
+
 
         res.json({ message: 'Cable TV subscription successful' });
     } catch (error: any) {
@@ -365,12 +467,6 @@ export const purchaseElectricity = async (req: Request, res: Response) => {
             });
 
             const ref = 'ELEC_' + Date.now();
-            const response = await clubKonnectProvider.purchaseElectricity(providerId, meterNumber, cost, ref);
-
-            if (response.status === 'FAILED') {
-                throw new Error(response.message || 'Provider failed');
-            }
-
             await tx.transaction.create({
                 data: {
                     userId,
@@ -378,21 +474,46 @@ export const purchaseElectricity = async (req: Request, res: Response) => {
                     amount: cost,
                     total: cost,
                     type: 'BILL_PAYMENT',
-                    status: response.status === 'SUCCESS' ? 'SUCCESS' : 'PENDING',
+                    status: 'PENDING',
                     reference: ref,
                     idempotencyKey,
-                    metadata: {
-                        providerId,
-                        meterNumber,
-                        token: response.token,
-                        providerRef: response.providerReference
-                    },
+                    metadata: { providerId, meterNumber },
                     description: `Electricity Token ${cost} for ${meterNumber} (${providerId})`
                 } as any
             });
 
-            return response;
+            return { walletId: wallet.id, ref };
         });
+
+        const response = await clubKonnectProvider.purchaseElectricity(providerId, meterNumber, cost, result.ref);
+
+        if (response.status === 'FAILED') {
+            await prisma.$transaction([
+                prisma.wallet.update({
+                    where: { id: result.walletId },
+                    data: { balance: { increment: cost } }
+                }),
+                prisma.transaction.update({
+                    where: { reference: result.ref },
+                    data: { status: 'FAILED' }
+                })
+            ]);
+            throw new Error(response.message || 'Provider failed, funds refunded');
+        }
+
+        await prisma.transaction.update({
+            where: { reference: result.ref },
+            data: {
+                status: 'SUCCESS',
+                metadata: {
+                    providerId,
+                    meterNumber,
+                    token: response.token,
+                    providerRef: response.providerReference
+                } as any
+            }
+        });
+
 
         res.json({ message: 'Electricity purchase successful', data: result });
 
@@ -434,12 +555,6 @@ export const purchaseBetting = async (req: Request, res: Response) => {
             });
 
             const ref = 'BET_' + Date.now();
-            const response = await clubKonnectProvider.fundBettingWallet(customerId, Number(amount), bookmaker, ref);
-
-            if (response.status === 'FAILED') {
-                throw new Error(response.message || 'Provider failed');
-            }
-
             await tx.transaction.create({
                 data: {
                     userId,
@@ -447,20 +562,48 @@ export const purchaseBetting = async (req: Request, res: Response) => {
                     amount: Number(amount),
                     total: Number(amount),
                     type: 'BILL_PAYMENT',
-                    status: response.status === 'SUCCESS' ? 'SUCCESS' : 'PENDING',
+                    status: 'PENDING',
                     reference: ref,
                     idempotencyKey,
                     metadata: {
                         customerId,
-                        bookmaker,
-                        providerRef: response.providerReference
+                        bookmaker
                     },
                     description: `Betting Topup ${amount} for ${customerId} (${bookmaker})`
                 } as any
             });
 
-            return response;
+            return { walletId: wallet.id, ref };
         });
+
+        const response = await clubKonnectProvider.fundBettingWallet(customerId, Number(amount), bookmaker, result.ref);
+
+        if (response.status === 'FAILED') {
+            await prisma.$transaction([
+                prisma.wallet.update({
+                    where: { id: result.walletId },
+                    data: { balance: { increment: Number(amount) } }
+                }),
+                prisma.transaction.update({
+                    where: { reference: result.ref },
+                    data: { status: 'FAILED' }
+                })
+            ]);
+            throw new Error(response.message || 'Provider failed, funds refunded');
+        }
+
+        await prisma.transaction.update({
+            where: { reference: result.ref },
+            data: {
+                status: 'SUCCESS',
+                metadata: {
+                    customerId,
+                    bookmaker,
+                    providerRef: response.providerReference
+                } as any
+            }
+        });
+
 
         res.json({ message: 'Betting wallet funded successfully', data: result });
 

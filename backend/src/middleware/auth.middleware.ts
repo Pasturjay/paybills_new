@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import prisma from '../prisma';
 
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET;
 
 if (!JWT_SECRET) {
     console.error('FATAL: JWT_SECRET environment variable is not set!');
@@ -13,12 +13,28 @@ if (!JWT_SECRET) {
 }
 
 export const authenticateToken = async (req: Request, res: Response, next: NextFunction) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (!token) return res.status(401).json({ error: 'Unauthorized: No token provided' });
-
     try {
+        let token = null;
+
+        // 1. Check cookies first (HttpOnly)
+        // If cookie-parser is used, req.cookies.accessToken would be available.
+        // Doing manual regex fallback in case it's not.
+        const cookies = req.headers.cookie;
+        if (cookies) {
+            const tokenMatch = cookies.match(/accessToken=([^;]+)/);
+            if (tokenMatch) {
+                token = tokenMatch[1];
+            }
+        }
+
+        // 2. Check Authorization Header as fallback
+        if (!token) {
+            const authHeader = req.headers['authorization'];
+            token = authHeader && authHeader.split(' ')[1];
+        }
+
+        if (!token) return res.status(401).json({ error: 'Unauthorized: No token provided' });
+
         const decoded = jwt.verify(token, JWT_SECRET) as any;
 
         const user = await prisma.user.findUnique({
@@ -38,12 +54,19 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
     }
 };
 
-export const authorizeRole = (roles: string[]) => {
+export const authorizeRole = (...roles: string[]) => {
     return (req: Request, res: Response, next: NextFunction) => {
         // @ts-ignore
-        if (!roles.includes(req.user.role)) {
+        const userRole = req.user?.role;
+
+        if (!userRole) {
+            return res.status(401).json({ error: 'Unauthorized: Role missing from payload' });
+        }
+
+        if (!roles.includes(userRole)) {
             return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
         }
+
         next();
     };
 };

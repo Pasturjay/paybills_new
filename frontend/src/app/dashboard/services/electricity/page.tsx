@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { api } from "@/lib/api";
@@ -24,6 +24,7 @@ export default function ElectricityPage() {
     const [pageLoading, setPageLoading] = useState(true);
     const [message, setMessage] = useState("");
     const [context, setContext] = useState<any>(null);
+    const isSubmitting = useRef(false);
 
     const providers = ["IKEDC", "EKEDC", "AEDC", "IBEDC"];
 
@@ -70,6 +71,8 @@ export default function ElectricityPage() {
     };
 
     const handlePurchase = async () => {
+        if (isSubmitting.current) return;
+        isSubmitting.current = true;
         setStatus("loading");
         setMessage("");
 
@@ -90,6 +93,8 @@ export default function ElectricityPage() {
         } catch (err: any) {
             setStatus("error");
             setMessage(err.message || "Transaction failed");
+        } finally {
+            isSubmitting.current = false;
         }
     };
 

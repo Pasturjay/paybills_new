@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { api } from "@/lib/api";
@@ -19,6 +19,7 @@ export default function CableTVPage() {
     const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
     const [idempotencyKey, setIdempotencyKey] = useState(uuidv4());
     const [message, setMessage] = useState("");
+    const isSubmitting = useRef(false);
 
     const packages: Record<string, { name: string, price: number, code: string }[]> = {
         "DSTV": [
@@ -59,6 +60,8 @@ export default function CableTVPage() {
     };
 
     const handlePurchase = async () => {
+        if (isSubmitting.current) return;
+        isSubmitting.current = true;
         setStatus("loading");
         setMessage("");
 
@@ -80,6 +83,8 @@ export default function CableTVPage() {
         } catch (err: any) {
             setStatus("error");
             setMessage(err.message || "Transaction failed");
+        } finally {
+            isSubmitting.current = false;
         }
     };
 

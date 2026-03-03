@@ -4,6 +4,7 @@ exports.purchaseBetting = exports.purchaseElectricity = exports.purchaseCable = 
 const client_1 = require("@prisma/client");
 const clubkonnect_provider_1 = require("../providers/clubkonnect.provider");
 const security_service_1 = require("../services/security.service");
+const socket_service_1 = require("../services/socket.service");
 const prisma = new client_1.PrismaClient();
 const clubKonnectProvider = new clubkonnect_provider_1.ClubKonnectProvider();
 const securityService = new security_service_1.SecurityService();
@@ -24,6 +25,7 @@ const getProducts = async (req, res) => {
 };
 exports.getProducts = getProducts;
 const purchaseEducation = async (req, res) => {
+    var _a;
     try {
         const userId = req.user.id;
         const { type, quantity = 1, pin, idempotencyKey } = req.body;
@@ -74,6 +76,15 @@ const purchaseEducation = async (req, res) => {
                 }
             });
             return response;
+        });
+        const newBalance = (_a = (await prisma.wallet.findFirst({ where: { userId, currency: 'NGN' } }))) === null || _a === void 0 ? void 0 : _a.balance;
+        socket_service_1.socketService.emitToUser(userId, 'BALANCE_UPDATE', { balance: newBalance });
+        socket_service_1.socketService.emitToUser(userId, 'TRANSACTION_NEW', {
+            id: 'EDU_' + Date.now(),
+            type: 'BILL_PAYMENT',
+            amount: cost,
+            status: 'SUCCESS',
+            message: `Purchase of ${quantity} ${type} PIN(s) successful`
         });
         res.json({ message: 'Purchase successful', type, quantity });
     }
@@ -134,6 +145,7 @@ const sellGiftCard = async (req, res) => {
 };
 exports.sellGiftCard = sellGiftCard;
 const purchaseAirtime = async (req, res) => {
+    var _a;
     try {
         const userId = req.user.id;
         const { networkId, phoneNumber, amount, pin, idempotencyKey } = req.body;
@@ -173,6 +185,15 @@ const purchaseAirtime = async (req, res) => {
             });
             return response;
         });
+        const newBalance = (_a = (await prisma.wallet.findFirst({ where: { userId, currency: 'NGN' } }))) === null || _a === void 0 ? void 0 : _a.balance;
+        socket_service_1.socketService.emitToUser(userId, 'BALANCE_UPDATE', { balance: newBalance });
+        socket_service_1.socketService.emitToUser(userId, 'TRANSACTION_NEW', {
+            id: 'AIR_' + Date.now(),
+            type: 'AIRTIME',
+            amount: cost,
+            status: 'SUCCESS',
+            message: `Airtime purchase of ₦${cost} successful`
+        });
         res.json({ message: 'Airtime purchase successful' });
     }
     catch (error) {
@@ -181,6 +202,7 @@ const purchaseAirtime = async (req, res) => {
 };
 exports.purchaseAirtime = purchaseAirtime;
 const purchaseData = async (req, res) => {
+    var _a;
     try {
         const userId = req.user.id;
         const { networkId, planId, phoneNumber, amount, pin, idempotencyKey } = req.body;
@@ -219,6 +241,15 @@ const purchaseData = async (req, res) => {
                 }
             });
             return response;
+        });
+        const newBalance = (_a = (await prisma.wallet.findFirst({ where: { userId, currency: 'NGN' } }))) === null || _a === void 0 ? void 0 : _a.balance;
+        socket_service_1.socketService.emitToUser(userId, 'BALANCE_UPDATE', { balance: newBalance });
+        socket_service_1.socketService.emitToUser(userId, 'TRANSACTION_NEW', {
+            id: 'DATA_' + Date.now(),
+            type: 'DATA',
+            amount: cost,
+            status: 'SUCCESS',
+            message: `Data purchase of ₦${cost} successful`
         });
         res.json({ message: 'Data purchase successful' });
     }

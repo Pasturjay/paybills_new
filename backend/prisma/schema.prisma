@@ -9,30 +9,30 @@ datasource db {
 }
 
 model User {
-  id              String           @id @default(uuid())
-  email           String?          @unique
-  phone           String?          @unique
-  password        String?
-  firebaseUid     String?          @unique
-  authProvider    String           @default("LOCAL")
-  firstName       String?
-  lastName        String?
-  role            Role             @default(USER)
-  userTag         String?          @unique
-  kycLevel        Int              @default(0)
-  address         String?
-  bvn             String?
-  nin             String?
-  idCardUrl       String?
-  utilityBillUrl  String?
-  isVerified      Boolean          @default(false)
-  isActive        Boolean          @default(true)
-  tenantId        String?
+  id             String  @id @default(uuid())
+  email          String? @unique
+  phone          String? @unique
+  password       String?
+  firebaseUid    String? @unique
+  authProvider   String  @default("LOCAL")
+  firstName      String?
+  lastName       String?
+  role           Role    @default(USER)
+  userTag        String? @unique
+  kycLevel       Int     @default(0)
+  address        String?
+  bvn            String?
+  nin            String?
+  idCardUrl      String?
+  utilityBillUrl String?
+  isVerified     Boolean @default(false)
+  isActive       Boolean @default(true)
+  tenantId       String?
 
-  avatarUrl      String?
-  lastLoginAt    DateTime? @default(now())
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  avatarUrl   String?
+  lastLoginAt DateTime? @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   transactionPin String?
   referralCode   String? @unique
@@ -86,15 +86,28 @@ model VirtualAccount {
 }
 
 model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  token        String   @unique
+  refreshToken String?  @unique
+  deviceInfo   String?
+  ipAddress    String?
+  expiresAt    DateTime
+  isRevoked    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Partner {
   id         String   @id @default(uuid())
-  userId     String
-  token      String   @unique
-  deviceInfo String?
-  ipAddress  String?
-  expiresAt  DateTime
-  isRevoked  Boolean  @default(false)
+  name       String
+  apiKey     String   @unique
+  apiSecret  String
+  status     String   @default("ACTIVE") // ACTIVE, SUSPENDED
+  rateLimit  Int      @default(100)
+  allowedIPs String[] // Array of allowed IP addresses
   createdAt  DateTime @default(now())
-  user       User     @relation(fields: [userId], references: [id])
+  updatedAt  DateTime @updatedAt
 }
 
 model Wallet {
@@ -320,39 +333,39 @@ model ProviderCostLog {
 }
 
 model SoftwareProduct {
-  id             String   @id @default(uuid())
-  name           String
-  description    String
-  category       String
-  brand          String
-  price          Decimal  @db.Decimal(20, 2)
-  originalPrice  Decimal  @db.Decimal(20, 2)
-  platform       Json     // Array of strings
-  licenseType    String
-  image          String
-  rating         Float    @default(0.0)
-  sales          Int      @default(0)
-  bestSeller     Boolean  @default(false)
-  isActive       Boolean  @default(true)
-  stock          Int      @default(-1) // -1 means unlimited API-provided, or generic
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id            String   @id @default(uuid())
+  name          String
+  description   String
+  category      String
+  brand         String
+  price         Decimal  @db.Decimal(20, 2)
+  originalPrice Decimal  @db.Decimal(20, 2)
+  platform      Json // Array of strings
+  licenseType   String
+  image         String
+  rating        Float    @default(0.0)
+  sales         Int      @default(0)
+  bestSeller    Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  stock         Int      @default(-1) // -1 means unlimited API-provided, or generic
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model BlogPost {
-  id          String   @id @default(uuid())
-  title       String
-  slug        String   @unique
-  excerpt     String
-  content     String
-  coverImage  String?
-  category    String   @default("General")
-  tags        String[]
-  status      String   @default("DRAFT")
-  authorName  String   @default("Paybills Team")
-  views       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(uuid())
+  title      String
+  slug       String   @unique
+  excerpt    String
+  content    String
+  coverImage String?
+  category   String   @default("General")
+  tags       String[]
+  status     String   @default("DRAFT")
+  authorName String   @default("Paybills Team")
+  views      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([status])
   @@index([slug])
@@ -362,7 +375,10 @@ enum Role {
   USER
   ADMIN
   SUPERADMIN
+  FINANCE
   SUPPORT
+  RESELLER
+  AGENT
   API_CLIENT
 }
 

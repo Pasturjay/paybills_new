@@ -36,9 +36,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.login = exports.register = exports.requestOtp = exports.syncFirebaseUser = void 0;
+exports.logout = exports.refreshSession = exports.login = exports.register = exports.requestOtp = exports.syncFirebaseUser = void 0;
 const prisma_1 = __importDefault(require("../prisma"));
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 // Lazy-load firebaseAdmin so startup doesn't crash if service account is missing
 const getFirebaseAuth = async () => {
     try {
@@ -186,11 +185,25 @@ const syncFirebaseUser = async (req, res) => {
             });
             console.log('Existing user updated.');
         }
-        console.log('Generating platform token...');
-        const platformToken = jsonwebtoken_1.default.sign({ id: user.id, uid: user.firebaseUid, role: user.role }, JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '1d' });
+        console.log('Generating session tokens...');
+        const { AuthService } = await Promise.resolve().then(() => __importStar(require('../services/auth.service')));
+        const { accessToken, refreshToken } = await AuthService.createSession(user.id, req.headers['user-agent'], req.ip || req.headers['x-forwarded-for']);
+        // Security: Set HTTP-Only Cookies
+        const isProduction = process.env.NODE_ENV === 'production';
+        res.cookie('accessToken', accessToken, {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: 'strict',
+            maxAge: 15 * 60 * 1000 // 15 minutes
+        });
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
         return res.json({
             message: 'User synced successfully',
-            token: platformToken,
             user: {
                 id: user.id,
                 email: user.email,
@@ -234,3 +247,58 @@ const register = async (req, res) => res.status(410).json({ error: 'Deprecated. 
 exports.register = register;
 const login = async (req, res) => res.status(410).json({ error: 'Deprecated. Use Firebase sign-in and POST /api/auth/sync.' });
 exports.login = login;
+const refreshSession = async (req, res) => {
+    try {
+        // Read refresh token from HTTP-only cookie
+        // Use cookie-parser in app.ts if not already used, or parse manually
+        const cookies = req.headers.cookie;
+        if (!cookies)
+            return res.status(401).json({ error: 'No cookies found' });
+        const refreshTokenMatch = cookies.match(/refreshToken=([^;]+)/);
+        const refreshToken = refreshTokenMatch ? refreshTokenMatch[1] : null;
+        if (!refreshToken)
+            return res.status(401).json({ error: 'Refresh token not provided' });
+        const { AuthService } = await Promise.resolve().then(() => __importStar(require('../services/auth.service')));
+        const { accessToken, refreshToken: newRefreshToken } = await AuthService.refreshSession(refreshToken, req.ip || req.headers['x-forwarded-for']);
+        const isProduction = process.env.NODE_ENV === 'production';
+        res.cookie('accessToken', accessToken, {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: 'strict',
+            maxAge: 15 * 60 * 1000
+        });
+        res.cookie('refreshToken', newRefreshToken, {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
+        res.json({ message: 'Session refreshed successfully' });
+    }
+    catch (error) {
+        console.error('Refresh Session Error:', error);
+        res.status(403).json({ error: error.message || 'Invalid or expired refresh token' });
+    }
+};
+exports.refreshSession = refreshSession;
+const logout = async (req, res) => {
+    try {
+        const cookies = req.headers.cookie;
+        const refreshTokenMatch = cookies === null || cookies === void 0 ? void 0 : cookies.match(/refreshToken=([^;]+)/);
+        const refreshToken = refreshTokenMatch ? refreshTokenMatch[1] : null;
+        if (refreshToken) {
+            const { AuthService } = await Promise.resolve().then(() => __importStar(require('../services/auth.service')));
+            await AuthService.revokeSession(refreshToken);
+        }
+        const isProduction = process.env.NODE_ENV === 'production';
+        const cookieOptions = { httpOnly: true, secure: isProduction, sameSite: 'strict' };
+        res.clearCookie('accessToken', cookieOptions);
+        res.clearCookie('refreshToken', cookieOptions);
+        res.json({ message: 'Logged out successfully' });
+    }
+    catch (error) {
+        console.error('Logout Error:', error);
+        res.status(500).json({ error: 'Failed to process logout' });
+    }
+};
+exports.logout = logout;
