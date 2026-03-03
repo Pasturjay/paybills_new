@@ -83,7 +83,6 @@ router.post('/cards/fund', authenticateToken, virtualCardController.fundCard);
 
 // Admin Routes
 import { getAllUsers, getAllTransactions, getAdminStats, getServiceStatus, updateServiceStatus, getProviderStatus, updateUserStatus } from '../controllers/admin.controller';
-import { authorizeRole } from '../middleware/auth.middleware';
 
 router.get('/admin/users', authenticateToken, authorizeRole(['ADMIN', 'SUPERADMIN']), getAllUsers);
 router.get('/admin/transactions', authenticateToken, authorizeRole(['ADMIN', 'SUPERADMIN']), getAllTransactions);

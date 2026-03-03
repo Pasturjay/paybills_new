@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma, Wallet } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -160,15 +160,20 @@ export const verifyFunding = async (req: Request, res: Response) => {
         // 3. Fund Wallet
         const amount = verification.amount / 100; // Convert kobo to naira
 
-        const wallet = await prisma.wallet.findFirst({ where: { userId, currency: 'NGN' } });
-        if (!wallet) return res.status(404).json({ error: 'Wallet not found' });
+        await prisma.$transaction(async (tx) => {
+            // Get Wallet with row-level lock
+            const wallets = await tx.$queryRaw<Wallet[]>(
+                Prisma.sql`SELECT * FROM "Wallet" WHERE "userId" = ${userId} AND "currency" = 'NGN' FOR UPDATE`
+            );
+            const wallet = wallets[0];
+            if (!wallet) throw new Error('Wallet not found');
 
-        await prisma.$transaction([
-            prisma.wallet.update({
+            await tx.wallet.update({
                 where: { id: wallet.id },
                 data: { balance: { increment: amount } }
-            }),
-            prisma.transaction.create({
+            });
+
+            await tx.transaction.create({
                 data: {
                     userId,
                     walletId: wallet.id,
@@ -179,8 +184,8 @@ export const verifyFunding = async (req: Request, res: Response) => {
                     reference: reference,
                     metadata: JSON.stringify(verification)
                 }
-            })
-        ]);
+            });
+        });
 
         // 4. Notify
         const { notificationService } = await import('../services/notification.service');
@@ -326,7 +331,7 @@ export const transferFunds = async (req: Request, res: Response) => {
             });
             if (existingDR) {
                 return res.json({
-                    status: 'success',
+                    success: true,
                     message: 'Transfer already processed',
                     reference: existingDR.reference,
                     amount: existingDR.amount
@@ -360,11 +365,24 @@ export const transferFunds = async (req: Request, res: Response) => {
 
         // 3. Perform Atomic Transfer
         await prisma.$transaction(async (tx) => {
-            // Check Sender Balance (Locking row if needed, but atomic increment/decrement is usually safe enough for this scale)
-            // Ideally we check balance first
-            const senderWallet = await tx.wallet.findFirst({ where: { userId, currency: 'NGN' } });
-            if (!senderWallet || senderWallet.balance.toNumber() < Number(amount)) {
+            // Check Sender Balance with row-level lock
+            const senderWallets = await tx.$queryRaw<Wallet[]>(
+                Prisma.sql`SELECT * FROM "Wallet" WHERE "userId" = ${userId} AND "currency" = 'NGN' FOR UPDATE`
+            );
+            const senderWallet = senderWallets[0];
+
+            if (!senderWallet || Number(senderWallet.balance) < Number(amount)) {
                 throw new Error('Insufficient funds');
+            }
+
+            // Get Recipient Wallet with row-level lock
+            const recipientWallets = await tx.$queryRaw<Wallet[]>(
+                Prisma.sql`SELECT * FROM "Wallet" WHERE "userId" = ${recipient.id} AND "currency" = 'NGN' FOR UPDATE`
+            );
+            const recipientWallet = recipientWallets[0];
+
+            if (!recipientWallet) {
+                throw new Error('Recipient wallet not found');
             }
 
             // Deduct from Sender
@@ -374,11 +392,6 @@ export const transferFunds = async (req: Request, res: Response) => {
             });
 
             // Add to Recipient
-            const recipientWallet = await tx.wallet.findFirst({ where: { userId: recipient.id, currency: 'NGN' } });
-            if (!recipientWallet) {
-                // Should exist, but handle edge case
-                throw new Error('Recipient wallet not found'); // Or create one
-            }
             await tx.wallet.update({
                 where: { id: recipientWallet.id },
                 data: { balance: { increment: Number(amount) } }

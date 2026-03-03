@@ -2,7 +2,15 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import prisma from '../prisma';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_dev_only';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+    console.error('FATAL: JWT_SECRET environment variable is not set!');
+    // In production, we want the process to fail early if security config is missing
+    if (process.env.NODE_ENV === 'production') {
+        process.exit(1);
+    }
+}
 
 export const authenticateToken = async (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers['authorization'];

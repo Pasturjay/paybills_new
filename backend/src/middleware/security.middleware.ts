@@ -18,11 +18,21 @@ export const configureSecurity = (app: Application) => {
     // Apply to all API routes
     app.use('/api', limiter);
 
-    // Stricter limit for Auth routes
+    // 3. Stricter limit for Sensitive Transactions
+    const transactionLimiter = rateLimit({
+        windowMs: 60 * 1000, // 1 minute
+        max: 5, // Limit each IP to 5 transactions per minute
+        message: { error: 'Too many transactions. Please wait a moment.' }
+    });
+    app.use('/api/wallet/transfer', transactionLimiter);
+    app.use('/api/products/purchase', transactionLimiter);
+
+    // 4. Stricter limit for Auth routes
     const authLimiter = rateLimit({
         windowMs: 60 * 60 * 1000, // 1 hour
-        max: 10, // Limit each IP to 5 create account requests per hour
-        message: { error: 'Too many login attempts, please try again after an hour' }
+        max: 5, // Limit each IP to 5 attempts per hour
+        message: { error: 'Too many attempts. Please try again after an hour.' }
     });
     app.use('/api/auth/login', authLimiter);
+    app.use('/api/auth/sync', authLimiter);
 };

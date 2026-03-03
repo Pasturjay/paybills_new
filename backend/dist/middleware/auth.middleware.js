@@ -6,7 +6,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.authorizeRole = exports.authenticateToken = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const prisma_1 = __importDefault(require("../prisma"));
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_dev_only';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    console.error('FATAL: JWT_SECRET environment variable is not set!');
+    // In production, we want the process to fail early if security config is missing
+    if (process.env.NODE_ENV === 'production') {
+        process.exit(1);
+    }
+}
 const authenticateToken = async (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];

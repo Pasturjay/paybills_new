@@ -87,6 +87,14 @@ router.get('/virtual-numbers/my', auth_middleware_1.authenticateToken, virtualNu
 router.get('/virtual-numbers/:id/messages', auth_middleware_1.authenticateToken, virtualNumberController.getNumberMessages);
 router.post('/virtual-numbers/cancel', auth_middleware_1.authenticateToken, virtualNumberController.cancelNumberSubscription);
 router.post('/webhooks/vonage/sms', virtualNumberController.handleSmsWebhook);
+// Blog Routes (Public + Admin)
+const blogController = __importStar(require("../controllers/blog.controller"));
+const auth_middleware_2 = require("../middleware/auth.middleware");
+router.get('/blog', blogController.getAllPosts);
+router.get('/blog/:slug', blogController.getPostBySlug);
+router.post('/admin/blog', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)(['ADMIN', 'SUPERADMIN']), blogController.createPost);
+router.put('/admin/blog/:id', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)(['ADMIN', 'SUPERADMIN']), blogController.updatePost);
+router.delete('/admin/blog/:id', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)(['ADMIN', 'SUPERADMIN']), blogController.deletePost);
 // Virtual Cards
 const virtualCardController = __importStar(require("../controllers/virtual-card.controller"));
 router.post('/cards/create', auth_middleware_1.authenticateToken, virtualCardController.createCard);
@@ -96,7 +104,6 @@ router.post('/cards/freeze', auth_middleware_1.authenticateToken, virtualCardCon
 router.post('/cards/fund', auth_middleware_1.authenticateToken, virtualCardController.fundCard);
 // Admin Routes
 const admin_controller_1 = require("../controllers/admin.controller");
-const auth_middleware_2 = require("../middleware/auth.middleware");
 router.get('/admin/users', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)(['ADMIN', 'SUPERADMIN']), admin_controller_1.getAllUsers);
 router.get('/admin/transactions', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)(['ADMIN', 'SUPERADMIN']), admin_controller_1.getAllTransactions);
 router.get('/admin/stats', auth_middleware_1.authenticateToken, (0, auth_middleware_2.authorizeRole)(['ADMIN', 'SUPERADMIN']), admin_controller_1.getAdminStats);
