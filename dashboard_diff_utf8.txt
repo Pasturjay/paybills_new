@@ -1,0 +1,3 @@
+﻿26530fc feat: complete dashboard integration and gitignore
+51b01c6 docs: Add comprehensive project README
+c72f8c1 SEO & App Store Integration, Compliance Updates, and Fixes

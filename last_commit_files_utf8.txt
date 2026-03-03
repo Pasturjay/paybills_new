@@ -1,0 +1,26 @@
+﻿commit d05dda546d982abb2378b51f2dbdd30b7716ebee
+Author: Paybills Admin <admin@usepaybills.com>
+Date:   Mon Mar 2 23:50:16 2026 +1400
+
+    Bold asset upgrade
+
+frontend/.next/cache/webpack/client-development/0.pack.gz
+frontend/.next/cache/webpack/client-development/1.pack.gz
+frontend/.next/cache/webpack/client-development/2.pack.gz
+frontend/.next/cache/webpack/client-development/3.pack.gz
+frontend/.next/cache/webpack/client-development/4.pack.gz
+frontend/.next/cache/webpack/client-development/index.pack.gz
+frontend/.next/cache/webpack/client-development/index.pack.gz.old
+frontend/.next/cache/webpack/server-development/0.pack.gz
+frontend/.next/cache/webpack/server-development/1.pack.gz
+frontend/.next/cache/webpack/server-development/10.pack.gz
+frontend/.next/cache/webpack/server-development/3.pack.gz
+frontend/.next/cache/webpack/server-development/4.pack.gz
+frontend/.next/cache/webpack/server-development/6.pack.gz
+frontend/.next/cache/webpack/server-development/index.pack.gz
+frontend/.next/cache/webpack/server-development/index.pack.gz.old
+frontend/.next/server/app-paths-manifest.json
+frontend/.next/server/middleware-manifest.json
+frontend/src/app/globals.css
+frontend/src/components/Navbar.tsx
+frontend/tsconfig.tsbuildinfo

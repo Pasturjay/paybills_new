@@ -1,0 +1,19 @@
+﻿On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	modified:   frontend/.next/trace
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	Navbar_new.tsx
+	Navbar_old.tsx
+	globals_css_new.css
+	globals_css_old.css
+	last_commit_diff.txt
+	last_commit_diff_utf8.txt
+	last_commit_files.txt
+	last_commit_files_utf8.txt
+	status_clean.txt
+
