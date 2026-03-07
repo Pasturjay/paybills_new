@@ -12,8 +12,9 @@ if (fs.existsSync(serviceAccountPath)) {
 } else if (process.env.FIREBASE_SERVICE_ACCOUNT) {
     try {
         serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-    } catch (error) {
-        console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT from process.env');
+    } catch (error: any) {
+        console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT from process.env:', error.message);
+        console.error('Raw ENV string starts with:', process.env.FIREBASE_SERVICE_ACCOUNT.substring(0, 20));
     }
 }
 
