@@ -8,6 +8,7 @@ const app: Application = express();
 
 // CORS Configuration
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+    .replace(/['"]/g, '')
     .split(',')
     .map(o => o.trim())
     .filter(Boolean);
@@ -24,7 +25,9 @@ app.use(cors({
         if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
-            callback(new Error(`CORS policy: origin ${origin} is not allowed`));
+            const err = new Error(`CORS policy: origin ${origin} is not allowed`) as any;
+            err.status = 403;
+            callback(err);
         }
     },
     credentials: true,
