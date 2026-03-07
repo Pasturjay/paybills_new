@@ -15,8 +15,8 @@ export function MobileBottomNav() {
 
     const navItems = [
         { name: "Home", href: "/", icon: Home },
-        { name: "Cards", href: "/dashboard/virtual-cards", icon: CreditCard },
-        { name: "Ledger", href: "/dashboard/history", icon: Clock },
+        { name: "Cards", href: "/products/virtual-cards", icon: CreditCard },
+        { name: "History", href: "/dashboard/history", icon: Clock },
         { name: "Profile", href: "/dashboard/profile", icon: User },
     ];
 
@@ -36,8 +36,8 @@ export function MobileBottomNav() {
                         >
                             <div
                                 className={`relative flex items-center justify-center w-10 h-10 rounded-2xl transition-all duration-300 ${active
-                                        ? "bg-indigo-500/20"
-                                        : "hover:bg-white/5"
+                                    ? "bg-indigo-500/20"
+                                    : "hover:bg-white/5"
                                     }`}
                             >
                                 {active && (
