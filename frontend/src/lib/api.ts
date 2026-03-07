@@ -59,10 +59,14 @@ const fetchWithAuth = async (
         if (newToken) {
             return fetch(url, { ...options, headers: buildHeaders(newToken) });
         }
-        // Refresh failed — clear session and redirect to login
+        // Refresh failed — clear session and redirect to login if on protected route
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        window.location.href = '/auth/login';
+
+        const pathname = window.location.pathname;
+        if (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) {
+            window.location.href = '/auth/login';
+        }
     }
 
     return res;
