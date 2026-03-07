@@ -129,6 +129,117 @@ const trustBadges = [
     { icon: Star, label: "Trusted by 10,000+", sub: "Happy customers nationwide" },
 ];
 
+const heroSlides = [
+    {
+        badgeText: "Nigeria's #1 Digital Services Platform",
+        titleLine1: "One App for",
+        titleLine2: "Everything Digital.",
+        desc: "Pay bills, buy software, top-up games, and more. Instant delivery, zero transaction fees.",
+        btn1Text: "Explore Products",
+        btn1Link: "/products",
+        btn1Icon: ArrowRight,
+        btn2Text: "Create Free Account",
+        btn2Link: "/auth/register",
+        bg: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 40%, #0f172a 100%)",
+        glow: "bg-indigo-600/25",
+        glow2: "bg-violet-600/20"
+    },
+    {
+        badgeText: "Global Payments Instantly",
+        titleLine1: "Your Virtual",
+        titleLine2: "USD Card Is Here.",
+        desc: "Pay for Netflix, Spotify, Amazon, and international software seamlessly without limits.",
+        btn1Text: "Get Your Card",
+        btn1Link: "/dashboard/virtual-cards",
+        btn1Icon: CreditCard,
+        btn2Text: "Learn More",
+        btn2Link: "/products",
+        bg: "linear-gradient(135deg, #0f172a 0%, #311155 40%, #0f172a 100%)",
+        glow: "bg-fuchsia-600/25",
+        glow2: "bg-purple-600/20"
+    },
+    {
+        badgeText: "Instant Utility Top-Ups",
+        titleLine1: "Never Run Out",
+        titleLine2: "Of Airtime & Data.",
+        desc: "Recharge any network in seconds. Enjoy fast routing and secure transactions across Nigeria.",
+        btn1Text: "Top Up Now",
+        btn1Link: "/products/airtime-data",
+        btn1Icon: Zap,
+        btn2Text: "View Packages",
+        btn2Link: "/products",
+        bg: "linear-gradient(135deg, #0f172a 0%, #0c3e60 40%, #0f172a 100%)",
+        glow: "bg-sky-600/25",
+        glow2: "bg-blue-600/20"
+    }
+];
+
+function HeroCarouselMobile() {
+    const [current, setCurrent] = useState(0);
+    const [animating, setAnimating] = useState(false);
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setAnimating(true);
+            setTimeout(() => {
+                setCurrent((prev) => (prev + 1) % heroSlides.length);
+                setAnimating(false);
+            }, 300);
+        }, 5000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const slide = heroSlides[current];
+
+    return (
+        <div className="relative w-full overflow-hidden rounded-3xl shadow-2xl transition-all duration-500"
+            style={{
+                background: slide.bg,
+                boxShadow: "0 20px 60px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.07)"
+            }}>
+            {/* Decorative glows */}
+            <div className={`absolute top-0 right-0 w-[400px] h-[400px] ${slide.glow} rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 pointer-events-none transition-colors duration-500`} />
+            <div className={`absolute bottom-0 left-0 w-[200px] h-[200px] ${slide.glow2} rounded-full blur-[60px] translate-y-1/2 -translate-x-1/2 pointer-events-none transition-colors duration-500`} />
+            {/* Top gloss line */}
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
+
+            <div className={`relative z-10 flex flex-col items-start p-8 transition-all duration-300 ${animating ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"}`}>
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/10 border border-white/20 rounded-full text-xs font-bold text-indigo-300 mb-5 backdrop-blur-sm">
+                    <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+                    {slide.badgeText}
+                </div>
+                <h1 className="text-3xl font-black mb-4 leading-[1.1] tracking-tight">
+                    {slide.titleLine1}<br />
+                    <span className="text-gradient-blue">{slide.titleLine2}</span>
+                </h1>
+                <p className="text-gray-100 text-sm mb-7 leading-relaxed font-medium">
+                    {slide.desc}
+                </p>
+                <div className="flex flex-col w-full gap-4 mt-2">
+                    <Link href={slide.btn1Link} className="btn-premium flex items-center justify-center gap-2 px-8 py-3.5 bg-indigo-600 text-white rounded-2xl text-[15px] glow-blue w-full">
+                        {slide.btn1Text} <slide.btn1Icon className="w-4 h-4" />
+                    </Link>
+                    <Link href={slide.btn2Link} className="shine flex items-center justify-center gap-2 px-8 py-3.5 bg-white/10 hover:bg-white/20 border border-white/30 text-white rounded-2xl font-black transition-all duration-300 text-[15px] backdrop-blur-md shadow-xl w-full">
+                        {slide.btn2Text}
+                    </Link>
+                </div>
+            </div>
+
+            {/* Dot indicators */}
+            <div className="absolute top-6 right-6 flex gap-1.5 z-20">
+                {heroSlides.map((_, i) => (
+                    <button
+                        key={i}
+                        onClick={() => setCurrent(i)}
+                        className={`rounded-full transition-all duration-300 ${i === current ? "bg-white w-5 h-1.5" : "bg-white/40 w-1.5 h-1.5"}`}
+                    />
+                ))}
+            </div>
+        </div>
+    );
+}
+
+
 export default function Home() {
     return (
         <main className="min-h-screen bg-gray-50 dark:bg-[#0a0a14] pb-24 md:pb-0 overflow-x-hidden">
@@ -136,7 +247,13 @@ export default function Home() {
 
             {/* ── Hero Section ── */}
             <div className="pt-24 pb-8 px-4 sm:px-6 container mx-auto">
-                <div className="shine relative overflow-hidden rounded-3xl p-8 sm:p-12 mb-10 text-white shadow-2xl"
+                {/* Mobile Hero Carousel */}
+                <div className="block md:hidden mb-10">
+                    <HeroCarouselMobile />
+                </div>
+
+                {/* Desktop Hero Static */}
+                <div className="hidden md:block shine relative overflow-hidden rounded-3xl p-8 sm:p-12 mb-10 text-white shadow-2xl"
                     style={{
                         background: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 40%, #0f172a 100%)",
                         boxShadow: "0 32px 80px rgba(99,102,241,0.35), 0 0 0 1px rgba(255,255,255,0.07) inset"
