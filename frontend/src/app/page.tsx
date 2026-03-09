@@ -131,18 +131,18 @@ const trustBadges = [
 
 const heroSlides = [
     {
-        badgeText: "Nigeria's #1 Digital Services Platform",
-        titleLine1: "One App for",
-        titleLine2: "Everything Digital.",
-        desc: "Pay bills, buy software, top-up games, and more. Instant delivery, zero transaction fees.",
-        btn1Text: "Explore Products",
-        btn1Link: "/products",
+        badgeText: "EASY",
+        titleLine1: "Pay Bills",
+        titleLine2: "Easily",
+        desc: "Electricity, Cable TV, and more with zero stress.",
+        btn1Text: "Pay Bill",
+        btn1Link: "/products/bill-payment",
         btn1Icon: ArrowRight,
-        btn2Text: "Create Free Account",
-        btn2Link: "/auth/register",
-        bg: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 40%, #0f172a 100%)",
-        glow: "bg-indigo-600/25",
-        glow2: "bg-violet-600/20"
+        btn2Text: "",
+        btn2Link: "",
+        bg: "linear-gradient(135deg, #f97316 0%, #ef4444 50%, #b91c1c 100%)",
+        glow: "bg-orange-500/30",
+        glow2: "bg-red-500/20"
     },
     {
         badgeText: "Global Payments Instantly",
@@ -203,24 +203,19 @@ function HeroCarouselMobile() {
             {/* Top gloss line */}
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
 
-            <div className={`relative z-10 flex flex-col items-start p-6 pb-10 transition-all duration-300 ${animating ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"}`}>
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/10 border border-white/20 rounded-full text-[11px] font-bold text-indigo-300 mb-4 backdrop-blur-sm">
-                    <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
-                    {slide.badgeText}
+            <div className={`relative z-10 flex flex-col items-start p-6 pb-8 transition-all duration-300 ${animating ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"}`}>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/20 border border-white/20 rounded-full text-[10px] font-bold text-white mb-4 backdrop-blur-md uppercase tracking-widest">
+                    <Sparkles className="w-3 h-3" /> {slide.badgeText}
                 </div>
-                <h1 className="text-2xl font-black mb-3 leading-[1.15] tracking-tight text-white">
-                    {slide.titleLine1}<br />
-                    <span className="text-gradient-blue">{slide.titleLine2}</span>
+                <h1 className="text-3xl font-bold mb-2 leading-[1.15] tracking-tight text-white">
+                    {slide.titleLine1} {slide.titleLine2}
                 </h1>
-                <p className="text-gray-100 text-[13px] mb-5 leading-relaxed font-medium">
+                <p className="text-white/90 text-[14px] mb-6 leading-relaxed font-medium">
                     {slide.desc}
                 </p>
-                <div className="flex flex-col w-full gap-3 mt-1">
-                    <Link href={slide.btn1Link} className="btn-premium flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl text-[14px] glow-blue w-full">
-                        {slide.btn1Text} <slide.btn1Icon className="w-4 h-4" />
-                    </Link>
-                    <Link href={slide.btn2Link} className="shine flex items-center justify-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/30 !text-white rounded-2xl font-black transition-all duration-300 text-[14px] backdrop-blur-md shadow-xl w-full" style={{ color: '#ffffff' }}>
-                        {slide.btn2Text}
+                <div className="flex w-full mt-1">
+                    <Link href={slide.btn1Link} className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-orange-600 hover:text-orange-700 hover:bg-white/90 shadow-xl rounded-full text-[14px] font-bold transition-all duration-300">
+                        {slide.btn1Text} <ArrowRight className="w-4 h-4" />
                     </Link>
                 </div>
             </div>
@@ -247,9 +242,13 @@ export default function Home() {
 
             {/* ── Hero Section ── */}
             <div className="pt-24 pb-8 px-4 sm:px-6 container mx-auto">
-                {/* ── Mobile Layout (Quick Actions First, then Carousel) ── */}
+                {/* ── Mobile Layout (Carousel First, then Quick Actions) ── */}
                 <div className="block md:hidden">
                     <div className="mb-8">
+                        <HeroCarouselMobile />
+                    </div>
+
+                    <div className="mb-10">
                         <h2 className="text-[14px] font-black text-indigo-900 dark:text-indigo-200 mb-4 uppercase tracking-[0.2em] flex items-center gap-2 drop-shadow-md">
                             <Zap className="w-4 h-4 text-indigo-500 drop-shadow-[0_0_10px_rgba(99,102,241,0.8)]" /> Quick Actions
                         </h2>
@@ -265,10 +264,6 @@ export default function Home() {
                                 </Link>
                             ))}
                         </div>
-                    </div>
-
-                    <div className="mb-10">
-                        <HeroCarouselMobile />
                     </div>
                 </div>
 
