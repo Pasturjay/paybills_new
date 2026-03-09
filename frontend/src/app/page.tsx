@@ -131,7 +131,27 @@ const trustBadges = [
 
 const heroSlides = [
     {
+        badgeText: "Nigeria's #1 Digital Services Platform",
+        badgeColor: "bg-[#293260]/40 border-white/10 text-[#a5b4fc]",
+        badgeDot: "bg-indigo-400",
+        titleLine1: "One App for",
+        titleLine2: "Everything Digital.",
+        titleLine2Style: "text-[#818cf8]",
+        desc: "Pay bills, buy software, top-up games, and more. Instant delivery, zero transaction fees.",
+        btn1Text: "Explore Products",
+        btn1Link: "/products",
+        btn1Icon: ArrowRight,
+        btn1Class: "bg-[#4f46e5] hover:bg-[#4338ca] text-white shadow-xl glow-blue font-bold",
+        btn2Text: "Create Free Account",
+        btn2Link: "/auth/register",
+        btn2Class: "bg-white/5 border border-white/20 text-white font-bold hover:bg-white/10 shadow-xl",
+        bg: "linear-gradient(135deg, #101538 0%, #1e1b4b 100%)",
+        glow: "bg-indigo-600/10",
+        glow2: "bg-violet-600/10"
+    },
+    {
         badgeText: "Global Payments Instantly",
+        badgeColor: "bg-white/10 border-white/20 text-white",
         titleLine1: "Your Virtual USD Card",
         titleLine2: "Is Here.",
         desc: "Pay for Netflix, Spotify, Amazon, and international software seamlessly without limits.",
@@ -139,12 +159,13 @@ const heroSlides = [
         btn1Link: "/dashboard/virtual-cards",
         btn1Icon: ArrowRight,
         bg: "linear-gradient(135deg, #1C0F38 0%, #3B1B61 50%, #1e1b4b 100%)",
-        btnTextColor: "text-orange-600",
+        btn1Class: "bg-white text-orange-600 hover:text-orange-700 hover:bg-white/90 shadow-xl font-bold",
         glow: "bg-fuchsia-600/20",
         glow2: "bg-purple-600/20"
     },
     {
         badgeText: "EASY",
+        badgeColor: "bg-white/20 border-white/20 text-white",
         titleLine1: "Pay Bills",
         titleLine2: "Easily",
         desc: "Electricity, Cable TV, and more with zero stress.",
@@ -152,7 +173,7 @@ const heroSlides = [
         btn1Link: "/products/bill-payment",
         btn1Icon: ArrowRight,
         bg: "linear-gradient(135deg, #f97316 0%, #ef4444 50%, #b91c1c 100%)",
-        btnTextColor: "text-orange-600",
+        btn1Class: "bg-white text-orange-600 hover:text-orange-700 hover:bg-white/90 shadow-xl font-bold",
         glow: "bg-orange-500/30",
         glow2: "bg-red-500/20"
     },
@@ -212,20 +233,29 @@ function HeroCarouselMobile() {
                 ))}
             </div>
 
-            <div className={`relative z-10 flex flex-col items-start p-6 pb-8 pt-8 transition-all duration-300 ${animating ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"}`}>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 border border-white/20 rounded-full text-[10px] font-bold text-white mb-6 backdrop-blur-md uppercase tracking-widest mt-[-0.5rem]">
-                    <Sparkles className="w-3 h-3 text-white/70" /> {slide.badgeText}
+            <div className={`relative z-10 flex flex-col items-start p-6 pb-8 pt-6 transition-all duration-300 ${animating ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"}`}>
+                <div className={`inline-flex items-center gap-1.5 px-3 py-1 ${slide.badgeColor || 'bg-white/10 border-white/20 text-white'} border rounded-full text-[10px] font-bold mb-6 backdrop-blur-md uppercase tracking-widest`}>
+                    {slide.badgeDot ? (
+                        <span className={`w-2 h-2 rounded-full ${slide.badgeDot} animate-pulse`} />
+                    ) : (
+                        <Sparkles className="w-3 h-3 text-white/70" />
+                    )} {slide.badgeText}
                 </div>
                 <h1 className="text-[28px] font-bold mb-3 leading-[1.1] tracking-tight text-white pr-4">
-                    {slide.titleLine1} <br /> {slide.titleLine2}
+                    {slide.titleLine1} <br /> <span className={slide.titleLine2Style || "text-white"}>{slide.titleLine2}</span>
                 </h1>
-                <p className="text-white/90 text-[15px] mb-8 leading-relaxed font-medium max-w-[90%]">
+                <p className="text-white/80 text-[14px] mb-6 leading-relaxed font-medium max-w-[95%]">
                     {slide.desc}
                 </p>
-                <div className="flex w-full mt-2">
-                    <Link href={slide.btn1Link} className={`inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-white ${slide.btnTextColor || 'text-indigo-600'} hover:bg-white/90 shadow-xl rounded-full text-[15px] font-bold transition-all duration-300`}>
-                        {slide.btn1Text} <slide.btn1Icon className="w-4 h-4" />
+                <div className="flex flex-col w-full gap-3 mt-auto">
+                    <Link href={slide.btn1Link} className={`inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl w-full text-[15px] transition-all duration-300 ${slide.btn1Class || 'bg-white text-orange-600 hover:bg-white/90 shadow-xl font-bold'}`}>
+                        {slide.btn1Text} {slide.btn1Icon && <slide.btn1Icon className="w-4 h-4" />}
                     </Link>
+                    {(slide as any).btn2Text && (
+                        <Link href={(slide as any).btn2Link} className={`inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl w-full text-[15px] transition-all duration-300 ${(slide as any).btn2Class}`}>
+                            {(slide as any).btn2Text}
+                        </Link>
+                    )}
                 </div>
             </div>
         </div>
