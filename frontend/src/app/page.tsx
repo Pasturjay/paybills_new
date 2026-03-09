@@ -203,23 +203,23 @@ function HeroCarouselMobile() {
             {/* Top gloss line */}
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
 
-            <div className={`relative z-10 flex flex-col items-start p-8 transition-all duration-300 ${animating ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"}`}>
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/10 border border-white/20 rounded-full text-xs font-bold text-indigo-300 mb-5 backdrop-blur-sm">
+            <div className={`relative z-10 flex flex-col items-start p-6 pb-10 transition-all duration-300 ${animating ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"}`}>
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/10 border border-white/20 rounded-full text-[11px] font-bold text-indigo-300 mb-4 backdrop-blur-sm">
                     <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
                     {slide.badgeText}
                 </div>
-                <h1 className="text-3xl font-black mb-4 leading-[1.1] tracking-tight text-white">
+                <h1 className="text-2xl font-black mb-3 leading-[1.15] tracking-tight text-white">
                     {slide.titleLine1}<br />
                     <span className="text-gradient-blue">{slide.titleLine2}</span>
                 </h1>
-                <p className="text-gray-100 text-sm mb-7 leading-relaxed font-medium">
+                <p className="text-gray-100 text-[13px] mb-5 leading-relaxed font-medium">
                     {slide.desc}
                 </p>
-                <div className="flex flex-col w-full gap-4 mt-2">
-                    <Link href={slide.btn1Link} className="btn-premium flex items-center justify-center gap-2 px-8 py-3.5 bg-indigo-600 text-white rounded-2xl text-[15px] glow-blue w-full">
+                <div className="flex flex-col w-full gap-3 mt-1">
+                    <Link href={slide.btn1Link} className="btn-premium flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl text-[14px] glow-blue w-full">
                         {slide.btn1Text} <slide.btn1Icon className="w-4 h-4" />
                     </Link>
-                    <Link href={slide.btn2Link} className="shine flex items-center justify-center gap-2 px-8 py-3.5 bg-white/10 hover:bg-white/20 border border-white/30 !text-white rounded-2xl font-black transition-all duration-300 text-[15px] backdrop-blur-md shadow-xl w-full" style={{ color: '#ffffff' }}>
+                    <Link href={slide.btn2Link} className="shine flex items-center justify-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/30 !text-white rounded-2xl font-black transition-all duration-300 text-[14px] backdrop-blur-md shadow-xl w-full" style={{ color: '#ffffff' }}>
                         {slide.btn2Text}
                     </Link>
                 </div>
@@ -247,9 +247,29 @@ export default function Home() {
 
             {/* ── Hero Section ── */}
             <div className="pt-24 pb-8 px-4 sm:px-6 container mx-auto">
-                {/* Mobile Hero Carousel */}
-                <div className="block md:hidden mb-10">
-                    <HeroCarouselMobile />
+                {/* ── Mobile Layout (Quick Actions First, then Carousel) ── */}
+                <div className="block md:hidden">
+                    <div className="mb-8">
+                        <h2 className="text-[14px] font-black text-indigo-900 dark:text-indigo-200 mb-4 uppercase tracking-[0.2em] flex items-center gap-2 drop-shadow-md">
+                            <Zap className="w-4 h-4 text-indigo-500 drop-shadow-[0_0_10px_rgba(99,102,241,0.8)]" /> Quick Actions
+                        </h2>
+                        <div className="grid grid-cols-4 gap-3">
+                            {quickActions.map((action) => (
+                                <Link key={action.name} href={action.href} className="flex flex-col items-center gap-2 group">
+                                    <div className={`w-14 h-14 rounded-2xl ${action.bg} flex items-center justify-center group-hover:scale-105 transition-transform duration-200`}>
+                                        <action.icon className={`w-6 h-6 ${action.color}`} />
+                                    </div>
+                                    <span className="text-[11px] font-black text-gray-700 dark:text-gray-300 text-center group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight uppercase tracking-wider">
+                                        {action.name}
+                                    </span>
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="mb-10">
+                        <HeroCarouselMobile />
+                    </div>
                 </div>
 
                 {/* Desktop Hero Static */}
@@ -265,25 +285,18 @@ export default function Home() {
                     {/* Top gloss line */}
                     <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
 
-                    <div className="relative z-10 flex flex-col md:flex-row justify-between items-start gap-6">
-                        <div className="max-w-xl">
-                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/10 border border-white/20 rounded-full text-xs font-bold text-indigo-300 mb-5 backdrop-blur-sm">
-                                <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
-                                Nigeria's #1 Digital Services Platform
-                            </div>
-                            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black mb-4 leading-[1.1] tracking-tight">
-                                One App for<br />
-                                <span className="text-gradient-blue">Everything Digital.</span>
+                    <div className="flex flex-col lg:flex-row items-center justify-between gap-12 relative z-10">
+                        <div className="flex-1 max-w-2xl">
+                            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black mb-6 leading-[1.1] tracking-tight">
+                                One Platform <br />
+                                to Power <span className="text-gradient-blue">Everything</span>
                             </h1>
-                            <p className="text-gray-100 text-sm sm:text-base mb-7 leading-relaxed max-w-md font-medium">
-                                Pay bills, buy software, top-up games, and more. Instant delivery, zero transaction fees.
+                            <p className="text-gray-300 text-lg mb-8 max-w-xl font-medium leading-relaxed">
+                                Join over 10,000+ users securely paying bills, buying software licenses, and shopping globally with instant delivery.
                             </p>
-                            <div className="flex flex-col sm:flex-row gap-4 mt-2">
-                                <Link href="/products" className="btn-premium inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-indigo-600 text-white rounded-2xl text-[15px] glow-blue">
-                                    Explore Products <ArrowRight className="w-4 h-4" />
-                                </Link>
-                                <Link href="/auth/register" className="shine inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white/10 hover:bg-white/20 border border-white/30 text-white rounded-2xl font-black transition-all duration-300 text-[15px] backdrop-blur-md shadow-xl">
-                                    Create Free Account
+                            <div className="flex flex-wrap items-center gap-4">
+                                <Link href="/products" className="btn-premium px-8 py-4 bg-indigo-600 text-white rounded-2xl glow-blue flex items-center gap-2">
+                                    Explore <ArrowRight className="w-4 h-4" />
                                 </Link>
                             </div>
                         </div>
@@ -305,18 +318,18 @@ export default function Home() {
                     </div>
                 </div>
 
-                {/* ── Quick Actions ── */}
-                <div className="mb-12">
+                {/* ── Desktop Quick Actions ── */}
+                <div className="hidden md:block mb-12">
                     <h2 className="text-[15px] font-black text-indigo-900 dark:text-indigo-200 mb-6 uppercase tracking-[0.2em] flex items-center gap-2 drop-shadow-md">
                         <Zap className="w-5 h-5 text-indigo-500 drop-shadow-[0_0_10px_rgba(99,102,241,0.8)]" /> Quick Actions
                     </h2>
-                    <div className="grid grid-cols-4 sm:grid-cols-7 gap-3">
+                    <div className="grid grid-cols-7 gap-3">
                         {quickActions.map((action) => (
                             <Link key={action.name} href={action.href} className="flex flex-col items-center gap-2.5 group">
-                                <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl ${action.bg} flex items-center justify-center group-hover:scale-105 transition-transform duration-200`}>
-                                    <action.icon className={`w-6 h-6 sm:w-7 sm:h-7 ${action.color}`} />
+                                <div className={`w-16 h-16 rounded-3xl ${action.bg} flex items-center justify-center group-hover:scale-105 transition-transform duration-200`}>
+                                    <action.icon className={`w-7 h-7 ${action.color}`} />
                                 </div>
-                                <span className="text-[11px] sm:text-[12px] font-black text-gray-700 dark:text-gray-300 text-center group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight uppercase tracking-wider">
+                                <span className="text-[12px] font-black text-gray-700 dark:text-gray-300 text-center group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight uppercase tracking-wider">
                                     {action.name}
                                 </span>
                             </Link>
