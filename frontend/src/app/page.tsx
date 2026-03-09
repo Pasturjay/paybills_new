@@ -330,7 +330,7 @@ export default function Home() {
                 {/* ── Recent Activity ── */}
                 <div>
                     <div className="flex items-center justify-between mb-5">
-                        <h2 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-2 drop-shadow-sm">
+                        <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 drop-shadow-sm">
                             <Clock className="w-5 h-5 text-indigo-500 drop-shadow-[0_0_8px_rgba(99,102,241,0.6)]" /> Recent Activity
                         </h2>
                         <Link href="/dashboard/history" className="text-xs text-indigo-600 dark:text-indigo-400 font-black hover:underline">See All</Link>
@@ -339,18 +339,18 @@ export default function Home() {
                         style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}>
                         {transactions.map((tx) => (
                             <div key={tx.id} className="shine group p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-white/5 rounded-2xl transition-all duration-300 cursor-pointer">
-                                <div className={`w-12 h-12 rounded-2xl ${tx.bg} flex items-center justify-center flex-shrink-0 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
-                                    <tx.icon className={`w-5 h-5 ${tx.color}`} />
+                                <div className={`w-10 h-10 rounded-xl ${tx.bg} flex items-center justify-center flex-shrink-0 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
+                                    <tx.icon className={`w-4 h-4 ${tx.color}`} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h4 className="font-black text-gray-900 dark:text-white text-sm group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">{tx.type}</h4>
+                                    <h4 className="font-bold text-gray-900 dark:text-white text-sm group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">{tx.type}</h4>
                                     <div className="text-xs text-gray-400 font-medium truncate">{tx.desc}</div>
                                 </div>
                                 <div className="text-right flex-shrink-0">
-                                    <div className="font-black text-sm text-gray-900 dark:text-white">
+                                    <div className="font-bold text-sm text-gray-900 dark:text-white">
                                         ₦{Math.abs(tx.amount).toLocaleString()}
                                     </div>
-                                    <div className="text-[10px] text-gray-400 font-bold mt-0.5 bg-gray-100 dark:bg-white/5 inline-block px-2 py-0.5 rounded-lg">
+                                    <div className="text-[10px] text-gray-400 font-medium mt-0.5 bg-gray-100 dark:bg-white/5 inline-block px-2 py-0.5 rounded-lg">
                                         {tx.date}
                                     </div>
                                 </div>
