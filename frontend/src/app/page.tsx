@@ -220,11 +220,11 @@ function HeroCarouselMobile() {
             </div>
 
             <div className={`relative z-10 flex flex-col items-start p-6 pb-8 pt-6 transition-all duration-300 ${animating ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"}`}>
-                <div className={`inline-flex items-center gap-1.5 px-3 py-1 ${slide.badgeColor || 'bg-white/10 border-white/20 text-white'} border rounded-full text-[10px] font-bold mb-6 backdrop-blur-md uppercase tracking-widest`}>
+                <div className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 ${slide.badgeColor || 'bg-white/10 border-white/20 text-white'} border rounded-full text-[9px] font-black mb-6 backdrop-blur-md uppercase tracking-widest`}>
                     {slide.badgeDot ? (
-                        <span className={`w-2 h-2 rounded-full ${slide.badgeDot} animate-pulse`} />
+                        <span className={`w-1.5 h-1.5 rounded-full ${slide.badgeDot} animate-pulse`} />
                     ) : (
-                        <Sparkles className="w-3 h-3 text-white/70" />
+                        <Sparkles className="w-2.5 h-2.5 text-white/70" />
                     )} {slide.badgeText}
                 </div>
                 <h1 className="text-[28px] font-bold mb-3 leading-[1.1] tracking-tight text-white pr-4">
