@@ -164,20 +164,6 @@ const heroSlides = [
         glow2: "bg-purple-600/20"
     },
     {
-        badgeText: "EASY",
-        badgeColor: "bg-white/20 border-white/20 text-white",
-        titleLine1: "Pay Bills",
-        titleLine2: "Easily",
-        desc: "Electricity, Cable TV, and more with zero stress.",
-        btn1Text: "Pay Bill",
-        btn1Link: "/products/bill-payment",
-        btn1Icon: ArrowRight,
-        bg: "linear-gradient(135deg, #f97316 0%, #ef4444 50%, #b91c1c 100%)",
-        btn1Class: "bg-white text-orange-600 hover:text-orange-700 hover:bg-white/90 shadow-xl font-bold",
-        glow: "bg-orange-500/30",
-        glow2: "bg-red-500/20"
-    },
-    {
         badgeText: "Instant Utility Top-Ups",
         titleLine1: "Never Run Out",
         titleLine2: "Of Airtime & Data.",
