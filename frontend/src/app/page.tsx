@@ -131,6 +131,19 @@ const trustBadges = [
 
 const heroSlides = [
     {
+        badgeText: "Global Payments Instantly",
+        titleLine1: "Your Virtual USD Card",
+        titleLine2: "Is Here.",
+        desc: "Pay for Netflix, Spotify, Amazon, and international software seamlessly without limits.",
+        btn1Text: "Get Your Card",
+        btn1Link: "/dashboard/virtual-cards",
+        btn1Icon: ArrowRight,
+        bg: "linear-gradient(135deg, #1C0F38 0%, #3B1B61 50%, #1e1b4b 100%)",
+        btnTextColor: "text-orange-600",
+        glow: "bg-fuchsia-600/20",
+        glow2: "bg-purple-600/20"
+    },
+    {
         badgeText: "EASY",
         titleLine1: "Pay Bills",
         titleLine2: "Easily",
@@ -138,25 +151,10 @@ const heroSlides = [
         btn1Text: "Pay Bill",
         btn1Link: "/products/bill-payment",
         btn1Icon: ArrowRight,
-        btn2Text: "",
-        btn2Link: "",
         bg: "linear-gradient(135deg, #f97316 0%, #ef4444 50%, #b91c1c 100%)",
+        btnTextColor: "text-orange-600",
         glow: "bg-orange-500/30",
         glow2: "bg-red-500/20"
-    },
-    {
-        badgeText: "Global Payments Instantly",
-        titleLine1: "Your Virtual",
-        titleLine2: "USD Card Is Here.",
-        desc: "Pay for Netflix, Spotify, Amazon, and international software seamlessly without limits.",
-        btn1Text: "Get Your Card",
-        btn1Link: "/dashboard/virtual-cards",
-        btn1Icon: CreditCard,
-        btn2Text: "Learn More",
-        btn2Link: "/products",
-        bg: "linear-gradient(135deg, #0f172a 0%, #311155 40%, #0f172a 100%)",
-        glow: "bg-fuchsia-600/25",
-        glow2: "bg-purple-600/20"
     },
     {
         badgeText: "Instant Utility Top-Ups",
@@ -192,7 +190,7 @@ function HeroCarouselMobile() {
     const slide = heroSlides[current];
 
     return (
-        <div className="relative w-full overflow-hidden rounded-3xl shadow-2xl transition-all duration-500"
+        <div className="relative w-full overflow-hidden rounded-[2rem] shadow-2xl transition-all duration-500"
             style={{
                 background: slide.bg,
                 boxShadow: "0 20px 60px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.07)"
@@ -201,27 +199,10 @@ function HeroCarouselMobile() {
             <div className={`absolute top-0 right-0 w-[400px] h-[400px] ${slide.glow} rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 pointer-events-none transition-colors duration-500`} />
             <div className={`absolute bottom-0 left-0 w-[200px] h-[200px] ${slide.glow2} rounded-full blur-[60px] translate-y-1/2 -translate-x-1/2 pointer-events-none transition-colors duration-500`} />
             {/* Top gloss line */}
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
 
-            <div className={`relative z-10 flex flex-col items-start p-6 pb-8 transition-all duration-300 ${animating ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"}`}>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/20 border border-white/20 rounded-full text-[10px] font-bold text-white mb-4 backdrop-blur-md uppercase tracking-widest">
-                    <Sparkles className="w-3 h-3" /> {slide.badgeText}
-                </div>
-                <h1 className="text-3xl font-bold mb-2 leading-[1.15] tracking-tight text-white">
-                    {slide.titleLine1} {slide.titleLine2}
-                </h1>
-                <p className="text-white/90 text-[14px] mb-6 leading-relaxed font-medium">
-                    {slide.desc}
-                </p>
-                <div className="flex w-full mt-1">
-                    <Link href={slide.btn1Link} className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-orange-600 hover:text-orange-700 hover:bg-white/90 shadow-xl rounded-full text-[14px] font-bold transition-all duration-300">
-                        {slide.btn1Text} <ArrowRight className="w-4 h-4" />
-                    </Link>
-                </div>
-            </div>
-
-            {/* Dot indicators */}
-            <div className="absolute top-6 right-6 flex gap-1.5 z-20">
+            {/* Dot indicators positioned top-right INSIDE the card matching the reference */}
+            <div className="absolute top-8 right-6 flex gap-1.5 z-20">
                 {heroSlides.map((_, i) => (
                     <button
                         key={i}
@@ -229,6 +210,23 @@ function HeroCarouselMobile() {
                         className={`rounded-full transition-all duration-300 ${i === current ? "bg-white w-5 h-1.5" : "bg-white/40 w-1.5 h-1.5"}`}
                     />
                 ))}
+            </div>
+
+            <div className={`relative z-10 flex flex-col items-start p-6 pb-8 pt-8 transition-all duration-300 ${animating ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"}`}>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 border border-white/20 rounded-full text-[10px] font-bold text-white mb-6 backdrop-blur-md uppercase tracking-widest mt-[-0.5rem]">
+                    <Sparkles className="w-3 h-3 text-white/70" /> {slide.badgeText}
+                </div>
+                <h1 className="text-[28px] font-bold mb-3 leading-[1.1] tracking-tight text-white pr-4">
+                    {slide.titleLine1} <br /> {slide.titleLine2}
+                </h1>
+                <p className="text-white/90 text-[15px] mb-8 leading-relaxed font-medium max-w-[90%]">
+                    {slide.desc}
+                </p>
+                <div className="flex w-full mt-2">
+                    <Link href={slide.btn1Link} className={`inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-white ${slide.btnTextColor || 'text-indigo-600'} hover:bg-white/90 shadow-xl rounded-full text-[15px] font-bold transition-all duration-300`}>
+                        {slide.btn1Text} <slide.btn1Icon className="w-4 h-4" />
+                    </Link>
+                </div>
             </div>
         </div>
     );
