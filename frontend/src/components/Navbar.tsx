@@ -87,7 +87,7 @@ export function Navbar() {
 
                     {/* Mobile hamburger */}
                     <button
-                        className="md:hidden p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
+                        className="md:hidden p-2 text-zinc-500 dark:text-gray-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5 rounded-xl transition-colors"
                         onClick={() => setMobileOpen(!mobileOpen)}
                         aria-label="Toggle menu"
                     >
@@ -98,12 +98,9 @@ export function Navbar() {
                 {/* Mobile drawer */}
                 {mobileOpen && (
                     <div
-                        className="mt-2 p-4 rounded-2xl overflow-hidden animate-in slide-in-from-top-2 duration-200"
+                        className="mt-2 p-4 rounded-2xl overflow-hidden animate-in slide-in-from-top-2 duration-200 bg-white/80 dark:bg-white/5 backdrop-blur-3xl border border-zinc-200 dark:border-white/10 shadow-2xl"
                         style={{
-                            background: "rgba(255, 255, 255, 0.05)",
-                            backdropFilter: "blur(32px)",
-                            border: "1px solid rgba(255,255,255,0.1)",
-                            boxShadow: "0 16px 48px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)"
+                            boxShadow: "0 16px 48px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.05)"
                         }}
                     >
                         <div className="space-y-1 mb-4">
@@ -112,7 +109,7 @@ export function Navbar() {
                                     key={link.label}
                                     href={link.href}
                                     onClick={() => setMobileOpen(false)}
-                                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 font-bold text-sm transition-colors"
+                                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5 font-bold text-sm transition-colors"
                                 >
                                     {link.label}
                                 </Link>
@@ -129,7 +126,7 @@ export function Navbar() {
                             ) : (
                                 <>
                                     <Link href="/auth/login" onClick={() => setMobileOpen(false)}
-                                        className="flex items-center justify-center gap-2 py-3.5 bg-white/5 text-white rounded-xl font-black text-[16px] border border-white/20 hover:bg-white/10 transition-colors"
+                                        className="flex items-center justify-center gap-2 py-3.5 bg-zinc-50 dark:bg-white/5 text-zinc-800 dark:text-white rounded-xl font-black text-[16px] border border-zinc-200 dark:border-white/20 hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors"
                                     >
                                         <LogIn className="w-5 h-5" /> Sign In
                                     </Link>
