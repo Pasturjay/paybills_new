@@ -219,7 +219,7 @@ function HeroCarouselMobile() {
                     <Link href={slide.btn1Link} className="btn-premium flex items-center justify-center gap-2 px-8 py-3.5 bg-indigo-600 text-white rounded-2xl text-[15px] glow-blue w-full">
                         {slide.btn1Text} <slide.btn1Icon className="w-4 h-4" />
                     </Link>
-                    <Link href={slide.btn2Link} className="shine flex items-center justify-center gap-2 px-8 py-3.5 bg-white/10 hover:bg-white/20 border border-white/30 text-white rounded-2xl font-black transition-all duration-300 text-[15px] backdrop-blur-md shadow-xl w-full">
+                    <Link href={slide.btn2Link} className="shine flex items-center justify-center gap-2 px-8 py-3.5 bg-white/10 hover:bg-white/20 border border-white/30 !text-white rounded-2xl font-black transition-all duration-300 text-[15px] backdrop-blur-md shadow-xl w-full" style={{ color: '#ffffff' }}>
                         {slide.btn2Text}
                     </Link>
                 </div>
