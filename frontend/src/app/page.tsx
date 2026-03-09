@@ -208,7 +208,7 @@ function HeroCarouselMobile() {
                     <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
                     {slide.badgeText}
                 </div>
-                <h1 className="text-3xl font-black mb-4 leading-[1.1] tracking-tight">
+                <h1 className="text-3xl font-black mb-4 leading-[1.1] tracking-tight text-white">
                     {slide.titleLine1}<br />
                     <span className="text-gradient-blue">{slide.titleLine2}</span>
                 </h1>
