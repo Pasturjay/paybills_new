@@ -5,6 +5,7 @@ import { Footer } from "@/components/Footer";
 import { Smartphone, Zap, BookOpen, Trophy, Gamepad2, Gift, Download, Clock, ArrowRight, CreditCard, Star, Shield, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { useUser } from "@/hooks/useData";
 
 const promos = [
     {
@@ -131,7 +132,7 @@ const trustBadges = [
 
 const heroSlides = [
     {
-        badgeText: "Nigeria's #1 Digital Services Platform",
+        badgeText: "Nigeria's #1 digital service platform",
         badgeColor: "bg-[#293260]/40 border-white/10 text-[#a5b4fc]",
         badgeDot: "bg-indigo-400",
         titleLine1: "One App for",
@@ -150,21 +151,22 @@ const heroSlides = [
         glow2: "bg-violet-600/10"
     },
     {
-        badgeText: "Global Payments Instantly",
+        badgeText: "Global payments instantly",
         badgeColor: "bg-white/10 border-white/20 text-white",
         titleLine1: "Your Virtual USD Card",
         titleLine2: "Is Here.",
         desc: "Pay for Netflix, Spotify, Amazon, and international software seamlessly without limits.",
-        btn1Text: "Get Your Card",
+        btn1Text: "Join Waitlist",
         btn1Link: "/dashboard/virtual-cards",
         btn1Icon: ArrowRight,
+        isWaitlist: true,
         bg: "linear-gradient(135deg, #1C0F38 0%, #3B1B61 50%, #1e1b4b 100%)",
         btn1Class: "bg-white text-orange-600 hover:text-orange-700 hover:bg-white/90 shadow-xl font-bold",
         glow: "bg-fuchsia-600/20",
         glow2: "bg-purple-600/20"
     },
     {
-        badgeText: "Instant Utility Top-Ups",
+        badgeText: "Instant utility topups",
         titleLine1: "Never Run Out",
         titleLine2: "Of Airtime & Data.",
         desc: "Recharge any network in seconds. Enjoy fast routing and secure transactions across Nigeria.",
@@ -173,6 +175,7 @@ const heroSlides = [
         btn1Icon: Zap,
         btn2Text: "View Packages",
         btn2Link: "/products",
+        btn2Class: "text-[#818cf8] font-black hover:text-white transition-all duration-300 drop-shadow-md",
         bg: "linear-gradient(135deg, #0f172a 0%, #0c3e60 40%, #0f172a 100%)",
         glow: "bg-sky-600/25",
         glow2: "bg-blue-600/20"
@@ -182,6 +185,15 @@ const heroSlides = [
 function HeroCarouselMobile() {
     const [current, setCurrent] = useState(0);
     const [animating, setAnimating] = useState(false);
+    const [waitlistEmail, setWaitlistEmail] = useState('');
+    const [waitlistJoined, setWaitlistJoined] = useState(false);
+    const { user } = useUser();
+
+    useEffect(() => {
+        // Reset waitlist state when slide changes
+        setWaitlistEmail('');
+        setWaitlistJoined(false);
+    }, [current]);
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -220,7 +232,7 @@ function HeroCarouselMobile() {
             </div>
 
             <div className={`relative z-10 flex flex-col items-start p-6 pb-8 pt-6 transition-all duration-300 ${animating ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"}`}>
-                <div className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 ${slide.badgeColor || 'bg-white/10 border-white/20 text-white'} border rounded-full text-[9px] font-black mb-6 backdrop-blur-md uppercase tracking-widest`}>
+                <div className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 ${slide.badgeColor || 'bg-white/10 border-white/20 text-white'} border rounded-full text-[9px] font-black mb-6 backdrop-blur-md tracking-wider text-white/90`}>
                     {slide.badgeDot ? (
                         <span className={`w-1.5 h-1.5 rounded-full ${slide.badgeDot} animate-pulse`} />
                     ) : (
@@ -234,9 +246,47 @@ function HeroCarouselMobile() {
                     {slide.desc}
                 </p>
                 <div className="flex flex-col w-full gap-3 mt-auto">
-                    <Link href={slide.btn1Link} className={`inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl w-full text-[15px] transition-all duration-300 ${slide.btn1Class || 'bg-white text-orange-600 hover:bg-white/90 shadow-xl font-bold'}`}>
-                        {slide.btn1Text} {slide.btn1Icon && <slide.btn1Icon className="w-4 h-4" />}
-                    </Link>
+                    {(slide as any).isWaitlist ? (
+                        <div className="flex flex-col gap-3 w-full">
+                            {waitlistJoined ? (
+                                <div className="bg-green-500/20 border border-green-500/30 p-3.5 rounded-2xl text-green-300 text-[14px] font-bold text-center animate-in zoom-in-95 duration-200">
+                                    Done! You&apos;re on the list.
+                                </div>
+                            ) : (
+                                <div className="flex flex-col gap-3">
+                                    {user ? (
+                                        <button
+                                            onClick={() => setWaitlistJoined(true)}
+                                            className={`inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl w-full text-[15px] transition-all duration-300 ${slide.btn1Class || 'bg-white text-orange-600 hover:bg-white/90 shadow-xl font-bold'}`}
+                                        >
+                                            Join as {user.email} <ArrowRight className="w-4 h-4" />
+                                        </button>
+                                    ) : (
+                                        <div className="flex flex-col gap-2">
+                                            <input
+                                                type="email"
+                                                placeholder="Enter your email"
+                                                className="px-5 py-3.5 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/40 text-[15px] focus:outline-none focus:ring-2 focus:ring-white/30 transition-all font-bold"
+                                                value={waitlistEmail}
+                                                onChange={(e) => setWaitlistEmail(e.target.value)}
+                                            />
+                                            <button
+                                                onClick={() => waitlistEmail && setWaitlistJoined(true)}
+                                                className={`inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl w-full text-[15px] transition-all duration-300 ${slide.btn1Class || 'bg-white text-orange-600 hover:bg-white/90 shadow-xl font-bold'} disabled:opacity-50`}
+                                                disabled={!waitlistEmail}
+                                            >
+                                                Join Waitlist <ArrowRight className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <Link href={slide.btn1Link} className={`inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl w-full text-[15px] transition-all duration-300 ${slide.btn1Class || 'bg-white text-orange-600 hover:bg-white/90 shadow-xl font-bold'}`}>
+                            {slide.btn1Text} {slide.btn1Icon && <slide.btn1Icon className="w-4 h-4" />}
+                        </Link>
+                    )}
                     {(slide as any).btn2Text && (
                         <Link href={(slide as any).btn2Link} className={`inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl w-full text-[15px] transition-all duration-300 ${(slide as any).btn2Class}`}>
                             {(slide as any).btn2Text}
