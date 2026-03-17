@@ -2,8 +2,8 @@
 
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { Gift, Search, Loader2, CheckCircle2, TrendingUp, ArrowUpRight, ArrowDownLeft } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Gift, Search, Loader2, CheckCircle2, TrendingUp, ArrowUpRight, ArrowDownLeft, AlertCircle, X } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { api } from "@/lib/api";
 import { CheckoutModal } from "@/components/CheckoutModal";
 import PinModal from "@/components/PinModal";
@@ -54,7 +54,10 @@ export default function GiftCards() {
     const [sellCardId, setSellCardId] = useState('amazon');
     const [sellValue, setSellValue] = useState<number>(0);
     const [sellCode, setSellCode] = useState('');
+    const [sellImages, setSellImages] = useState<string[]>([]);
     const [sellSuccess, setSellSuccess] = useState<{ message: string; ngnPayout: number } | null>(null);
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const catalog: GiftCard[] = [
@@ -115,13 +118,13 @@ export default function GiftCards() {
             const token = localStorage.getItem("token");
             if (!token) throw new Error("Please login to continue");
             const res: any = await api.post("/products/gift-card/sell", {
-                cardId: sellCardId, cardValue: sellValue, cardCode: sellCode, pin
+                cardId: sellCardId, cardValue: sellValue, cardCode: sellCode, images: sellImages, pin
             }, token);
             setSellSuccess({
                 message: res.message || "Trade submitted successfully.",
                 ngnPayout: res.ngnPayout ?? ngnPreview
             });
-            setSellValue(0); setSellCode('');
+            setSellValue(0); setSellCode(''); setSellImages([]);
         } catch (e: any) {
             alert(e.message || "Failed to submit gift card trade");
         } finally {
@@ -375,13 +378,67 @@ export default function GiftCards() {
                                                     />
                                                 </div>
 
-                                                <p className="text-xs text-gray-400 text-center">
+                                                <div className="pt-2">
+                                                    <input
+                                                        type="file"
+                                                        multiple
+                                                        accept="image/*"
+                                                        className="hidden"
+                                                        ref={fileInputRef}
+                                                        onChange={(e) => {
+                                                            const files = Array.from(e.target.files || []);
+                                                            const fileReaders: Promise<string>[] = [];
+                                                            for (let i = 0; i < files.length; i++) {
+                                                                fileReaders.push(new Promise((resolve) => {
+                                                                    const reader = new FileReader();
+                                                                    reader.onloadend = () => resolve(reader.result as string);
+                                                                    reader.readAsDataURL(files[i]);
+                                                                }));
+                                                            }
+                                                            Promise.all(fileReaders).then(results => {
+                                                                setSellImages(prev => [...prev, ...results]);
+                                                            });
+                                                            if (fileInputRef.current) fileInputRef.current.value = '';
+                                                        }}
+                                                    />
+                                                    <button
+                                                        onClick={() => fileInputRef.current?.click()}
+                                                        className="w-full p-4 bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors rounded-xl flex items-center justify-between group"
+                                                    >
+                                                        <div className="flex items-center gap-3 text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white">
+                                                            <div className="p-1 border border-current rounded border-dashed">
+                                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle><line x1="12" y1="9" x2="12" y2="17"></line><line x1="8" y1="13" x2="16" y2="13"></line></svg>
+                                                            </div>
+                                                            <span className="text-sm font-medium">Upload your images</span>
+                                                        </div>
+                                                        <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white rotate-45 transform" />
+                                                    </button>
+
+                                                    {sellImages.length > 0 && (
+                                                        <div className="flex flex-wrap gap-2 mt-3">
+                                                            {sellImages.map((img, idx) => (
+                                                                <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden border border-gray-200 dark:border-zinc-700">
+                                                                    <img src={img} alt={`upload-${idx}`} className="w-full h-full object-cover" />
+                                                                    <button
+                                                                        onClick={() => setSellImages(s => s.filter((_, i) => i !== idx))}
+                                                                        className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5 hover:bg-red-500 transition-colors"
+                                                                    >
+                                                                        <X className="w-3 h-3" />
+                                                                    </button>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                    <p className="text-center text-[10px] text-gray-400 mt-2">multiple card images can be uploaded</p>
+                                                </div>
+
+                                                <p className="text-xs text-gray-400 text-center mt-2">
                                                     Funds credited instantly and subject to verification.
                                                 </p>
 
                                                 <button
                                                     onClick={() => setIsPinModalOpen(true)}
-                                                    disabled={!sellValue || sellValue < 20 || !sellCode || processing}
+                                                    disabled={!sellValue || sellValue < 20 || (!sellCode && sellImages.length === 0) || processing}
                                                     className="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold shadow-lg shadow-green-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
                                                     <ArrowUpRight className="w-5 h-5" />

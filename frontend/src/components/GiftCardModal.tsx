@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from 'react';
-import { X, Gift, ArrowDownLeft, ArrowUpRight, CheckCircle, AlertCircle, TrendingUp } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Gift, AlertCircle, ArrowUpRight, ArrowDownLeft, CheckCircle, TrendingUp, CheckCircle2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import PinModal from './PinModal';
 
@@ -31,7 +31,9 @@ export default function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
     const [buyData, setBuyData] = useState({ cardId: 'amazon', amount: '' });
 
     // Sell state
-    const [sellData, setSellData] = useState({ cardId: 'amazon', subCategory: 'US', cardValue: '', quantity: 1, cardCode: '' });
+    const [sellData, setSellData] = useState({ cardId: 'amazon', subCategory: 'US', cardValue: '', quantity: 1, cardCode: '', images: [] as string[] });
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -44,27 +46,64 @@ export default function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
     const ngnPreview = activeRate > 0 ? Math.floor(Number(sellData.cardValue) * activeRate * sellData.quantity) : 0;
     const currentTier = Number(sellData.cardValue) >= 50 ? 'high' : Number(sellData.cardValue) >= 20 ? 'low' : null;
 
+    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (!files) return;
+
+        const newImages: string[] = [];
+        const fileReaders: Promise<string>[] = [];
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            fileReaders.push(
+                new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        resolve(reader.result as string);
+                    };
+                    reader.readAsDataURL(file);
+                })
+            );
+        }
+
+        Promise.all(fileReaders).then((results) => {
+            setSellData((prev) => ({
+                ...prev,
+                images: [...prev.images, ...results],
+            }));
+        });
+    };
+
+    const removeImage = (index: number) => {
+        setSellData((prev) => ({
+            ...prev,
+            images: prev.images.filter((_, i) => i !== index),
+        }));
+    };
+
     const handleSubmit = async (pin: string) => {
         setIsPinModalOpen(false);
         setLoading(true);
         setError('');
 
         const token = localStorage.getItem('token');
-        if (!token) return;
+        if (!token) {
+            setError('Authentication token not found. Please log in again.');
+            setLoading(false);
+            return;
+        }
 
         try {
             if (mode === 'buy') {
                 await api.post('/products/gift-card/buy', { ...buyData, pin }, token);
                 setSuccessMsg('Purchase successful! Your gift card code will be delivered shortly.');
             } else {
-                const res: any = await api.post('/products/gift-card/sell', {
-                    cardId: sellData.cardId,
-                    cardValue: sellData.cardValue,
-                    cardCode: sellData.cardCode,
+                const response = await api.post('/products/gift-card/sell', {
+                    ...sellData,
                     pin
                 }, token);
-                setNgnCredited(res.ngnPayout ?? ngnPreview);
-                setSuccessMsg(res.message || 'Trade submitted! Funds credited to your wallet.');
+                setNgnCredited(response.ngnPayout ?? ngnPreview);
+                setSuccessMsg(response.message || 'Trade submitted! Funds credited to your wallet.');
             }
         } catch (err: any) {
             setError(err.message || 'Transaction failed');
@@ -78,7 +117,7 @@ export default function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
         setNgnCredited(null);
         setError('');
         setBuyData({ cardId: 'amazon', amount: '' });
-        setSellData({ cardId: 'amazon', subCategory: 'US', cardValue: '', quantity: 1, cardCode: '' });
+        setSellData({ cardId: 'amazon', subCategory: 'US', cardValue: '', quantity: 1, cardCode: '', images: [] });
         onClose();
     };
 
@@ -277,22 +316,60 @@ export default function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
 
                                 {/* Upload Images */}
                                 <div className="pt-2">
-                                    <button className="w-full p-4 bg-[#142143] hover:bg-[#1A2A54] transition-colors rounded-xl flex items-center justify-between group">
+                                    <input
+                                        type="file"
+                                        multiple
+                                        accept="image/*"
+                                        className="hidden"
+                                        ref={fileInputRef}
+                                        onChange={(e) => {
+                                            const files = Array.from(e.target.files || []);
+                                            files.forEach(file => {
+                                                const reader = new FileReader();
+                                                reader.onload = (ev) => {
+                                                    const base64 = ev.target?.result as string;
+                                                    setSellData(s => ({ ...s, images: [...s.images, base64] }));
+                                                };
+                                                reader.readAsDataURL(file);
+                                            });
+                                            if (fileInputRef.current) fileInputRef.current.value = '';
+                                        }}
+                                    />
+                                    <button
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="w-full p-4 bg-[#142143] hover:bg-[#1A2A54] transition-colors rounded-xl flex items-center justify-between group"
+                                    >
                                         <div className="flex items-center gap-3 text-blue-200/80 group-hover:text-white">
                                             <div className="p-1 border border-current rounded border-dashed">
-                                                <AlertCircle className="w-5 h-5 opacity-0 absolute" /> {/* Placeholder for camera + icon */}
+                                                <AlertCircle className="w-5 h-5 opacity-0 absolute" /> {/* Placeholder */}
                                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle><line x1="12" y1="9" x2="12" y2="17"></line><line x1="8" y1="13" x2="16" y2="13"></line></svg>
                                             </div>
                                             <span className="text-sm font-medium">Upload your images</span>
                                         </div>
                                         <ArrowUpRight className="w-5 h-5 text-blue-200/50 group-hover:text-white rotate-45 transform" />
                                     </button>
+
+                                    {sellData.images.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 mt-3">
+                                            {sellData.images.map((img, idx) => (
+                                                <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden border border-blue-500/30">
+                                                    <img src={img} alt={`upload-${idx}`} className="w-full h-full object-cover" />
+                                                    <button
+                                                        onClick={() => setSellData(s => ({ ...s, images: s.images.filter((_, i) => i !== idx) }))}
+                                                        className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5 hover:bg-red-500 transition-colors"
+                                                    >
+                                                        <X className="w-3 h-3" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                     <p className="text-center text-[10px] text-blue-200/50 mt-2">multiple card images can be uploaded</p>
                                 </div>
 
                                 <button
                                     onClick={() => setIsPinModalOpen(true)}
-                                    disabled={!sellData.cardValue || Number(sellData.cardValue) < 20 || (!sellData.cardCode && true) /* true for image bypass eventually */ || loading}
+                                    disabled={!sellData.cardValue || Number(sellData.cardValue) < 20 || (!sellData.cardCode && sellData.images.length === 0) || loading}
                                     className="w-full py-4 mt-6 bg-[#1D4ED8] text-white font-bold rounded-full hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     Sell

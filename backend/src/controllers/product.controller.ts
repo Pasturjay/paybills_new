@@ -3,6 +3,7 @@ import { PrismaClient, Prisma, Wallet } from '@prisma/client';
 import { ClubKonnectProvider } from '../providers/clubkonnect.provider';
 import { SecurityService } from '../services/security.service';
 import { socketService } from '../services/socket.service';
+import { saveBase64Image } from '../utils/file.util';
 
 const prisma = new PrismaClient();
 const clubKonnectProvider = new ClubKonnectProvider();
@@ -177,7 +178,7 @@ function getGiftCardRate(cardId: string, usdValue: number): number {
 export const sellGiftCard = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.id;
-        const { cardId, cardValue, cardCode, pin, idempotencyKey } = req.body;
+        const { cardId, subCategory, quantity, cardValue, cardCode, pin, idempotencyKey, images } = req.body;
 
         if (!cardId || !cardValue || !cardCode || !pin) {
             return res.status(400).json({ error: 'Missing required fields: cardId, cardValue, cardCode, pin' });
@@ -204,9 +205,21 @@ export const sellGiftCard = async (req: Request, res: Response) => {
         }
 
         const rate = getGiftCardRate(cardId, usdValue);
-        const ngnPayout = Math.floor(usdValue * rate);
+        const qty = Number(quantity) || 1;
+        const ngnPayout = Math.floor(usdValue * rate * qty);
 
         const ref = 'GCS_' + Date.now();
+
+        // Process images
+        let imageUrls: string[] = [];
+        if (images && Array.isArray(images)) {
+            try {
+                imageUrls = images.map((img: string) => saveBase64Image(img, 'giftcards'));
+            } catch (err) {
+                console.error('Error saving images:', err);
+                return res.status(400).json({ error: 'Failed to process uploaded images. Ensure they are valid base64 strings.' });
+            }
+        }
 
         await prisma.$transaction(async (tx) => {
             const walletResults = await tx.$queryRaw<Wallet[]>(
@@ -233,12 +246,15 @@ export const sellGiftCard = async (req: Request, res: Response) => {
                     idempotencyKey,
                     metadata: {
                         cardId,
+                        subCategory: subCategory || 'US',
                         cardCode,
                         cardValue: usdValue,
+                        quantity: qty,
                         ngnPayout,
                         rate,
+                        images: imageUrls,
                     },
-                    description: `Gift Card Sale – $${usdValue} ${cardId.charAt(0).toUpperCase() + cardId.slice(1)}`
+                    description: `Gift Card Sale – ${qty}x $${usdValue} ${cardId.charAt(0).toUpperCase() + cardId.slice(1)}`
                 } as any
             });
         });

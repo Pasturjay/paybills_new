@@ -35,11 +35,16 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
+import path from 'path';
+
 // Security Middleware (Helmet + Rate Limiter)
 configureSecurity(app);
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Serve static uploads
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Request Logger
 app.use((req: Request, res: Response, next: NextFunction) => {
