@@ -320,16 +320,18 @@ export default function GiftCards() {
                                                             <div className={`w-10 h-10 rounded-lg ${selectedSellCard.color} shadow`}></div>
                                                             <div className="font-bold text-sm text-gray-900 dark:text-white">{selectedSellCard.name}</div>
                                                         </div>
-                                                        <div className="space-y-1">
-                                                            <div className={`flex justify-between text-xs rounded-lg px-2 py-1 font-medium transition-colors ${currentTier === 'low' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'text-gray-400'}`}>
-                                                                <span>$20 – $49</span>
-                                                                <span>₦{selectedSellCard.low.toLocaleString()} / $1</span>
+                                                        {sellValue > 0 && (
+                                                            <div className="space-y-1 mt-2">
+                                                                <div className={`flex justify-between text-xs rounded-lg px-2 py-1 font-medium transition-colors ${currentTier === 'low' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'text-gray-400'}`}>
+                                                                    <span>$20 – $49</span>
+                                                                    <span>₦{selectedSellCard.low.toLocaleString()} / $1</span>
+                                                                </div>
+                                                                <div className={`flex justify-between text-xs rounded-lg px-2 py-1 font-medium transition-colors ${currentTier === 'high' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'text-gray-400'}`}>
+                                                                    <span>$50+</span>
+                                                                    <span>₦{selectedSellCard.high.toLocaleString()} / $1</span>
+                                                                </div>
                                                             </div>
-                                                            <div className={`flex justify-between text-xs rounded-lg px-2 py-1 font-medium transition-colors ${currentTier === 'high' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'text-gray-400'}`}>
-                                                                <span>$50+</span>
-                                                                <span>₦{selectedSellCard.high.toLocaleString()} / $1</span>
-                                                            </div>
-                                                        </div>
+                                                        )}
                                                     </div>
                                                 )}
 

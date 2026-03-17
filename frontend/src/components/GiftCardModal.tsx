@@ -196,22 +196,33 @@ export default function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
                                         <option value="GLOBAL">Global</option>
                                     </select>
                                 </div>
-                                {/* Rate tiers badge */}
-                                <div className="mt-2 space-y-1">
-                                    <div className={`flex justify-between text-xs rounded-lg px-3 py-1.5 font-medium transition-colors ${currentTier === 'low' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' : 'text-gray-400'}`}>
-                                        <span>$20 – $49</span>
-                                        <span>₦{selectedSellCard.low.toLocaleString()} / $1</span>
+                                {/* Rate tiers badge (shows only when amount is entered) */}
+                                {Number(sellData.cardValue) > 0 && (
+                                    <div className="mt-2 space-y-1">
+                                        <div className={`flex justify-between text-xs rounded-lg px-3 py-1.5 font-medium transition-colors ${currentTier === 'low' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' : 'text-gray-400'}`}>
+                                            <span>$20 – $49</span>
+                                            <span>₦{selectedSellCard.low.toLocaleString()} / $1</span>
+                                        </div>
+                                        <div className={`flex justify-between text-xs rounded-lg px-3 py-1.5 font-medium transition-colors ${currentTier === 'high' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' : 'text-gray-400'}`}>
+                                            <span>$50+</span>
+                                            <span>₦{selectedSellCard.high.toLocaleString()} / $1</span>
+                                        </div>
                                     </div>
-                                    <div className={`flex justify-between text-xs rounded-lg px-3 py-1.5 font-medium transition-colors ${currentTier === 'high' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' : 'text-gray-400'}`}>
-                                        <span>$50+</span>
-                                        <span>₦{selectedSellCard.high.toLocaleString()} / $1</span>
-                                    </div>
-                                </div>                                {/* Card Value & Quantity */}
+                                )}
+                                {/* Card Value & Quantity */}
                                 <div>
                                     <div className="flex justify-between items-end mb-2">
                                         <label className="block text-xs font-semibold text-blue-200/70">Card Value</label>
                                         <span className="text-[10px] text-blue-200/50 flex items-center gap-1">
-                                            <TrendingUp className="w-3 h-3" /> 1 ~ ₦{activeRate.toLocaleString()}
+                                            {Number(sellData.cardValue) > 0 ? (
+                                                <>
+                                                    <TrendingUp className="w-3 h-3" /> 1 ~ ₦{activeRate.toLocaleString()}
+                                                </>
+                                            ) : (
+                                                <span className="flex items-center gap-1">
+                                                    <TrendingUp className="w-3 h-3" /> 1 ~ NGN0
+                                                </span>
+                                            )}
                                         </span>
                                     </div>
                                     <div className="flex items-center bg-[#142143] rounded-xl overflow-hidden pr-2">
