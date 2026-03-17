@@ -11,17 +11,19 @@ interface GiftCardModalProps {
 }
 
 const CARDS = [
-    { id: 'amazon', name: 'Amazon', low: 794, high: 1100 },
-    { id: 'apple', name: 'Apple / iTunes', low: 794, high: 1080 },
-    { id: 'steam', name: 'Steam', low: 794, high: 1050 },
-    { id: 'google', name: 'Google Play', low: 794, high: 1070 },
-    { id: 'vanilla', name: 'Vanilla Visa', low: 794, high: 1050 },
+    { id: 'amazon', name: 'Amazon', mini: 694, low: 794, high: 1100 },
+    { id: 'apple', name: 'Apple / iTunes', mini: 694, low: 794, high: 1080 },
+    { id: 'steam', name: 'Steam', mini: 694, low: 794, high: 1050 },
+    { id: 'google', name: 'Google Play', mini: 694, low: 794, high: 1070 },
+    { id: 'vanilla', name: 'Vanilla Visa', mini: 694, low: 794, high: 1050 },
 ];
 
 function getTieredRate(card: typeof CARDS[0], usdValue: number | string): number {
     const val = Number(usdValue);
-    if (!val || val < 20) return 0;
-    return val >= 50 ? card.high : card.low;
+    if (!val || val < 5) return 0;
+    if (val >= 50) return card.high;
+    if (val >= 20) return card.low;
+    return card.mini;
 }
 
 export default function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
@@ -44,7 +46,7 @@ export default function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
     const selectedSellCard = CARDS.find(c => c.id === sellData.cardId) || CARDS[0];
     const activeRate = getTieredRate(selectedSellCard, sellData.cardValue);
     const ngnPreview = activeRate > 0 ? Math.floor(Number(sellData.cardValue) * activeRate * sellData.quantity) : 0;
-    const currentTier = Number(sellData.cardValue) >= 50 ? 'high' : Number(sellData.cardValue) >= 20 ? 'low' : null;
+    const currentTier = Number(sellData.cardValue) >= 50 ? 'high' : Number(sellData.cardValue) >= 20 ? 'low' : Number(sellData.cardValue) >= 5 ? 'mini' : null;
 
     const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
@@ -369,8 +371,8 @@ export default function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
 
                                 <button
                                     onClick={() => setIsPinModalOpen(true)}
-                                    disabled={!sellData.cardValue || Number(sellData.cardValue) < 20 || (!sellData.cardCode && sellData.images.length === 0) || loading}
-                                    className="w-full py-4 mt-6 bg-[#1D4ED8] text-white font-bold rounded-full hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    disabled={!sellData.cardValue || Number(sellData.cardValue) < 5 || (!sellData.cardCode && sellData.images.length === 0) || loading}
+                                    className="w-full py-4 bg-green-500 hover:bg-green-600 text-white rounded-2xl font-bold shadow-lg shadow-green-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-4"
                                 >
                                     Sell
                                 </button>

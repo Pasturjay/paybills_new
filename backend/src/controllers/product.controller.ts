@@ -157,14 +157,15 @@ export const purchaseGiftCard = async (req: Request, res: Response) => {
 };
 
 // Tiered NGN payout rates per $1 USD
-// $20–$49: flat ₦794 across all cards
-// $50+:    per-card rates in the ₦1,050–₦1,100 range
-const GIFT_CARD_RATE_TIERS: Record<string, { low: number; high: number }> = {
-    amazon: { low: 794, high: 1100 },
-    apple: { low: 794, high: 1080 },
-    steam: { low: 794, high: 1050 },
-    google: { low: 794, high: 1070 },
-    vanilla: { low: 794, high: 1050 },
+// $5–$19:   flat ₦694 across all cards (mini)
+// $20–$49:  flat ₦794 across all cards (low)
+// $50+:     per-card rates in the ₦1,050–₦1,100 range (high)
+const GIFT_CARD_RATE_TIERS: Record<string, { mini: number; low: number; high: number }> = {
+    amazon: { mini: 694, low: 794, high: 1100 },
+    apple: { mini: 694, low: 794, high: 1080 },
+    steam: { mini: 694, low: 794, high: 1050 },
+    google: { mini: 694, low: 794, high: 1070 },
+    vanilla: { mini: 694, low: 794, high: 1050 },
 };
 
 function getGiftCardRate(cardId: string, usdValue: number): number {
@@ -172,6 +173,7 @@ function getGiftCardRate(cardId: string, usdValue: number): number {
     if (!tiers) return 0;
     if (usdValue >= 50) return tiers.high;
     if (usdValue >= 20) return tiers.low;
+    if (usdValue >= 5) return tiers.mini;
     return 0; // below minimum
 }
 
@@ -193,8 +195,8 @@ export const sellGiftCard = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Invalid card value' });
         }
 
-        if (usdValue < 20) {
-            return res.status(400).json({ error: 'Minimum card value is $20' });
+        if (usdValue < 5) {
+            return res.status(400).json({ error: 'Minimum card value is $5' });
         }
         await securityService.validateRequestPin(userId, pin);
 

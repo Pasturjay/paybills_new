@@ -14,24 +14,27 @@ interface GiftCard {
     category: string;
     regions: string[];
     color: string;
+    mini: number; // NGN per $1 for $5-$19
     low: number; // NGN per $1 for $20-$49
     high: number; // NGN per $1 for $50+
 }
 
 // Per-card NGN sell rates (must match backend tiers)
-const SELL_RATE_TIERS: Record<string, { low: number; high: number }> = {
-    amazon: { low: 794, high: 1100 },
-    apple: { low: 794, high: 1080 },
-    steam: { low: 794, high: 1050 },
-    google: { low: 794, high: 1070 },
-    vanilla: { low: 794, high: 1050 },
+const SELL_RATE_TIERS: Record<string, { mini: number; low: number; high: number }> = {
+    amazon: { mini: 694, low: 794, high: 1100 },
+    apple: { mini: 694, low: 794, high: 1080 },
+    steam: { mini: 694, low: 794, high: 1050 },
+    google: { mini: 694, low: 794, high: 1070 },
+    vanilla: { mini: 694, low: 794, high: 1050 },
 };
 
 function getTieredRate(card: GiftCard | undefined, usdValue: number | ''): number {
     if (!card) return 0;
     const val = Number(usdValue);
-    if (!val || val < 20) return 0;
-    return val >= 50 ? card.high : card.low;
+    if (!val || val < 5) return 0;
+    if (val >= 50) return card.high;
+    if (val >= 20) return card.low;
+    return card.mini;
 }
 
 export default function GiftCards() {
@@ -61,11 +64,11 @@ export default function GiftCards() {
 
     useEffect(() => {
         const catalog: GiftCard[] = [
-            { id: 'amazon', name: 'Amazon', category: 'Shopping', regions: ['US', 'GLOBAL'], color: 'bg-orange-600', low: SELL_RATE_TIERS.amazon.low, high: SELL_RATE_TIERS.amazon.high },
-            { id: 'apple', name: 'Apple / iTunes', category: 'Streaming', regions: ['US', 'GLOBAL'], color: 'bg-slate-800', low: SELL_RATE_TIERS.apple.low, high: SELL_RATE_TIERS.apple.high },
-            { id: 'steam', name: 'Steam', category: 'Gaming', regions: ['GLOBAL'], color: 'bg-blue-800', low: SELL_RATE_TIERS.steam.low, high: SELL_RATE_TIERS.steam.high },
-            { id: 'google', name: 'Google Play', category: 'Gaming', regions: ['US', 'UK'], color: 'bg-teal-600', low: SELL_RATE_TIERS.google.low, high: SELL_RATE_TIERS.google.high },
-            { id: 'vanilla', name: 'Vanilla Visa', category: 'Shopping', regions: ['US'], color: 'bg-indigo-600', low: SELL_RATE_TIERS.vanilla.low, high: SELL_RATE_TIERS.vanilla.high },
+            { id: 'amazon', name: 'Amazon', category: 'Shopping', regions: ['US', 'GLOBAL'], color: 'bg-orange-600', mini: SELL_RATE_TIERS.amazon.mini, low: SELL_RATE_TIERS.amazon.low, high: SELL_RATE_TIERS.amazon.high },
+            { id: 'apple', name: 'Apple / iTunes', category: 'Streaming', regions: ['US', 'GLOBAL'], color: 'bg-slate-800', mini: SELL_RATE_TIERS.apple.mini, low: SELL_RATE_TIERS.apple.low, high: SELL_RATE_TIERS.apple.high },
+            { id: 'steam', name: 'Steam', category: 'Gaming', regions: ['GLOBAL'], color: 'bg-blue-800', mini: SELL_RATE_TIERS.steam.mini, low: SELL_RATE_TIERS.steam.low, high: SELL_RATE_TIERS.steam.high },
+            { id: 'google', name: 'Google Play', category: 'Gaming', regions: ['US', 'UK'], color: 'bg-teal-600', mini: SELL_RATE_TIERS.google.mini, low: SELL_RATE_TIERS.google.low, high: SELL_RATE_TIERS.google.high },
+            { id: 'vanilla', name: 'Vanilla Visa', category: 'Shopping', regions: ['US'], color: 'bg-indigo-600', mini: SELL_RATE_TIERS.vanilla.mini, low: SELL_RATE_TIERS.vanilla.low, high: SELL_RATE_TIERS.vanilla.high },
         ];
         setCards(catalog);
         setLoading(false);
@@ -438,7 +441,7 @@ export default function GiftCards() {
 
                                                 <button
                                                     onClick={() => setIsPinModalOpen(true)}
-                                                    disabled={!sellValue || sellValue < 20 || (!sellCode && sellImages.length === 0) || processing}
+                                                    disabled={!sellValue || sellValue < 5 || (!sellCode && sellImages.length === 0) || processing}
                                                     className="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold shadow-lg shadow-green-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
                                                     <ArrowUpRight className="w-5 h-5" />
