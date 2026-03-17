@@ -240,7 +240,7 @@ export const sellGiftCard = async (req: Request, res: Response) => {
                     walletId: wallet.id,
                     amount: ngnPayout,
                     total: ngnPayout,
-                    type: 'GIFT_CARD_TRADE',
+                    type: 'GIFTCARD',
                     status: 'PENDING',
                     reference: ref,
                     idempotencyKey,
@@ -263,7 +263,7 @@ export const sellGiftCard = async (req: Request, res: Response) => {
         socketService.emitToUser(userId, 'BALANCE_UPDATE', { balance: newBalance });
         socketService.emitToUser(userId, 'TRANSACTION_NEW', {
             id: ref,
-            type: 'GIFT_CARD_TRADE',
+            type: 'GIFTCARD',
             amount: ngnPayout,
             status: 'PENDING',
             message: `₦${ngnPayout.toLocaleString()} credited for $${usdValue} gift card (pending verification)`

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
+import { socketService } from '../services/socket.service';
 
 const prisma = new PrismaClient();
 
@@ -145,5 +146,61 @@ export const updateUserStatus = async (req: Request, res: Response) => {
         res.json(updatedUser);
     } catch (error) {
         res.status(500).json({ error: 'Failed to update user status' });
+    }
+};
+// Update Gift Card Trade Status
+export const updateGiftCardTradeStatus = async (req: Request, res: Response) => {
+    try {
+        const { reference } = req.params;
+        const { status, adminNotes } = req.body; // SUCCESS or FAILED
+
+        if (!['SUCCESS', 'FAILED'].includes(status)) {
+            return res.status(400).json({ error: 'Invalid status. Must be SUCCESS or FAILED' });
+        }
+
+        const transaction = await prisma.transaction.findUnique({
+            where: { reference },
+            include: { wallet: true }
+        });
+
+        if (!transaction) return res.status(404).json({ error: 'Transaction not found' });
+        if (transaction.type !== 'GIFTCARD') return res.status(400).json({ error: 'Not a gift card transaction' });
+        if (transaction.status !== 'PENDING') return res.status(400).json({ error: 'Transaction already processed' });
+
+        await prisma.$transaction(async (tx) => {
+            // Update transaction status
+            await tx.transaction.update({
+                where: { id: transaction.id },
+                data: {
+                    status,
+                    metadata: {
+                        ...(transaction.metadata as any),
+                        adminNotes,
+                        processedAt: new Date(),
+                    }
+                }
+            });
+
+            // If FAILED, reverse the optimistic credit
+            if (status === 'FAILED') {
+                await tx.wallet.update({
+                    where: { id: transaction.walletId },
+                    data: { balance: { decrement: transaction.amount } }
+                });
+            }
+        });
+
+        const updatedWallet = await prisma.wallet.findUnique({ where: { id: transaction.walletId } });
+        socketService.emitToUser(transaction.userId, 'BALANCE_UPDATE', { balance: updatedWallet?.balance });
+        socketService.emitToUser(transaction.userId, 'TRANSACTION_UPDATE', {
+            reference,
+            status,
+            message: status === 'SUCCESS' ? 'Gift card trade approved!' : 'Gift card trade rejected and reversed'
+        });
+
+        res.json({ message: `Transaction ${status === 'SUCCESS' ? 'approved' : 'rejected'}` });
+    } catch (error) {
+        console.error('Update giftcard status error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 };

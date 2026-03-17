@@ -96,7 +96,7 @@ router.post('/cards/freeze', authenticateToken, virtualCardController.toggleCard
 router.post('/cards/fund', authenticateToken, virtualCardController.fundCard);
 
 // Admin Routes
-import { getAllUsers, getAllTransactions, getAdminStats, getServiceStatus, updateServiceStatus, getProviderStatus, updateUserStatus } from '../controllers/admin.controller';
+import { getAllUsers, getAllTransactions, getAdminStats, getServiceStatus, updateServiceStatus, getProviderStatus, updateUserStatus, updateGiftCardTradeStatus } from '../controllers/admin.controller';
 
 router.get('/admin/users', authenticateToken, authorizeRole('ADMIN', 'SUPERADMIN'), getAllUsers);
 router.get('/admin/transactions', authenticateToken, authorizeRole('ADMIN', 'SUPERADMIN'), getAllTransactions);
@@ -105,6 +105,7 @@ router.get('/admin/services', authenticateToken, authorizeRole('ADMIN', 'SUPERAD
 router.put('/admin/services/:id', authenticateToken, authorizeRole('ADMIN', 'SUPERADMIN'), updateServiceStatus);
 router.get('/admin/providers', authenticateToken, authorizeRole('ADMIN', 'SUPERADMIN'), getProviderStatus);
 router.put('/admin/users/:id/status', authenticateToken, authorizeRole('ADMIN', 'SUPERADMIN'), updateUserStatus);
+router.patch('/admin/gift-cards/:reference/status', authenticateToken, authorizeRole('ADMIN', 'SUPERADMIN'), updateGiftCardTradeStatus);
 
 
 
