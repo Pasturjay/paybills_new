@@ -2,7 +2,7 @@
 
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { Gift, Search, Loader2, CheckCircle2 } from "lucide-react";
+import { Gift, Search, Loader2, CheckCircle2, TrendingUp, ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { CheckoutModal } from "@/components/CheckoutModal";
@@ -14,16 +14,27 @@ interface GiftCard {
     category: string;
     regions: string[];
     color: string;
+    sellRate: number; // NGN per $1
 }
+
+// Per-card NGN sell rates (must match backend)
+const SELL_RATES: Record<string, number> = {
+    amazon: 1271,
+    apple: 1230,
+    steam: 1214,
+    google: 1246,
+    vanilla: 1205,
+};
 
 export default function GiftCards() {
     const [cards, setCards] = useState<GiftCard[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState("All");
     const [search, setSearch] = useState("");
+    const [pageMode, setPageMode] = useState<'buy' | 'sell'>('buy');
     const [isPinModalOpen, setIsPinModalOpen] = useState(false);
 
-    // Selection State
+    // Buy state
     const [selectedCard, setSelectedCard] = useState<GiftCard | null>(null);
     const [amount, setAmount] = useState<number>(0);
     const [quantity, setQuantity] = useState(1);
@@ -31,15 +42,21 @@ export default function GiftCards() {
     const [processing, setProcessing] = useState(false);
     const [successData, setSuccessData] = useState<any>(null);
 
+    // Sell state
+    const [sellCardId, setSellCardId] = useState('amazon');
+    const [sellValue, setSellValue] = useState<number>(0);
+    const [sellCode, setSellCode] = useState('');
+    const [sellSuccess, setSellSuccess] = useState<{ message: string; ngnPayout: number } | null>(null);
+
     useEffect(() => {
-        // Mock Catalog since there is no endpoint
-        setCards([
-            { id: 'amazon', name: 'Amazon', category: 'Shopping', regions: ['US', 'GLOBAL'], color: 'bg-orange-600' },
-            { id: 'apple', name: 'Apple / iTunes', category: 'Streaming', regions: ['US', 'GLOBAL'], color: 'bg-slate-800' },
-            { id: 'steam', name: 'Steam', category: 'Gaming', regions: ['GLOBAL'], color: 'bg-blue-800' },
-            { id: 'google', name: 'Google Play', category: 'Gaming', regions: ['US', 'UK'], color: 'bg-teal-600' },
-            { id: 'vanilla', name: 'Vanilla Visa', category: 'Shopping', regions: ['US'], color: 'bg-indigo-600' }
-        ]);
+        const catalog: GiftCard[] = [
+            { id: 'amazon', name: 'Amazon', category: 'Shopping', regions: ['US', 'GLOBAL'], color: 'bg-orange-600', sellRate: SELL_RATES.amazon },
+            { id: 'apple', name: 'Apple / iTunes', category: 'Streaming', regions: ['US', 'GLOBAL'], color: 'bg-slate-800', sellRate: SELL_RATES.apple },
+            { id: 'steam', name: 'Steam', category: 'Gaming', regions: ['GLOBAL'], color: 'bg-blue-800', sellRate: SELL_RATES.steam },
+            { id: 'google', name: 'Google Play', category: 'Gaming', regions: ['US', 'UK'], color: 'bg-teal-600', sellRate: SELL_RATES.google },
+            { id: 'vanilla', name: 'Vanilla Visa', category: 'Shopping', regions: ['US'], color: 'bg-indigo-600', sellRate: SELL_RATES.vanilla },
+        ];
+        setCards(catalog);
         setLoading(false);
     }, []);
 
@@ -49,20 +66,15 @@ export default function GiftCards() {
         return matchesCategory && matchesSearch;
     });
 
-    const categories = ["All", "Gaming", "Shopping", "Streaming", "Software"];
+    const categories = ["All", "Gaming", "Shopping", "Streaming"];
 
+    // ── Buy Flow ──
     const handleCheckout = () => {
-        if (!selectedCard || amount <= 0) {
-            alert("Please select a card and enter an amount.");
-            return;
-        }
+        if (!selectedCard || amount <= 0) { alert("Please select a card and enter an amount."); return; }
         setCheckoutOpen(true);
     };
 
-    const confirmCheckout = () => {
-        setCheckoutOpen(false);
-        setIsPinModalOpen(true);
-    };
+    const confirmCheckout = () => { setCheckoutOpen(false); setIsPinModalOpen(true); };
 
     const confirmPayment = async (pin: string) => {
         setIsPinModalOpen(false);
@@ -70,21 +82,11 @@ export default function GiftCards() {
         try {
             const token = localStorage.getItem("token");
             if (!token) throw new Error("Please login to continue");
-
-            // Make request to the correct working endpoint
             const res = await api.post("/products/gift-card/buy", {
-                cardId: selectedCard?.id,
-                amount: amount,
-                quantity: quantity,
-                pin: pin
+                cardId: selectedCard?.id, amount, quantity, pin
             }, token);
-
-            // Set success with the message from the backend
             setSuccessData({ message: res.message || "Gift card purchase successful. Code will be sent shortly." });
-
-            setSelectedCard(null);
-            setAmount(0);
-            setQuantity(1);
+            setSelectedCard(null); setAmount(0); setQuantity(1);
         } catch (e: any) {
             alert(e.message || "Failed to purchase Gift Card");
         } finally {
@@ -92,11 +94,36 @@ export default function GiftCards() {
         }
     };
 
+    // ── Sell Flow ──
+    const selectedSellCard = cards.find(c => c.id === sellCardId) || cards[0];
+    const ngnPreview = selectedSellCard && sellValue > 0
+        ? Math.floor(sellValue * (selectedSellCard.sellRate || SELL_RATES[sellCardId] || 1500))
+        : 0;
+
+    const handleSellSubmit = async (pin: string) => {
+        setIsPinModalOpen(false);
+        setProcessing(true);
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) throw new Error("Please login to continue");
+            const res: any = await api.post("/products/gift-card/sell", {
+                cardId: sellCardId, cardValue: sellValue, cardCode: sellCode, pin
+            }, token);
+            setSellSuccess({
+                message: res.message || "Trade submitted successfully.",
+                ngnPayout: res.ngnPayout ?? ngnPreview
+            });
+            setSellValue(0); setSellCode('');
+        } catch (e: any) {
+            alert(e.message || "Failed to submit gift card trade");
+        } finally {
+            setProcessing(false);
+        }
+    };
+
     return (
         <main className="min-h-screen bg-gray-50 dark:bg-[#0f172a]">
-            {/* Scrollable Background Pattern */}
             <div className="fixed inset-0 pattern-dots disabled opacity-5 pointer-events-none"></div>
-
             <Navbar />
 
             {/* Header */}
@@ -108,8 +135,24 @@ export default function GiftCards() {
                         Global Gift Cards
                     </h1>
                     <p className="text-gray-300 max-w-xl mx-auto">
-                        Instant access to thousands of gift cards from top global brands.
+                        Buy gift cards instantly or sell yours for NGN — credited directly to your wallet.
                     </p>
+
+                    {/* Buy / Sell mode toggle */}
+                    <div className="inline-flex mt-6 p-1 bg-white/10 backdrop-blur-sm rounded-2xl">
+                        <button
+                            onClick={() => setPageMode('buy')}
+                            className={`px-8 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all ${pageMode === 'buy' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30' : 'text-white/70 hover:text-white'}`}
+                        >
+                            <ArrowDownLeft className="w-4 h-4" /> Buy Cards
+                        </button>
+                        <button
+                            onClick={() => setPageMode('sell')}
+                            className={`px-8 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all ${pageMode === 'sell' ? 'bg-green-500 text-white shadow-lg shadow-green-500/30' : 'text-white/70 hover:text-white'}`}
+                        >
+                            <ArrowUpRight className="w-4 h-4" /> Sell for NGN
+                        </button>
+                    </div>
                 </div>
             </section>
 
@@ -118,7 +161,6 @@ export default function GiftCards() {
 
                     {/* Controls */}
                     <div className="bg-white dark:bg-zinc-900 p-6 rounded-3xl shadow-xl border border-gray-100 dark:border-zinc-800 mb-10 flex flex-col md:flex-row gap-6 items-center justify-between">
-                        {/* Categories */}
                         <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto scrollbar-hide">
                             {categories.map(cat => (
                                 <button
@@ -130,8 +172,6 @@ export default function GiftCards() {
                                 </button>
                             ))}
                         </div>
-
-                        {/* Search */}
                         <div className="relative w-full md:w-80">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                             <input
@@ -147,7 +187,7 @@ export default function GiftCards() {
                     {/* Content Grid */}
                     <div className="flex flex-col lg:flex-row gap-8 items-start">
 
-                        {/* Grid */}
+                        {/* Card Grid */}
                         <div className="flex-1 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full">
                             {loading ? (
                                 <div className="col-span-full h-64 flex items-center justify-center">
@@ -156,81 +196,174 @@ export default function GiftCards() {
                             ) : filteredCards.map(card => (
                                 <div
                                     key={card.id}
-                                    onClick={() => { setSelectedCard(card); setAmount(0); }}
-                                    className={`group cursor-pointer relative overflow-hidden rounded-2xl bg-white dark:bg-zinc-900 transition-all hover:scale-[1.03] ${selectedCard?.id === card.id ? "ring-4 ring-purple-500 shadow-2xl z-10 scale-[1.03]" : "hover:shadow-xl shadow-md"}`}
+                                    onClick={() => {
+                                        if (pageMode === 'buy') { setSelectedCard(card); setAmount(0); }
+                                        else { setSellCardId(card.id); }
+                                    }}
+                                    className={`group cursor-pointer relative overflow-hidden rounded-2xl bg-white dark:bg-zinc-900 transition-all hover:scale-[1.03]
+                                        ${pageMode === 'buy'
+                                            ? (selectedCard?.id === card.id ? "ring-4 ring-purple-500 shadow-2xl z-10 scale-[1.03]" : "hover:shadow-xl shadow-md")
+                                            : (sellCardId === card.id ? "ring-4 ring-green-500 shadow-2xl z-10 scale-[1.03]" : "hover:shadow-xl shadow-md")
+                                        }`}
                                 >
-                                    {/* Card Visual */}
                                     <div className={`aspect-[1.586/1] ${card.color} relative p-4 flex flex-col justify-between`}>
                                         <div className="flex justify-between items-start">
                                             <div className="text-white/80 font-mono text-xs font-bold tracking-widest">{card.regions[0] || "GLOBAL"}</div>
-                                            {selectedCard?.id === card.id && <CheckCircle2 className="text-white w-6 h-6 drop-shadow-md" />}
+                                            {((pageMode === 'buy' && selectedCard?.id === card.id) || (pageMode === 'sell' && sellCardId === card.id)) && (
+                                                <CheckCircle2 className="text-white w-6 h-6 drop-shadow-md" />
+                                            )}
                                         </div>
                                         <div className="text-white font-bold text-xl drop-shadow-md leading-tight">{card.name}</div>
                                     </div>
-
-                                    {/* Footer Info */}
-                                    <div className="p-3 text-xs text-center font-medium text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-zinc-800/50">
-                                        {card.category}
+                                    <div className="p-3 text-xs font-medium bg-gray-50 dark:bg-zinc-800/50">
+                                        <div className="text-center text-gray-500 dark:text-gray-400">{card.category}</div>
+                                        {pageMode === 'sell' && (
+                                            <div className="text-center text-green-600 dark:text-green-400 font-bold mt-0.5 flex items-center justify-center gap-1">
+                                                <TrendingUp className="w-3 h-3" /> ₦{card.sellRate.toLocaleString()}/$
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}
                         </div>
 
-                        {/* Sticky Checkout Sidebar */}
-                        <div className={`lg:w-80 w-full shrink-0 sticky top-24 transition-all duration-500 ${selectedCard ? "opacity-100 translate-x-0" : "opacity-50 translate-x-10 lg:translate-x-0 grayscale pointer-events-none"}`}>
+                        {/* Sidebar */}
+                        <div className="lg:w-80 w-full shrink-0 sticky top-24">
                             <div className="bg-white dark:bg-zinc-900 p-6 rounded-3xl shadow-xl border border-gray-100 dark:border-zinc-800">
-                                <h3 className="text-lg font-bold mb-6 text-gray-900 dark:text-white">Purchase Details</h3>
 
-                                {selectedCard ? (
-                                    <div className="space-y-6">
-                                        <div className="flex items-center gap-4">
-                                            <div className={`w-12 h-12 rounded-lg ${selectedCard.color} shadow-lg`}></div>
-                                            <div>
-                                                <div className="font-bold text-gray-900 dark:text-white text-sm">{selectedCard.name}</div>
-                                                <div className="text-xs text-gray-500">{selectedCard.regions.join(", ")}</div>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-4">
-                                            <div>
-                                                <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Amount (USD/EUR)</label>
-                                                <input
-                                                    type="number"
-                                                    value={amount || ''}
-                                                    onChange={(e) => setAmount(Number(e.target.value))}
-                                                    placeholder="25"
-                                                    className="w-full text-lg font-bold p-3 rounded-xl bg-gray-50 dark:bg-zinc-800 border-none focus:ring-2 focus:ring-purple-500"
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Quantity</label>
-                                                <div className="flex items-center gap-3">
-                                                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-zinc-800 font-bold hover:bg-gray-200 dark:hover:bg-zinc-700">-</button>
-                                                    <span className="flex-1 text-center font-bold text-lg">{quantity}</span>
-                                                    <button onClick={() => setQuantity(quantity + 1)} className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-zinc-800 font-bold hover:bg-gray-200 dark:hover:bg-zinc-700">+</button>
+                                {pageMode === 'buy' ? (
+                                    /* ── BUY SIDEBAR ── */
+                                    <>
+                                        <h3 className="text-lg font-bold mb-6 text-gray-900 dark:text-white">Purchase Details</h3>
+                                        {selectedCard ? (
+                                            <div className="space-y-6">
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`w-12 h-12 rounded-lg ${selectedCard.color} shadow-lg`}></div>
+                                                    <div>
+                                                        <div className="font-bold text-gray-900 dark:text-white text-sm">{selectedCard.name}</div>
+                                                        <div className="text-xs text-gray-500">{selectedCard.regions.join(", ")}</div>
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-4">
+                                                    <div>
+                                                        <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Amount (USD/EUR)</label>
+                                                        <input
+                                                            type="number" value={amount || ''} onChange={(e) => setAmount(Number(e.target.value))}
+                                                            placeholder="25"
+                                                            className="w-full text-lg font-bold p-3 rounded-xl bg-gray-50 dark:bg-zinc-800 border-none focus:ring-2 focus:ring-purple-500"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Quantity</label>
+                                                        <div className="flex items-center gap-3">
+                                                            <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-zinc-800 font-bold hover:bg-gray-200 dark:hover:bg-zinc-700">-</button>
+                                                            <span className="flex-1 text-center font-bold text-lg">{quantity}</span>
+                                                            <button onClick={() => setQuantity(quantity + 1)} className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-zinc-800 font-bold hover:bg-gray-200 dark:hover:bg-zinc-700">+</button>
+                                                        </div>
+                                                    </div>
+                                                    <div className="pt-4 border-t border-gray-100 dark:border-zinc-800">
+                                                        <div className="flex justify-between items-center mb-4">
+                                                            <span className="text-gray-500 text-sm">Total Estimate</span>
+                                                            <span className="text-xl font-bold text-purple-600">₦{((amount * quantity) * 1650).toLocaleString()}</span>
+                                                        </div>
+                                                        <button onClick={handleCheckout} className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold shadow-lg shadow-purple-600/20 transition-all flex items-center justify-center gap-2">
+                                                            <CheckCircle2 className="w-5 h-5" /> Buy Now
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
+                                        ) : (
+                                            <div className="text-center py-12 text-gray-400">
+                                                <Gift className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                                                <p className="text-sm">Select a card to continue</p>
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    /* ── SELL SIDEBAR ── */
+                                    <>
+                                        <h3 className="text-lg font-bold mb-1 text-gray-900 dark:text-white flex items-center gap-2">
+                                            <ArrowUpRight className="w-5 h-5 text-green-500" /> Sell Your Card
+                                        </h3>
+                                        <p className="text-xs text-gray-400 mb-5">Get instant NGN into your wallet</p>
 
-                                            <div className="pt-4 border-t border-gray-100 dark:border-zinc-800">
-                                                <div className="flex justify-between items-center mb-4">
-                                                    <span className="text-gray-500 text-sm">Total Estimate</span>
-                                                    <span className="text-xl font-bold text-purple-600">₦{((amount * quantity) * 1650).toLocaleString()}</span>
+                                        {sellSuccess ? (
+                                            /* Sell Success */
+                                            <div className="text-center py-6">
+                                                <div className="w-14 h-14 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                                                    <CheckCircle2 className="w-7 h-7" />
                                                 </div>
-                                                <button
-                                                    onClick={handleCheckout}
-                                                    className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold shadow-lg shadow-purple-600/20 transition-all flex items-center justify-center gap-2"
-                                                >
-                                                    <CheckCircle2 className="w-5 h-5" /> Buy Now
+                                                <h4 className="font-bold text-gray-900 dark:text-white mb-1">Trade Submitted!</h4>
+                                                <div className="inline-flex items-center gap-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 px-4 py-2 rounded-xl font-bold text-lg mb-3">
+                                                    <TrendingUp className="w-5 h-5" />
+                                                    ₦{sellSuccess.ngnPayout.toLocaleString()} credited
+                                                </div>
+                                                <p className="text-xs text-gray-400 mb-5">{sellSuccess.message}</p>
+                                                <button onClick={() => setSellSuccess(null)} className="w-full py-2.5 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-900 dark:text-white font-bold rounded-xl text-sm transition-colors">
+                                                    Sell Another Card
                                                 </button>
                                             </div>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="text-center py-12 text-gray-400">
-                                        <Gift className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                                        <p className="text-sm">Select a card to continue</p>
-                                    </div>
+                                        ) : (
+                                            <div className="space-y-4">
+                                                {/* Selected card indicator */}
+                                                {selectedSellCard && (
+                                                    <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-zinc-800 rounded-xl">
+                                                        <div className={`w-10 h-10 rounded-lg ${selectedSellCard.color} shadow`}></div>
+                                                        <div>
+                                                            <div className="font-bold text-sm text-gray-900 dark:text-white">{selectedSellCard.name}</div>
+                                                            <div className="text-xs text-green-600 dark:text-green-400 font-medium flex items-center gap-1">
+                                                                <TrendingUp className="w-3 h-3" /> ₦{selectedSellCard.sellRate.toLocaleString()} / $1
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                <div>
+                                                    <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Card Value (USD)</label>
+                                                    <input
+                                                        type="number"
+                                                        placeholder="e.g. 50"
+                                                        value={sellValue || ''}
+                                                        onChange={(e) => setSellValue(Number(e.target.value))}
+                                                        className="w-full text-lg font-bold p-3 rounded-xl bg-gray-50 dark:bg-zinc-800 border-none focus:ring-2 focus:ring-green-500"
+                                                    />
+                                                </div>
+
+                                                {ngnPreview > 0 && (
+                                                    <div className="flex items-center justify-between bg-green-50 dark:bg-green-900/20 rounded-xl px-4 py-3">
+                                                        <span className="text-sm text-gray-600 dark:text-gray-400">You'll receive</span>
+                                                        <span className="text-xl font-bold text-green-600 dark:text-green-400">
+                                                            ₦{ngnPreview.toLocaleString()}
+                                                        </span>
+                                                    </div>
+                                                )}
+
+                                                <div>
+                                                    <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Redemption Code</label>
+                                                    <textarea
+                                                        placeholder="Paste your e-code here..."
+                                                        rows={3}
+                                                        value={sellCode}
+                                                        onChange={(e) => setSellCode(e.target.value)}
+                                                        className="w-full p-3 rounded-xl bg-gray-50 dark:bg-zinc-800 border-none focus:ring-2 focus:ring-green-500 resize-none text-sm"
+                                                    />
+                                                </div>
+
+                                                <p className="text-xs text-gray-400 text-center">
+                                                    Funds credited instantly and subject to verification.
+                                                </p>
+
+                                                <button
+                                                    onClick={() => setIsPinModalOpen(true)}
+                                                    disabled={!sellValue || !sellCode || processing}
+                                                    className="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold shadow-lg shadow-green-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    <ArrowUpRight className="w-5 h-5" />
+                                                    {processing ? 'Processing...' : `Sell for ₦${ngnPreview > 0 ? ngnPreview.toLocaleString() : '---'}`}
+                                                </button>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                             </div>
                         </div>
@@ -239,11 +372,12 @@ export default function GiftCards() {
                 </div>
             </section>
 
+            {/* Buy modals */}
             <CheckoutModal
                 isOpen={checkoutOpen}
                 onClose={() => setCheckoutOpen(false)}
                 onConfirm={confirmCheckout}
-                amount={(amount * quantity) * 1650} // Mock Exchange Rate
+                amount={(amount * quantity) * 1650}
                 title={`Buy ${selectedCard?.name}`}
                 loading={processing}
                 details={[
@@ -257,12 +391,16 @@ export default function GiftCards() {
             <PinModal
                 isOpen={isPinModalOpen}
                 onClose={() => setIsPinModalOpen(false)}
-                onSuccess={confirmPayment}
-                title="Confirm Purchase"
-                description={`Enter PIN to buy ${quantity}x $${amount} ${selectedCard?.name} gift card(s)`}
+                onSuccess={pageMode === 'buy' ? confirmPayment : handleSellSubmit}
+                title={pageMode === 'buy' ? "Confirm Purchase" : "Confirm Gift Card Sale"}
+                description={
+                    pageMode === 'buy'
+                        ? `Enter PIN to buy ${quantity}x $${amount} ${selectedCard?.name} gift card(s)`
+                        : `Enter PIN to sell $${sellValue} ${selectedSellCard?.name} for ₦${ngnPreview.toLocaleString()}`
+                }
             />
 
-            {/* Success Code Display Modal */}
+            {/* Buy success */}
             {successData && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                     <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl max-w-md w-full p-8 animate-in zoom-in-95">
@@ -273,13 +411,11 @@ export default function GiftCards() {
                             <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Purchase Successful!</h3>
                             <p className="text-gray-500">Here are your gift card codes:</p>
                         </div>
-
                         <div className="bg-gray-50 dark:bg-black/20 rounded-xl p-4 space-y-3 mb-6 max-h-60 overflow-y-auto w-full text-center">
                             <p className="text-gray-900 dark:text-gray-100 font-medium">{successData.message}</p>
                         </div>
-
                         <button
-                            onClick={() => { setSuccessData(null); }}
+                            onClick={() => setSuccessData(null)}
                             className="w-full py-3 bg-gray-900 dark:bg-white text-white dark:text-black font-bold rounded-xl hover:opacity-90 transition-opacity"
                         >
                             Close
@@ -292,5 +428,3 @@ export default function GiftCards() {
         </main>
     );
 }
-
-

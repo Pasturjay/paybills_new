@@ -155,9 +155,96 @@ export const purchaseGiftCard = async (req: Request, res: Response) => {
     }
 };
 
+// NGN payout rates per USD for each gift card type (18% margin applied)
+const GIFT_CARD_NGN_RATES: Record<string, number> = {
+    amazon: 1271,
+    apple: 1230,
+    steam: 1214,
+    google: 1246,
+    vanilla: 1205,
+};
+
 export const sellGiftCard = async (req: Request, res: Response) => {
     try {
-        res.json({ message: 'Trade initiated. Please wait for admin verification.' });
+        const userId = (req as any).user.id;
+        const { cardId, cardValue, cardCode, pin, idempotencyKey } = req.body;
+
+        if (!cardId || !cardValue || !cardCode || !pin) {
+            return res.status(400).json({ error: 'Missing required fields: cardId, cardValue, cardCode, pin' });
+        }
+
+        const rate = GIFT_CARD_NGN_RATES[cardId.toLowerCase()];
+        if (!rate) {
+            return res.status(400).json({ error: 'Unsupported gift card type' });
+        }
+
+        const usdValue = Number(cardValue);
+        if (isNaN(usdValue) || usdValue <= 0) {
+            return res.status(400).json({ error: 'Invalid card value' });
+        }
+
+        await securityService.validateRequestPin(userId, pin);
+
+        // Idempotency check
+        if (idempotencyKey) {
+            const existing = await prisma.transaction.findFirst({ where: { userId, idempotencyKey } });
+            if (existing) return res.json({ message: 'Trade already submitted', reference: existing.reference });
+        }
+
+        const ngnPayout = Math.floor(usdValue * rate);
+
+        const ref = 'GCS_' + Date.now();
+
+        await prisma.$transaction(async (tx) => {
+            const walletResults = await tx.$queryRaw<Wallet[]>(
+                Prisma.sql`SELECT * FROM "Wallet" WHERE "userId" = ${userId} AND "currency" = 'NGN' FOR UPDATE`
+            );
+            const wallet = walletResults[0];
+            if (!wallet) throw new Error('Wallet not found');
+
+            // Optimistic credit — admin can reverse if card is invalid
+            await tx.wallet.update({
+                where: { id: wallet.id },
+                data: { balance: { increment: ngnPayout } }
+            });
+
+            await tx.transaction.create({
+                data: {
+                    userId,
+                    walletId: wallet.id,
+                    amount: ngnPayout,
+                    total: ngnPayout,
+                    type: 'GIFT_CARD_TRADE',
+                    status: 'PENDING',
+                    reference: ref,
+                    idempotencyKey,
+                    metadata: {
+                        cardId,
+                        cardCode,
+                        cardValue: usdValue,
+                        ngnPayout,
+                        rate
+                    },
+                    description: `Gift Card Sale – $${usdValue} ${cardId.charAt(0).toUpperCase() + cardId.slice(1)}`
+                } as any
+            });
+        });
+
+        const newBalance = (await prisma.wallet.findFirst({ where: { userId, currency: 'NGN' } }))?.balance;
+        socketService.emitToUser(userId, 'BALANCE_UPDATE', { balance: newBalance });
+        socketService.emitToUser(userId, 'TRANSACTION_NEW', {
+            id: ref,
+            type: 'GIFT_CARD_TRADE',
+            amount: ngnPayout,
+            status: 'PENDING',
+            message: `₦${ngnPayout.toLocaleString()} credited for $${usdValue} gift card (pending verification)`
+        });
+
+        res.json({
+            message: `₦${ngnPayout.toLocaleString()} has been credited to your wallet. Your trade is being reviewed.`,
+            ngnPayout,
+            reference: ref
+        });
     } catch (error: any) {
         res.status(400).json({ error: error.message });
     }
