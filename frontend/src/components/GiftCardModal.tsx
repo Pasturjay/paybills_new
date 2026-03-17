@@ -11,12 +11,18 @@ interface GiftCardModalProps {
 }
 
 const CARDS = [
-    { id: 'amazon', name: 'Amazon', rate: 1271 },
-    { id: 'apple', name: 'Apple / iTunes', rate: 1230 },
-    { id: 'steam', name: 'Steam', rate: 1214 },
-    { id: 'google', name: 'Google Play', rate: 1246 },
-    { id: 'vanilla', name: 'Vanilla Visa', rate: 1205 },
+    { id: 'amazon', name: 'Amazon', low: 794, high: 1100 },
+    { id: 'apple', name: 'Apple / iTunes', low: 794, high: 1080 },
+    { id: 'steam', name: 'Steam', low: 794, high: 1050 },
+    { id: 'google', name: 'Google Play', low: 794, high: 1070 },
+    { id: 'vanilla', name: 'Vanilla Visa', low: 794, high: 1050 },
 ];
+
+function getTieredRate(card: typeof CARDS[0], usdValue: number | string): number {
+    const val = Number(usdValue);
+    if (!val || val < 20) return 0;
+    return val >= 50 ? card.high : card.low;
+}
 
 export default function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
     const [mode, setMode] = useState<'buy' | 'sell'>('buy');
@@ -34,9 +40,9 @@ export default function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
     const [isPinModalOpen, setIsPinModalOpen] = useState(false);
 
     const selectedSellCard = CARDS.find(c => c.id === sellData.cardId) || CARDS[0];
-    const ngnPreview = sellData.cardValue
-        ? Math.floor(Number(sellData.cardValue) * selectedSellCard.rate)
-        : 0;
+    const activeRate = getTieredRate(selectedSellCard, sellData.cardValue);
+    const ngnPreview = activeRate > 0 ? Math.floor(Number(sellData.cardValue) * activeRate) : 0;
+    const currentTier = Number(sellData.cardValue) >= 50 ? 'high' : Number(sellData.cardValue) >= 20 ? 'low' : null;
 
     const handleSubmit = async (pin: string) => {
         setIsPinModalOpen(false);
@@ -173,11 +179,17 @@ export default function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
                                     >
                                         {CARDS.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                     </select>
-                                    {/* Rate badge */}
-                                    <p className="text-xs text-purple-600 dark:text-purple-400 font-medium mt-1.5 flex items-center gap-1">
-                                        <TrendingUp className="w-3 h-3" />
-                                        Rate: ₦{selectedSellCard.rate.toLocaleString()} per $1
-                                    </p>
+                                    {/* Rate tiers badge */}
+                                    <div className="mt-2 space-y-1">
+                                        <div className={`flex justify-between text-xs rounded-lg px-3 py-1.5 font-medium transition-colors ${currentTier === 'low' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' : 'text-gray-400'}`}>
+                                            <span>$20 – $49</span>
+                                            <span>₦{selectedSellCard.low.toLocaleString()} / $1</span>
+                                        </div>
+                                        <div className={`flex justify-between text-xs rounded-lg px-3 py-1.5 font-medium transition-colors ${currentTier === 'high' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' : 'text-gray-400'}`}>
+                                            <span>$50+</span>
+                                            <span>₦{selectedSellCard.high.toLocaleString()} / $1</span>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div>
@@ -192,9 +204,17 @@ export default function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
                                 </div>
 
                                 {/* Live NGN Payout Preview */}
+                                {Number(sellData.cardValue) > 0 && Number(sellData.cardValue) < 20 && (
+                                    <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-xl px-4 py-3 text-sm font-medium">
+                                        ⚠️ Minimum card value is $20
+                                    </div>
+                                )}
                                 {ngnPreview > 0 && (
                                     <div className="flex items-center justify-between bg-purple-50 dark:bg-purple-900/20 rounded-xl px-4 py-3">
-                                        <span className="text-sm text-gray-600 dark:text-gray-400">You'll receive</span>
+                                        <div>
+                                            <span className="text-sm text-gray-600 dark:text-gray-400">You'll receive</span>
+                                            <div className="text-xs text-gray-400">Rate: ₦{activeRate.toLocaleString()}/$1</div>
+                                        </div>
                                         <span className="text-xl font-bold text-purple-600 dark:text-purple-400">
                                             ₦{ngnPreview.toLocaleString()}
                                         </span>
@@ -218,7 +238,7 @@ export default function GiftCardModal({ isOpen, onClose }: GiftCardModalProps) {
 
                                 <button
                                     onClick={() => setIsPinModalOpen(true)}
-                                    disabled={!sellData.cardValue || !sellData.cardCode || loading}
+                                    disabled={!sellData.cardValue || Number(sellData.cardValue) < 20 || !sellData.cardCode || loading}
                                     className="w-full py-4 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {loading ? 'Processing...' : `Sell for ₦${ngnPreview > 0 ? ngnPreview.toLocaleString() : '---'}`}

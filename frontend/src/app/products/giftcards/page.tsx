@@ -14,17 +14,25 @@ interface GiftCard {
     category: string;
     regions: string[];
     color: string;
-    sellRate: number; // NGN per $1
+    low: number; // NGN per $1 for $20-$49
+    high: number; // NGN per $1 for $50+
 }
 
-// Per-card NGN sell rates (must match backend)
-const SELL_RATES: Record<string, number> = {
-    amazon: 1271,
-    apple: 1230,
-    steam: 1214,
-    google: 1246,
-    vanilla: 1205,
+// Per-card NGN sell rates (must match backend tiers)
+const SELL_RATE_TIERS: Record<string, { low: number; high: number }> = {
+    amazon: { low: 794, high: 1100 },
+    apple: { low: 794, high: 1080 },
+    steam: { low: 794, high: 1050 },
+    google: { low: 794, high: 1070 },
+    vanilla: { low: 794, high: 1050 },
 };
+
+function getTieredRate(card: GiftCard | undefined, usdValue: number | ''): number {
+    if (!card) return 0;
+    const val = Number(usdValue);
+    if (!val || val < 20) return 0;
+    return val >= 50 ? card.high : card.low;
+}
 
 export default function GiftCards() {
     const [cards, setCards] = useState<GiftCard[]>([]);
@@ -50,11 +58,11 @@ export default function GiftCards() {
 
     useEffect(() => {
         const catalog: GiftCard[] = [
-            { id: 'amazon', name: 'Amazon', category: 'Shopping', regions: ['US', 'GLOBAL'], color: 'bg-orange-600', sellRate: SELL_RATES.amazon },
-            { id: 'apple', name: 'Apple / iTunes', category: 'Streaming', regions: ['US', 'GLOBAL'], color: 'bg-slate-800', sellRate: SELL_RATES.apple },
-            { id: 'steam', name: 'Steam', category: 'Gaming', regions: ['GLOBAL'], color: 'bg-blue-800', sellRate: SELL_RATES.steam },
-            { id: 'google', name: 'Google Play', category: 'Gaming', regions: ['US', 'UK'], color: 'bg-teal-600', sellRate: SELL_RATES.google },
-            { id: 'vanilla', name: 'Vanilla Visa', category: 'Shopping', regions: ['US'], color: 'bg-indigo-600', sellRate: SELL_RATES.vanilla },
+            { id: 'amazon', name: 'Amazon', category: 'Shopping', regions: ['US', 'GLOBAL'], color: 'bg-orange-600', low: SELL_RATE_TIERS.amazon.low, high: SELL_RATE_TIERS.amazon.high },
+            { id: 'apple', name: 'Apple / iTunes', category: 'Streaming', regions: ['US', 'GLOBAL'], color: 'bg-slate-800', low: SELL_RATE_TIERS.apple.low, high: SELL_RATE_TIERS.apple.high },
+            { id: 'steam', name: 'Steam', category: 'Gaming', regions: ['GLOBAL'], color: 'bg-blue-800', low: SELL_RATE_TIERS.steam.low, high: SELL_RATE_TIERS.steam.high },
+            { id: 'google', name: 'Google Play', category: 'Gaming', regions: ['US', 'UK'], color: 'bg-teal-600', low: SELL_RATE_TIERS.google.low, high: SELL_RATE_TIERS.google.high },
+            { id: 'vanilla', name: 'Vanilla Visa', category: 'Shopping', regions: ['US'], color: 'bg-indigo-600', low: SELL_RATE_TIERS.vanilla.low, high: SELL_RATE_TIERS.vanilla.high },
         ];
         setCards(catalog);
         setLoading(false);
@@ -96,9 +104,9 @@ export default function GiftCards() {
 
     // ── Sell Flow ──
     const selectedSellCard = cards.find(c => c.id === sellCardId) || cards[0];
-    const ngnPreview = selectedSellCard && sellValue > 0
-        ? Math.floor(sellValue * (selectedSellCard.sellRate || SELL_RATES[sellCardId] || 1500))
-        : 0;
+    const activeRate = getTieredRate(selectedSellCard, sellValue);
+    const ngnPreview = activeRate > 0 ? Math.floor(sellValue * activeRate) : 0;
+    const currentTier = sellValue >= 50 ? 'high' : sellValue >= 20 ? 'low' : null;
 
     const handleSellSubmit = async (pin: string) => {
         setIsPinModalOpen(false);
@@ -219,7 +227,7 @@ export default function GiftCards() {
                                         <div className="text-center text-gray-500 dark:text-gray-400">{card.category}</div>
                                         {pageMode === 'sell' && (
                                             <div className="text-center text-green-600 dark:text-green-400 font-bold mt-0.5 flex items-center justify-center gap-1">
-                                                <TrendingUp className="w-3 h-3" /> ₦{card.sellRate.toLocaleString()}/$
+                                                <TrendingUp className="w-3 h-3" /> Up to ₦{card.high.toLocaleString()}/$
                                             </div>
                                         )}
                                     </div>
@@ -307,12 +315,19 @@ export default function GiftCards() {
                                             <div className="space-y-4">
                                                 {/* Selected card indicator */}
                                                 {selectedSellCard && (
-                                                    <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-zinc-800 rounded-xl">
-                                                        <div className={`w-10 h-10 rounded-lg ${selectedSellCard.color} shadow`}></div>
-                                                        <div>
+                                                    <div className="p-3 bg-gray-50 dark:bg-zinc-800 rounded-xl">
+                                                        <div className="flex items-center gap-3 mb-2">
+                                                            <div className={`w-10 h-10 rounded-lg ${selectedSellCard.color} shadow`}></div>
                                                             <div className="font-bold text-sm text-gray-900 dark:text-white">{selectedSellCard.name}</div>
-                                                            <div className="text-xs text-green-600 dark:text-green-400 font-medium flex items-center gap-1">
-                                                                <TrendingUp className="w-3 h-3" /> ₦{selectedSellCard.sellRate.toLocaleString()} / $1
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <div className={`flex justify-between text-xs rounded-lg px-2 py-1 font-medium transition-colors ${currentTier === 'low' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'text-gray-400'}`}>
+                                                                <span>$20 – $49</span>
+                                                                <span>₦{selectedSellCard.low.toLocaleString()} / $1</span>
+                                                            </div>
+                                                            <div className={`flex justify-between text-xs rounded-lg px-2 py-1 font-medium transition-colors ${currentTier === 'high' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'text-gray-400'}`}>
+                                                                <span>$50+</span>
+                                                                <span>₦{selectedSellCard.high.toLocaleString()} / $1</span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -329,9 +344,18 @@ export default function GiftCards() {
                                                     />
                                                 </div>
 
+                                                {sellValue > 0 && sellValue < 20 && (
+                                                    <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-xl px-4 py-3 text-sm font-medium">
+                                                        ⚠️ Minimum card value is $20
+                                                    </div>
+                                                )}
+
                                                 {ngnPreview > 0 && (
                                                     <div className="flex items-center justify-between bg-green-50 dark:bg-green-900/20 rounded-xl px-4 py-3">
-                                                        <span className="text-sm text-gray-600 dark:text-gray-400">You'll receive</span>
+                                                        <div>
+                                                            <span className="text-sm text-gray-600 dark:text-gray-400">You'll receive</span>
+                                                            <div className="text-xs text-gray-400">Rate: ₦{activeRate.toLocaleString()}/$1</div>
+                                                        </div>
                                                         <span className="text-xl font-bold text-green-600 dark:text-green-400">
                                                             ₦{ngnPreview.toLocaleString()}
                                                         </span>
@@ -355,7 +379,7 @@ export default function GiftCards() {
 
                                                 <button
                                                     onClick={() => setIsPinModalOpen(true)}
-                                                    disabled={!sellValue || !sellCode || processing}
+                                                    disabled={!sellValue || sellValue < 20 || !sellCode || processing}
                                                     className="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold shadow-lg shadow-green-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
                                                     <ArrowUpRight className="w-5 h-5" />

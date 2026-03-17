@@ -155,14 +155,24 @@ export const purchaseGiftCard = async (req: Request, res: Response) => {
     }
 };
 
-// NGN payout rates per USD for each gift card type (18% margin applied)
-const GIFT_CARD_NGN_RATES: Record<string, number> = {
-    amazon: 1271,
-    apple: 1230,
-    steam: 1214,
-    google: 1246,
-    vanilla: 1205,
+// Tiered NGN payout rates per $1 USD
+// $20–$49: flat ₦794 across all cards
+// $50+:    per-card rates in the ₦1,050–₦1,100 range
+const GIFT_CARD_RATE_TIERS: Record<string, { low: number; high: number }> = {
+    amazon: { low: 794, high: 1100 },
+    apple: { low: 794, high: 1080 },
+    steam: { low: 794, high: 1050 },
+    google: { low: 794, high: 1070 },
+    vanilla: { low: 794, high: 1050 },
 };
+
+function getGiftCardRate(cardId: string, usdValue: number): number {
+    const tiers = GIFT_CARD_RATE_TIERS[cardId.toLowerCase()];
+    if (!tiers) return 0;
+    if (usdValue >= 50) return tiers.high;
+    if (usdValue >= 20) return tiers.low;
+    return 0; // below minimum
+}
 
 export const sellGiftCard = async (req: Request, res: Response) => {
     try {
@@ -173,8 +183,7 @@ export const sellGiftCard = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Missing required fields: cardId, cardValue, cardCode, pin' });
         }
 
-        const rate = GIFT_CARD_NGN_RATES[cardId.toLowerCase()];
-        if (!rate) {
+        if (!GIFT_CARD_RATE_TIERS[cardId.toLowerCase()]) {
             return res.status(400).json({ error: 'Unsupported gift card type' });
         }
 
@@ -183,6 +192,9 @@ export const sellGiftCard = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Invalid card value' });
         }
 
+        if (usdValue < 20) {
+            return res.status(400).json({ error: 'Minimum card value is $20' });
+        }
         await securityService.validateRequestPin(userId, pin);
 
         // Idempotency check
@@ -191,6 +203,7 @@ export const sellGiftCard = async (req: Request, res: Response) => {
             if (existing) return res.json({ message: 'Trade already submitted', reference: existing.reference });
         }
 
+        const rate = getGiftCardRate(cardId, usdValue);
         const ngnPayout = Math.floor(usdValue * rate);
 
         const ref = 'GCS_' + Date.now();
@@ -223,7 +236,7 @@ export const sellGiftCard = async (req: Request, res: Response) => {
                         cardCode,
                         cardValue: usdValue,
                         ngnPayout,
-                        rate
+                        rate,
                     },
                     description: `Gift Card Sale – $${usdValue} ${cardId.charAt(0).toUpperCase() + cardId.slice(1)}`
                 } as any
