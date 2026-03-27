@@ -4,8 +4,9 @@ import { Users, Target, Shield } from "lucide-react";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "About Us",
-    description: "Learn more about PayBills, our mission to simplify digital payments in Africa, and the values that drive our innovation.",
+    title: "About PayBills | Nigeria's Most Reliable Payment Platform",
+    description: "Learn about PayBills, our mission to simplify digital payments for Africans, and our commitment to security, speed, and reliability. Operated by Fecund Integrated Technology Limited.",
+    keywords: ["about paybills", "fecund integrated technology limited", "digital payments africa", "secure fintech nigeria", "instant bill payment history"],
 };
 
 export default function About() {

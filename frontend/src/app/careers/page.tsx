@@ -1,8 +1,16 @@
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Briefcase, Rocket, Heart, Globe, ArrowRight } from "lucide-react";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+    title: "Careers | Join the Future of Payments in Africa",
+    description: "Join the PayBills team and help build the most reliable digital payment platform in Africa. Explore open positions in engineering, design, and operations.",
+    keywords: ["fintech jobs nigeria", "tech careers africa", "remote jobs nigeria", "senior frontend engineer jobs", "work at paybills"],
+};
 
 export default function Careers() {
+
     return (
         <main className="min-h-screen bg-white">
             <Navbar />

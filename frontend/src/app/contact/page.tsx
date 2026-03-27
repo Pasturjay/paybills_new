@@ -1,8 +1,16 @@
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Mail, MapPin, Phone } from "lucide-react";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+    title: "Contact Us | 24/7 Customer Support",
+    description: "Get in touch with PayBills. Our support team is available 24/7 to help with bill payments, airtime top-ups, and virtual card issues. Contact us via email, phone, or social media.",
+    keywords: ["paybills contact", "customer support nigeria", "fintech help desk", "paybills support number", "contact paybills team"],
+};
 
 export default function Contact() {
+
     return (
         <main className="min-h-screen bg-gray-50/50">
             <Navbar />

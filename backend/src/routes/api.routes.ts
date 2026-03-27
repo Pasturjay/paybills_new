@@ -12,6 +12,7 @@ router.post('/auth/request-otp', requestOtp); // Deprecated
 router.post('/auth/register', register);       // Deprecated
 router.post('/auth/login', login);             // Deprecated
 router.post('/webhooks/paystack', require('../controllers/paystack.webhook').handlePaystackWebhook);
+router.post('/webhooks/flutterwave', require('../controllers/flutterwave.webhook').handleFlutterwaveWebhook);
 
 // Notification Routes
 import { getNotifications, markRead } from '../controllers/notification.controller';

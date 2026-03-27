@@ -2,10 +2,13 @@ import Link from 'next/link';
 import { Instagram, Twitter, Facebook, ArrowRight } from 'lucide-react';
 import { PaybillsLogo } from "@/components/PaybillsLogo";
 
+import { SEODirectory } from "@/components/SEODirectory";
+
 export function Footer() {
     return (
         <footer className="hidden md:block relative overflow-hidden pt-20 pb-10 mt-10 bg-[#0a0a14] border-t border-white/10"
         >
+            <SEODirectory />
             {/* Top gloss divider */}
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 

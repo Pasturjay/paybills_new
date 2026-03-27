@@ -10,6 +10,7 @@ export function FundWalletModal({ isOpen, onClose }: { isOpen: boolean; onClose:
     const [account, setAccount] = useState<any>(null);
     const [copied, setCopied] = useState(false);
     const [missingInfo, setMissingInfo] = useState<any>(null);
+    const [providerLoading, setProviderLoading] = useState<'PAYSTACK' | 'FLUTTERWAVE' | null>(null);
     const [profileData, setProfileData] = useState({
         firstName: "",
         lastName: "",
@@ -73,7 +74,7 @@ export function FundWalletModal({ isOpen, onClose }: { isOpen: boolean; onClose:
 
     if (!isOpen) return null;
 
-    const handleFund = async () => {
+    const handleFund = async (provider: 'PAYSTACK' | 'FLUTTERWAVE') => {
         const parsedAmount = Number(amount);
         if (!amount || isNaN(parsedAmount) || parsedAmount < 100) {
             toast.error("Please enter a valid amount (minimum ₦100)");
@@ -81,22 +82,25 @@ export function FundWalletModal({ isOpen, onClose }: { isOpen: boolean; onClose:
         }
 
         setLoading(true);
+        setProviderLoading(provider);
         try {
             const token = localStorage.getItem("token");
             if (!token) throw new Error("Not authenticated");
 
-            const res = await api.post("/wallet/fund/initialize", { amount: parsedAmount }, token);
+            const res = await api.post("/wallet/fund/initialize", { amount: parsedAmount, provider }, token);
 
             if (res.authorization_url) {
                 window.location.href = res.authorization_url;
             } else {
                 toast.error("Failed to initialize payment. Please try again.");
                 setLoading(false);
+                setProviderLoading(null);
             }
         } catch (error: any) {
             console.error(error);
             toast.error(error.message || "Something went wrong. Please try again.");
             setLoading(false);
+            setProviderLoading(null);
         }
     };
 
@@ -214,14 +218,25 @@ export function FundWalletModal({ isOpen, onClose }: { isOpen: boolean; onClose:
                         ))}
                     </div>
 
-                    <button
-                        onClick={handleFund}
-                        disabled={loading}
-                        className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-lg shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
-                    >
-                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <CreditCard className="w-5 h-5" />}
-                        {loading ? "Processing..." : "Top up w/ Card"}
-                    </button>
+                    <div className="grid grid-cols-2 gap-3 mt-4">
+                        <button
+                            onClick={() => handleFund('PAYSTACK')}
+                            disabled={loading}
+                            className="w-full py-4 bg-gray-900 dark:bg-zinc-800 hover:bg-gray-800 dark:hover:bg-zinc-700 text-white rounded-2xl font-bold md:text-sm text-xs shadow-lg transition-all flex flex-col items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+                        >
+                            {providerLoading === 'PAYSTACK' ? <Loader2 className="w-5 h-5 animate-spin" /> : <CreditCard className="w-5 h-5 mb-1" />}
+                            {providerLoading === 'PAYSTACK' ? "Wait..." : "Paystack"}
+                        </button>
+
+                        <button
+                            onClick={() => handleFund('FLUTTERWAVE')}
+                            disabled={loading}
+                            className="w-full py-4 bg-orange-600 hover:bg-orange-700 text-white rounded-2xl font-bold md:text-sm text-xs shadow-lg transition-all flex flex-col items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+                        >
+                            {providerLoading === 'FLUTTERWAVE' ? <Loader2 className="w-5 h-5 animate-spin" /> : <CreditCard className="w-5 h-5 mb-1" />}
+                            {providerLoading === 'FLUTTERWAVE' ? "Wait..." : "Flutterwave"}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

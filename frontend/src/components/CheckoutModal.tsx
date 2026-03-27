@@ -4,17 +4,17 @@ import { useState } from "react";
 interface CheckoutModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onConfirm: (method: 'WALLET' | 'CARD' | 'CRYPTO') => void;
+    onConfirm: (method: 'WALLET' | 'CARD' | 'PAYSTACK' | 'FLUTTERWAVE' | 'CRYPTO') => void;
     amount: number;
     fee?: number;
     title: string;
     details: { label: string; value: string }[];
     loading?: boolean;
-    paymentMethods?: ('WALLET' | 'CARD' | 'CRYPTO')[];
+    paymentMethods?: ('WALLET' | 'CARD' | 'PAYSTACK' | 'FLUTTERWAVE' | 'CRYPTO')[];
 }
 
-export function CheckoutModal({ isOpen, onClose, onConfirm, amount, fee = 0, title, details, loading, paymentMethods = ['WALLET'] }: CheckoutModalProps) {
-    const [selectedMethod, setSelectedMethod] = useState<'WALLET' | 'CARD' | 'CRYPTO'>('WALLET');
+export function CheckoutModal({ isOpen, onClose, onConfirm, amount, fee = 0, title, details, loading, paymentMethods = ['WALLET', 'PAYSTACK', 'FLUTTERWAVE'] }: CheckoutModalProps) {
+    const [selectedMethod, setSelectedMethod] = useState<'WALLET' | 'CARD' | 'PAYSTACK' | 'FLUTTERWAVE' | 'CRYPTO'>('WALLET');
 
     if (!isOpen) return null;
 
@@ -101,6 +101,42 @@ export function CheckoutModal({ isOpen, onClose, onConfirm, amount, fee = 0, tit
                                         </div>
                                         <div className={`ml-auto w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedMethod === 'CARD' ? 'border-blue-600' : 'border-gray-300'}`}>
                                             {selectedMethod === 'CARD' && <div className="w-2.5 h-2.5 rounded-full bg-blue-600"></div>}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {paymentMethods.includes('PAYSTACK') && (
+                                    <div
+                                        onClick={() => setSelectedMethod('PAYSTACK')}
+                                        className={`p-4 border-2 rounded-xl flex items-center gap-3 cursor-pointer transition-all ${selectedMethod === 'PAYSTACK' ? 'border-gray-900 bg-gray-50 dark:bg-zinc-800' : 'border-gray-100 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700'}`}
+                                    >
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${selectedMethod === 'PAYSTACK' ? 'bg-gray-900 text-white' : 'bg-gray-100 dark:bg-zinc-800 text-gray-500'}`}>
+                                            <CreditCard className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <div className="font-bold text-sm text-gray-900 dark:text-white">Paystack</div>
+                                            <div className="text-xs text-gray-500">Pay with Card or Bank</div>
+                                        </div>
+                                        <div className={`ml-auto w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedMethod === 'PAYSTACK' ? 'border-gray-900' : 'border-gray-300'}`}>
+                                            {selectedMethod === 'PAYSTACK' && <div className="w-2.5 h-2.5 rounded-full bg-gray-900"></div>}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {paymentMethods.includes('FLUTTERWAVE') && (
+                                    <div
+                                        onClick={() => setSelectedMethod('FLUTTERWAVE')}
+                                        className={`p-4 border-2 rounded-xl flex items-center gap-3 cursor-pointer transition-all ${selectedMethod === 'FLUTTERWAVE' ? 'border-orange-600 bg-orange-50 dark:bg-orange-900/20' : 'border-gray-100 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700'}`}
+                                    >
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${selectedMethod === 'FLUTTERWAVE' ? 'bg-orange-600 text-white' : 'bg-gray-100 dark:bg-zinc-800 text-gray-500'}`}>
+                                            <CreditCard className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <div className="font-bold text-sm text-gray-900 dark:text-white">Flutterwave</div>
+                                            <div className="text-xs text-gray-500">Pay with Card or Bank</div>
+                                        </div>
+                                        <div className={`ml-auto w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedMethod === 'FLUTTERWAVE' ? 'border-orange-600' : 'border-gray-300'}`}>
+                                            {selectedMethod === 'FLUTTERWAVE' && <div className="w-2.5 h-2.5 rounded-full bg-orange-600"></div>}
                                         </div>
                                     </div>
                                 )}

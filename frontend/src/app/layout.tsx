@@ -8,11 +8,19 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 export const metadata: Metadata = {
     title: {
         template: '%s | PayBills',
-        default: 'PayBills - Seamless Utility Payments & Virtual Cards',
+        default: 'PayBills - Nigeria\'s #1 Utility Payment & Virtual Card Platform',
     },
     metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://paybills.ng'),
-    description: "PayBills is your all-in-one platform for airtime, data, electricity, cable TV, and virtual dollar cards. Secure, fast, and reliable.",
-    keywords: ["paybills", "airtime nigeria", "data subscription", "electricity bills", "virtual dollar card", "cable tv renewal", "software licenses", "gift cards nigeria"],
+    description: "PayBills is your all-in-one platform for instant airtime, cheap data, electricity bills, cable TV, and premium virtual dollar cards. Experience secure, fast, and 100% reliable digital payments with zero transaction fees.",
+    keywords: [
+        "paybills", "paybills nigeria", "buy airtime online", "cheap data bundles nigeria", 
+        "electricity bill payment", "ikeja electric prepaid", "eko electric postpaid", 
+        "dstv subscription online", "gotv payment lagos", "startimes recharge", 
+        "virtual dollar card nigeria", "dollar card for netflix", "buy software licenses", 
+        "windows 11 product key", "waec result checker pin", "neco token online", 
+        "jamb pin purchase", "fund sportybet account", "bet9ja wallet funding", 
+        "gift cards nigeria", "itunes gift card", "amazon gift card buy"
+    ],
     robots: {
         index: true,
         follow: true,
@@ -27,17 +35,17 @@ export const metadata: Metadata = {
     manifest: "/manifest.json",
     openGraph: {
         title: 'PayBills - Seamless Utility Payments & Virtual Cards',
-        description: 'Pay bills, buy data, and create virtual dollar cards instantly.',
+        description: 'Join 10,000+ Nigerians paying bills and shopping globally with PayBills. Instant delivery on all digital services.',
         url: 'https://paybills.ng',
         siteName: 'PayBills',
-        images: [{ url: 'https://paybills.ng/og-image.png', width: 1200, height: 630 }],
+        images: [{ url: 'https://paybills.ng/og-image.png', width: 1200, height: 630, alt: 'PayBills Digital Services' }],
         locale: 'en_NG',
         type: 'website',
     },
     twitter: {
         card: 'summary_large_image',
-        title: 'PayBills - Seamless Utility Top Ups',
-        description: 'Instant top-ups, bills, and virtual dollar cards.',
+        title: 'PayBills - Nigeria\'s Top Digital Payment App',
+        description: 'Instant airtime, data, bills, and virtual dollar cards. Fast, secure, and zero fees.',
         creator: '@paybills_ng',
         images: ['https://paybills.ng/og-image.png'],
     },
@@ -67,7 +75,7 @@ export const metadata: Metadata = {
         'microsoft-partner': 'https://marketplace.microsoft.com/en-us/partners/086ea8f8-72d6-44a6-8e33-32630eab33c5/overview',
     },
     verification: {
-        google: 'google-site-verification-id', // User should replace this with actual verification ID
+        google: 'google-site-verification-id',
     },
 };
 
@@ -75,8 +83,6 @@ export const viewport = {
     themeColor: "#0f172a",
     width: "device-width",
     initialScale: 1,
-    // NOTE: maximumScale and userScalable intentionally omitted to allow
-    // pinch-to-zoom for accessibility compliance.
 };
 
 import dynamic from "next/dynamic";
@@ -93,15 +99,51 @@ export default function RootLayout({
     const jsonLd = {
         "@context": "https://schema.org",
         "@type": "Organization",
+        "@id": "https://paybills.ng/#organization",
         "name": "PayBills",
         "url": "https://paybills.ng",
+        "logo": "https://paybills.ng/logo.png",
+        "contactPoint": {
+            "@type": "ContactPoint",
+            "telephone": "+234-800-PAYBILLS",
+            "contactType": "customer service",
+            "areaServed": "NG",
+            "availableLanguage": "en"
+        },
         "sameAs": [
             "https://twitter.com/paybills_ng",
             "https://facebook.com/paybillsng",
             "https://instagram.com/paybillsng"
         ],
-        "description": "Seamless utility payments, virtual cards, and digital lifestyle management."
+        "description": "Premium platform for utility payments, virtual cards, and digital lifestyle management in Nigeria.",
+        "brand": {
+            "@type": "Brand",
+            "name": "PayBills"
+        },
+        "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "36 Aka Itiam Lane",
+            "addressLocality": "Uyo",
+            "addressRegion": "Akwa Ibom",
+            "addressCountry": "NG"
+        }
     };
+
+    const siteLd = {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "@id": "https://paybills.ng/#website",
+        "url": "https://paybills.ng",
+        "name": "PayBills",
+        "description": "Seamless Utility Payments & Virtual Cards",
+        "publisher": { "@id": "https://paybills.ng/#organization" },
+        "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://paybills.ng/products?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+        }
+    };
+
 
     return (
         <html lang="en">
@@ -110,7 +152,12 @@ export default function RootLayout({
                     type="application/ld+json"
                     dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
                 />
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify(siteLd) }}
+                />
                 {/* Global toast notifications — positioned top-right */}
+
                 <Toaster
                     position="top-right"
                     toastOptions={{

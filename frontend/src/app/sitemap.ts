@@ -1,64 +1,62 @@
 import { MetadataRoute } from 'next'
-import fs from 'fs'
-import path from 'path'
 
-const baseUrl = 'https://paybills.ng'
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const baseUrl = 'https://paybills.ng'
 
-// Automatically scan src/app directory for routes
-function getRoutes(dir: string, basePath = ''): string[] {
-    if (!fs.existsSync(dir)) return [];
-    const entries = fs.readdirSync(dir, { withFileTypes: true })
+  // 🧾 Static pages
+  const staticPages = [
+    '',
+    '/about',
+    '/contact',
+    '/careers',
+    '/products',
+  ]
 
-    let routes: string[] = []
+  // 🛒 Product pages
+  const productPages = [
+    '/products/airtime-data',
+    '/products/bill-payment',
+    '/products/virtual-cards',
+    '/products/software',
+    '/products/giftcards',
+    '/products/games',
+    '/products/education',
+    '/products/betting',
+  ]
 
-    for (const entry of entries) {
-        if (entry.name.startsWith('_')) continue
-        if (entry.name.startsWith('(')) continue
-        if (entry.name.startsWith('.')) continue
-        // Skip private folders
-        if (entry.name === 'api' || entry.name === 'dashboard' || entry.name === 'admin') continue
+  // ⚖️ Legal pages
+  const legalPages = [
+    '/legal/privacy',
+    '/legal/terms',
+    '/legal/refund',
+  ]
 
-        const fullPath = path.join(dir, entry.name)
-        const routePath = `${basePath}/${entry.name}`
+  // 📰 Blog pages (future-ready)
+  const blogPages: string[] = [
+    // '/blog/how-to-buy-airtime',
+    // '/blog/cheap-data-nigeria',
+  ]
 
-        if (entry.isDirectory()) {
-            routes = routes.concat(getRoutes(fullPath, routePath))
-        }
+  const allPages = [...staticPages, ...productPages, ...legalPages, ...blogPages]
 
-        if (entry.name === 'page.tsx' || entry.name === 'page.jsx') {
-            routes.push(basePath || '')
-        }
-    }
-
-    return routes
-}
-
-export default function sitemap(): MetadataRoute.Sitemap {
-    // Note: In Next.js src layout, app is at src/app
-    const appDir = path.join(process.cwd(), 'src', 'app')
-
-    let routes: string[] = []
-
-    try {
-        routes = getRoutes(appDir)
-    } catch (err) {
-        console.error('Sitemap generation error:', err)
-        routes = []
-    }
-
-    // Remove duplicates and system routes
-    const filteredRoutes = Array.from(new Set(routes))
-        .filter(route =>
-            !route.includes('/api') &&
-            !route.includes('/_') &&
-            !route.includes('/404') &&
-            !route.includes('/500')
-        )
-
-    return filteredRoutes.map(route => ({
-        url: `${baseUrl}${route}`,
-        lastModified: new Date(),
-        changeFrequency: route === '' ? 'daily' : 'weekly',
-        priority: route === '' ? 1.0 : 0.8,
-    }))
+  return allPages.map((path) => ({
+    url: `${baseUrl}${path}`,
+    lastModified: new Date(),
+    changeFrequency:
+      path === ''
+        ? 'daily'
+        : path.includes('/products')
+        ? 'daily'
+        : path.includes('/legal')
+        ? 'yearly' as const
+        : 'weekly',
+    priority:
+      path === ''
+        ? 1.0
+        : path.includes('/products')
+        ? 0.9
+        : path.includes('/legal')
+        ? 0.5
+        : 0.7,
+  }))
 }

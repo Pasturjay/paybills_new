@@ -100,7 +100,7 @@ export const initiateFunding = async (req: Request, res: Response) => {
     try {
         // @ts-ignore
         const userId = req.user.id;
-        const { amount } = req.body;
+        const { amount, provider = 'PAYSTACK' } = req.body;
 
         if (!amount || Number(amount) <= 0) {
             return res.status(400).json({ error: 'Invalid amount' });
@@ -108,13 +108,30 @@ export const initiateFunding = async (req: Request, res: Response) => {
 
         const user = await prisma.user.findUnique({ where: { id: userId } });
         if (!user) return res.status(404).json({ error: 'User not found' });
+        if (!user.email) return res.status(400).json({ error: 'Email address required to fund wallet. Please update your profile.' });
 
-        // callback URL - frontend verification page
-        // Use process.env.FRONTEND_URL usually, hardcoding for now based on user context if needed, or relative.
-        // Assuming localhost or the deployed URL.
         const callbackUrl = `${process.env.APP_URL || 'http://localhost:3000'}/dashboard/fund/verify`;
 
-        if (!user.email) return res.status(400).json({ error: 'Email address required to fund wallet. Please update your profile.' });
+        if (provider === 'FLUTTERWAVE') {
+            // Flutterwave Standard (hosted checkout)
+            const txRef = `FLW_FUND_${userId}_${Date.now()}`;
+            const flwResponse = await flutterwaveService.initializeTransaction(
+                user.email,
+                Number(amount),
+                txRef,
+                callbackUrl,
+                { type: 'funding', userId }
+            );
+
+            return res.json({
+                message: 'Authorization URL created',
+                authorization_url: flwResponse.link,
+                reference: flwResponse.tx_ref,
+                provider: 'FLUTTERWAVE'
+            });
+        }
+
+        // Default: Paystack
         const initResponse = await paystackService.initializeTransaction(user.email, Number(amount), callbackUrl, {
             type: 'funding',
             userId: userId
@@ -123,7 +140,8 @@ export const initiateFunding = async (req: Request, res: Response) => {
         res.json({
             message: 'Authorization URL created',
             authorization_url: initResponse.authorization_url,
-            reference: initResponse.reference
+            reference: initResponse.reference,
+            provider: 'PAYSTACK'
         });
 
     } catch (error: any) {
@@ -136,22 +154,48 @@ export const verifyFunding = async (req: Request, res: Response) => {
     try {
         // @ts-ignore
         const userId = req.user.id;
-        const { reference } = req.query;
+        const { reference, transaction_id, provider = 'PAYSTACK' } = req.query;
 
-        if (!reference || typeof reference !== 'string') {
-            return res.status(400).json({ error: 'Transaction reference is required' });
-        }
+        // 1. Verify with the appropriate provider
+        let amount: number;
+        let verificationData: any;
+        let txReference: string;
 
-        // 1. Verify with Paystack
-        const verification = await paystackService.verifyTransaction(reference);
+        if (provider === 'FLUTTERWAVE') {
+            // Flutterwave verification uses the transaction_id returned after redirect
+            if (!transaction_id || typeof transaction_id !== 'string') {
+                return res.status(400).json({ error: 'Transaction ID is required for Flutterwave verification' });
+            }
 
-        if (verification.status !== 'success') {
-            return res.status(400).json({ error: 'Transaction was not successful' });
+            const verification = await flutterwaveService.verifyTransaction(transaction_id);
+
+            if (verification.status !== 'successful') {
+                return res.status(400).json({ error: 'Transaction was not successful' });
+            }
+
+            amount = verification.amount; // Flutterwave returns amount in naira directly
+            verificationData = verification;
+            txReference = verification.tx_ref;
+        } else {
+            // Default: Paystack
+            if (!reference || typeof reference !== 'string') {
+                return res.status(400).json({ error: 'Transaction reference is required' });
+            }
+
+            const verification = await paystackService.verifyTransaction(reference);
+
+            if (verification.status !== 'success') {
+                return res.status(400).json({ error: 'Transaction was not successful' });
+            }
+
+            amount = verification.amount / 100; // Convert kobo to naira
+            verificationData = verification;
+            txReference = reference;
         }
 
         // 2. Check if transaction already processed
         const existingTx = await prisma.transaction.findFirst({
-            where: { reference: reference }
+            where: { reference: txReference }
         });
 
         if (existingTx) {
@@ -159,8 +203,6 @@ export const verifyFunding = async (req: Request, res: Response) => {
         }
 
         // 3. Fund Wallet
-        const amount = verification.amount / 100; // Convert kobo to naira
-
         await prisma.$transaction(async (tx) => {
             // Get Wallet with row-level lock
             const wallets = await tx.$queryRaw<Wallet[]>(
@@ -182,8 +224,8 @@ export const verifyFunding = async (req: Request, res: Response) => {
                     total: amount,
                     type: 'FUNDING',
                     status: 'SUCCESS',
-                    reference: reference,
-                    metadata: JSON.stringify(verification)
+                    reference: txReference,
+                    metadata: JSON.stringify(verificationData)
                 }
             });
         });
