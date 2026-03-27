@@ -31,6 +31,13 @@
     <priority>0.6</priority>
   </url>
 
+  <url>
+    <loc>https://paybills.ng/faq</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
   <!-- Products Main -->
   <url>
     <loc>https://paybills.ng/products</loc>
@@ -118,14 +125,11 @@
     <priority>0.5</priority>
   </url>
 
-  <!-- Blog (uncomment when live) -->
-  <!--
   <url>
-    <loc>https://paybills.ng/blog</loc>
+    <loc>https://paybills.ng/legal/disclaimer</loc>
     <lastmod>2026-03-27</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
   </url>
-  -->
 
 </urlset>

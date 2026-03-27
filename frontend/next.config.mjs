@@ -28,6 +28,23 @@ const nextConfig = {
             },
         ];
     },
+    async redirects() {
+        return [
+            { source: '/software', destination: '/products/software', permanent: true },
+            { source: '/betting', destination: '/products/betting', permanent: true },
+            { source: '/privacy', destination: '/legal/privacy', permanent: true },
+            { source: '/education', destination: '/products/education', permanent: true },
+            { source: '/airtime-data', destination: '/products/airtime-data', permanent: true },
+            { source: '/refund', destination: '/legal/refund', permanent: true },
+            { source: '/terms', destination: '/legal/terms', permanent: true },
+            { source: '/utilities', destination: '/products/bill-payment', permanent: true },
+            { source: '/services', destination: '/products', permanent: true },
+            { source: '/help', destination: '/contact', permanent: true },
+            { source: '/ms-activation', destination: '/products/software', permanent: true },
+            { source: '/agent', destination: '/contact', permanent: true },
+            { source: '/disclaimer', destination: '/legal/disclaimer', permanent: true },
+        ];
+    },
 };
 
 export default nextConfig;

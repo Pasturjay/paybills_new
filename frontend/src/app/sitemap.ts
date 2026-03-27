@@ -10,6 +10,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/contact',
     '/careers',
     '/products',
+    '/faq',
   ]
 
   // 🛒 Product pages
@@ -29,6 +30,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/legal/privacy',
     '/legal/terms',
     '/legal/refund',
+    '/legal/disclaimer',
   ]
 
   // 📰 Blog pages (future-ready)
